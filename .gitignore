@@ -1,0 +1,14 @@
+# Node
+/ml-server/node_modules/
+/public-api/node_modules/
+/ml-server/dist/
+/public-api/dist/
+
+# Env
+./style-canvas-public.pem
+.env
+
+# IntelliJ IDEA
+.idea/
+
+/style-canvas-public.pem
