@@ -6,7 +6,7 @@
 
 # Env
 ./style-canvas-public.pem
-.env
+public-api/.env
 
 # IntelliJ IDEA
 .idea/
