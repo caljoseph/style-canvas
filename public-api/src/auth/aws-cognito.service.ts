@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { CognitoIdentityServiceProvider } from 'aws-sdk';
-
+import { CognitoIdentityServiceProvider} from 'aws-sdk';
+import { AuthenticationDetails} from 'amazon-cognito-identity-js';
 import { AuthLoginUserDto } from './dto/auth-login-user.dto';
 import { AuthRegisterUserDto } from './dto/auth-register-user.dto';
 import * as crypto from 'crypto';
 import {ConfigService} from "@nestjs/config";
+import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
+import {Authenticator} from "passport";
 
 @Injectable()
 export class AwsCognitoService {
@@ -41,7 +43,7 @@ export class AwsCognitoService {
             Password: password,
             Username: email,
             SecretHash: secretHash,
-            UserAttributes: []  // Define attributes such as email etc. here if needed
+            UserAttributes: []  // TODO: define attributes
         };
 
         return new Promise((resolve, reject) => {
@@ -77,6 +79,36 @@ export class AwsCognitoService {
                         accessToken: authResult.AuthenticationResult.AccessToken,
                         refreshToken: authResult.AuthenticationResult.RefreshToken,
                     });
+                }
+            });
+        });
+    }
+    async changeUserPassword(authChangePasswordUserDto: AuthChangePasswordUserDto) {
+        // Extract change password info from DTO.
+        const { email, currentPassword, newPassword } = authChangePasswordUserDto;
+
+        // Convert to an authenticate user DTO.
+        const authLoginUserDto: AuthLoginUserDto = {
+            email,
+            password: currentPassword,
+        };
+
+        // Get authToken from UN/PW.
+        const { accessToken } = await this.authenticateUser(authLoginUserDto);
+
+        const params = {
+            PreviousPassword: currentPassword,
+            ProposedPassword: newPassword,
+            AccessToken: accessToken,
+        };
+
+        // Request change password from cognito
+        return new Promise((resolve, reject) => {
+            this.cognitoServiceProvider.changePassword(params, (err, data) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(data);
                 }
             });
         });

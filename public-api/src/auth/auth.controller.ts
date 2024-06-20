@@ -1,7 +1,9 @@
-import {Body, Controller, Post, UsePipes, ValidationPipe} from '@nestjs/common';
+import {Body, Controller, Post, UseGuards, UsePipes, ValidationPipe} from '@nestjs/common';
 import {AuthRegisterUserDto} from "./dto/auth-register-user.dto";
 import { AwsCognitoService } from './aws-cognito.service';
 import {AuthLoginUserDto} from "./dto/auth-login-user.dto";
+import {AuthGuard} from "@nestjs/passport";
+import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
 
 
 @Controller('auth')
@@ -17,6 +19,14 @@ export class AuthController {
     @UsePipes(ValidationPipe)
     async login(@Body() authLoginUserDto: AuthLoginUserDto) {
         return this.awsCognitoService.authenticateUser(authLoginUserDto);
+    }
+
+    @Post('/change-password')
+    @UsePipes(ValidationPipe)
+    async changePassword(
+        @Body() authChangePasswordUserDto: AuthChangePasswordUserDto,
+    ){
+        await this.awsCognitoService.changeUserPassword(authChangePasswordUserDto);
     }
 
 }
