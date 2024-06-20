@@ -4,6 +4,8 @@ import { AwsCognitoService } from './aws-cognito.service';
 import {AuthLoginUserDto} from "./dto/auth-login-user.dto";
 import {AuthGuard} from "@nestjs/passport";
 import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
+import {AuthForgotPasswordUserDto} from "./dto/auth-forgot-password-user.dto";
+import {AuthConfirmPasswordUserDto} from "./dto/auth-confirm-password-user.dto";
 
 
 @Controller('auth')
@@ -28,5 +30,26 @@ export class AuthController {
     ){
         await this.awsCognitoService.changeUserPassword(authChangePasswordUserDto);
     }
+
+    @Post('/forgot-password')
+    @UsePipes(ValidationPipe)
+    async forgotPassword(
+        @Body() authForgotPasswordUserDto: AuthForgotPasswordUserDto,
+    ) {
+        return await this.awsCognitoService.forgotUserPassword(
+            authForgotPasswordUserDto,
+        );
+    }
+
+    @Post('/confirm-password')
+    @UsePipes(ValidationPipe)
+    async confirmPassword(
+        @Body() authConfirmPasswordUserDto: AuthConfirmPasswordUserDto,
+    ) {
+        return await this.awsCognitoService.confirmUserPassword(
+            authConfirmPasswordUserDto,
+        );
+    }
+
 
 }
