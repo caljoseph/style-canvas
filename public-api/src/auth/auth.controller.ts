@@ -6,21 +6,22 @@ import {AuthGuard} from "@nestjs/passport";
 import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
 import {AuthForgotPasswordUserDto} from "./dto/auth-forgot-password-user.dto";
 import {AuthConfirmPasswordUserDto} from "./dto/auth-confirm-password-user.dto";
+import {AuthService} from "./auth.service";
 
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly awsCognitoService: AwsCognitoService) {}
+    constructor(private readonly authService: AuthService) {}
 
     @Post('/register')
     async register(@Body() authRegisterUserDto: AuthRegisterUserDto) {
-        return this.awsCognitoService.registerUser(authRegisterUserDto);
+        return this.authService.registerUser(authRegisterUserDto);
     }
 
     @Post('/login')
     @UsePipes(ValidationPipe)
     async login(@Body() authLoginUserDto: AuthLoginUserDto) {
-        return this.awsCognitoService.authenticateUser(authLoginUserDto);
+        return this.authService.authenticateUser(authLoginUserDto);
     }
 
     @Post('/change-password')
@@ -28,7 +29,7 @@ export class AuthController {
     async changePassword(
         @Body() authChangePasswordUserDto: AuthChangePasswordUserDto,
     ){
-        await this.awsCognitoService.changeUserPassword(authChangePasswordUserDto);
+        return this.authService.changeUserPassword(authChangePasswordUserDto);
     }
 
     @Post('/forgot-password')
@@ -36,7 +37,7 @@ export class AuthController {
     async forgotPassword(
         @Body() authForgotPasswordUserDto: AuthForgotPasswordUserDto,
     ) {
-        return await this.awsCognitoService.forgotUserPassword(
+        return this.authService.forgotUserPassword(
             authForgotPasswordUserDto,
         );
     }
@@ -46,7 +47,7 @@ export class AuthController {
     async confirmPassword(
         @Body() authConfirmPasswordUserDto: AuthConfirmPasswordUserDto,
     ) {
-        return await this.awsCognitoService.confirmUserPassword(
+        return await this.authService.confirmUserPassword(
             authConfirmPasswordUserDto,
         );
     }

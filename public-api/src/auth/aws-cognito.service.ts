@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { CognitoIdentityServiceProvider} from 'aws-sdk';
-import { AuthenticationDetails} from 'amazon-cognito-identity-js';
 import { AuthLoginUserDto } from './dto/auth-login-user.dto';
 import { AuthRegisterUserDto } from './dto/auth-register-user.dto';
 import * as crypto from 'crypto';
-import {ConfigService} from "@nestjs/config";
 import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
-import {Authenticator} from "passport";
 import {AuthForgotPasswordUserDto} from "./dto/auth-forgot-password-user.dto";
 import {AuthConfirmPasswordUserDto} from "./dto/auth-confirm-password-user.dto";
 
@@ -36,7 +33,7 @@ export class AwsCognitoService {
             .digest('base64');
     }
 
-    async registerUser(authRegisterUserDto: AuthRegisterUserDto): Promise<String | void> {
+    async registerUser(authRegisterUserDto: AuthRegisterUserDto): Promise<string | void> {
         const { email, password } = authRegisterUserDto;
         const secretHash = this.computeSecretHash(email);
 
@@ -55,7 +52,7 @@ export class AwsCognitoService {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(data.UserSub);  // UserSub is the identifier for the user
+                    resolve(data.UserSub);  // UserSub is the uuid for a user
                 }
             });
         });
