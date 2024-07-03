@@ -3,6 +3,7 @@
 /public-api/node_modules/
 /ml-server/dist/
 /public-api/dist/
+./node_modules/
 
 # Env
 ./style-canvas-public.pem
