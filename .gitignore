@@ -4,6 +4,7 @@
 /ml-server/dist/
 /public-api/dist/
 ./node_modules/
+node_modules/
 
 # Env
 ./style-canvas-public.pem
