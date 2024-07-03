@@ -5,11 +5,13 @@ import { AwsCognitoService } from "./aws-cognito.service";
 import { PassportModule } from "@nestjs/passport";
 import { JwtStrategy } from "./jwt.strategy";
 import { UsersModule } from "../users/users.module";
+import {AwsConfigModule} from "../config/aws-config.module";
 
 @Module({
     imports: [
         PassportModule.register({ defaultStrategy: 'jwt' }),
         UsersModule,
+        AwsConfigModule,
     ],
     providers: [AuthService, AwsCognitoService, JwtStrategy],
     controllers: [AuthController],

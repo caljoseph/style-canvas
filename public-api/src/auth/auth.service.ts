@@ -16,18 +16,18 @@ export class AuthService {
     ) {}
 
     async registerUser(authRegisterUserDto: AuthRegisterUserDto) {
-        const UserSub = await this.awsCognitoService.registerUser(authRegisterUserDto);
-        if (UserSub) {
+        try {
+            const userSub = await this.awsCognitoService.registerUser(authRegisterUserDto);
             const newUser = new User(
                 authRegisterUserDto.email,
-                UserSub,
-                'User',  // Default role
-                10       // Default tokens
+                userSub,
+                10 // Default tokens
             );
-            await this.userRepository.createUser(newUser);
+            await this.userRepository.create(newUser);
             return newUser;
-        } else {
-            throw new Error('User registration failed');
+        } catch (error) {
+            console.error('Error during user registration:', error);
+            throw new Error('User registration failed.');
         }
     }
 

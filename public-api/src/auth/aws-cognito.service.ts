@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { CognitoIdentityServiceProvider} from 'aws-sdk';
+import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import { AuthLoginUserDto } from './dto/auth-login-user.dto';
 import { AuthRegisterUserDto } from './dto/auth-register-user.dto';
 import * as crypto from 'crypto';
 import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
 import {AuthForgotPasswordUserDto} from "./dto/auth-forgot-password-user.dto";
 import {AuthConfirmPasswordUserDto} from "./dto/auth-confirm-password-user.dto";
+import {AwsConfigService} from "../config/aws-config.service";
 
 @Injectable()
 export class AwsCognitoService {
@@ -14,7 +15,7 @@ export class AwsCognitoService {
     private clientId: string;
     private clientSecret: string;
 
-    constructor() {
+    constructor(private readonly awsConfigService: AwsConfigService) {
         this.userPoolId = process.env.AWS_COGNITO_USER_POOL_ID;
         this.clientId = process.env.AWS_COGNITO_CLIENT_ID;
         this.clientSecret = process.env.AWS_COGNITO_CLIENT_SECRET;
@@ -23,7 +24,7 @@ export class AwsCognitoService {
             throw new Error('UserPoolId, ClientId, and ClientSecret are required.');
         }
 
-        this.cognitoServiceProvider = new CognitoIdentityServiceProvider();
+        this.cognitoServiceProvider = this.awsConfigService.getCognitoClient();
     }
 
     private computeSecretHash(username: string): string {
@@ -33,7 +34,11 @@ export class AwsCognitoService {
             .digest('base64');
     }
 
-    async registerUser(authRegisterUserDto: AuthRegisterUserDto): Promise<string | void> {
+
+    // TODO: there is a ConfirmSignUpEndpoint that I'll probably have to use in the flow
+    // There is also an InitiateAuth endpoint that may be useful for the flow to not
+    // Have to use my authentication endpoint needlessly
+    async registerUser(authRegisterUserDto: AuthRegisterUserDto): Promise<string> {
         const { email, password } = authRegisterUserDto;
         const secretHash = this.computeSecretHash(email);
 
@@ -46,16 +51,33 @@ export class AwsCognitoService {
             UserAttributes: []  // TODO: define attributes
         };
 
-        // Sign up the user in Cognito
-        return new Promise((resolve, reject) => {
-            this.cognitoServiceProvider.signUp(params, (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data.UserSub);  // UserSub is the uuid for a user
-                }
-            });
-        });
+        // Sign up the user
+        let signUpResponse;
+        try {
+            signUpResponse = await this.cognitoServiceProvider.signUp(params).promise();
+        } catch (err) {
+            console.error('Error during user sign-up:', err);
+            throw new Error('User registration failed.');
+        }
+
+        // Add the user to the Users group
+        try {
+            await this.addUserToGroup(email, 'Users');
+        } catch (groupError) {
+            console.error('Error adding user to group:', groupError);
+            throw new Error('User registered but failed to add to group.');
+        }
+
+        return signUpResponse.UserSub;  // UserSub is the UUID for a user
+    }
+
+    private async addUserToGroup(email: string, groupName: string): Promise<void> {
+        const params = {
+            UserPoolId: this.userPoolId,
+            Username: email,
+            GroupName: groupName
+        };
+        await this.cognitoServiceProvider.adminAddUserToGroup(params).promise();
     }
 
     async authenticateUser(authLoginUserDto: AuthLoginUserDto): Promise<{ accessToken: string; refreshToken: string }> {

@@ -22,7 +22,7 @@ export class UserRepository {
         this.usersTable = process.env.DYNAMODB_TABLE_NAME
     }
 
-    async createUser(user: User): Promise<void> {
+    async create(user: User): Promise<void> {
         const params = {
             TableName: this.usersTable,
             Item: user,
@@ -30,7 +30,7 @@ export class UserRepository {
         await this.dynamoDb.send(new PutCommand(params));
     }
 
-    async getAllUsers(): Promise<User[]> {
+    async getMany(): Promise<User[]> {
         const params = {
             TableName: this.usersTable,
         };
@@ -44,7 +44,7 @@ export class UserRepository {
         }
     }
 
-    async getUserByCognitoId(cognitoId: string): Promise<User> {
+    async getOne(cognitoId: string): Promise<User> {
         const params = {
             TableName: this.usersTable,
             Key: { cognitoId },
@@ -59,7 +59,7 @@ export class UserRepository {
         }
     }
 
-    async updateUser(userId: string, updateData: any): Promise<void> {
+    async update(userId: string, updateData: any): Promise<void> {
         const params = {
             TableName: 'Users',
             Key: { userId },
@@ -77,8 +77,7 @@ export class UserRepository {
         await this.dynamoDb.send(new UpdateCommand(params));
     }
 
-
-    async deleteUser(userId: string): Promise<void> {
+    async delete(userId: string): Promise<void> {
         const params = {
             TableName: 'Users',
             Key: { userId },
