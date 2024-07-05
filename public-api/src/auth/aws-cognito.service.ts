@@ -71,7 +71,7 @@ export class AwsCognitoService {
         return signUpResponse.UserSub;  // UserSub is the UUID for a user
     }
 
-    private async addUserToGroup(email: string, groupName: string): Promise<void> {
+    async addUserToGroup(email: string, groupName: string): Promise<void> {
         const params = {
             UserPoolId: this.userPoolId,
             Username: email,

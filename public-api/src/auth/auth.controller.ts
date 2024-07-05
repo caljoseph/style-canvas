@@ -1,4 +1,4 @@
-import {Body, Controller, Post, UseGuards, UsePipes, ValidationPipe} from '@nestjs/common';
+import {Body, Controller, Param, Post, UseGuards, UsePipes, ValidationPipe} from '@nestjs/common';
 import {AuthRegisterUserDto} from "./dto/auth-register-user.dto";
 import { AwsCognitoService } from './aws-cognito.service';
 import {AuthLoginUserDto} from "./dto/auth-login-user.dto";
@@ -7,6 +7,7 @@ import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
 import {AuthForgotPasswordUserDto} from "./dto/auth-forgot-password-user.dto";
 import {AuthConfirmPasswordUserDto} from "./dto/auth-confirm-password-user.dto";
 import {AuthService} from "./auth.service";
+import {AdminGuard} from "./guards/admin.guard";
 
 
 @Controller('auth')
@@ -52,5 +53,11 @@ export class AuthController {
         );
     }
 
+    @UseGuards(AuthGuard('jwt'), AdminGuard)
+    @Post('/elevate-privileges/:email')
+    async elevatePrivilege(@Param('email') email: string): Promise<{ message: string }> {
+        const result = await this.authService.elevateUserPrivilege(email);
+        return { message: result };
+    }
 
 }

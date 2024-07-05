@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import {ForbiddenException, Injectable} from '@nestjs/common';
 import {AuthLoginUserDto} from "./dto/auth-login-user.dto";
 import {AwsCognitoService} from "./aws-cognito.service";
 import {AuthRegisterUserDto} from "./dto/auth-register-user.dto";
@@ -35,7 +35,15 @@ export class AuthService {
         return this.awsCognitoService.authenticateUser(authLoginUserDto);
     }
 
-
+    async elevateUserPrivilege(email: string): Promise<string> {
+        try {
+            await this.awsCognitoService.addUserToGroup(email, 'Admins');
+            return `User ${email} has been successfully elevated to admin privileges`;
+        } catch (error) {
+            console.error('Error elevating user privileges:', error);
+            throw new ForbiddenException(`Failed to elevate privileges for user ${email}.`);
+        }
+    }
     async changeUserPassword(authChangePasswordUserDto: AuthChangePasswordUserDto){
         return this.awsCognitoService.changeUserPassword(authChangePasswordUserDto);
     }
