@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { passportJwtSecret } from 'jwks-rsa';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import {Logger, UnauthorizedException} from "@nestjs/common";
+import {PassportStrategy} from "@nestjs/passport";
+import {ExtractJwt, Strategy} from "passport-jwt";
+import {passportJwtSecret} from "jwks-rsa";
 
-@Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor() {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -22,10 +23,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    return {
-      cognitoId: payload.sub,
-      email: payload.email,
-      groups: payload['cognito:groups'] || [],
-    };
+    try {
+      this.logger.debug(`Validating JWT payload: ${JSON.stringify(payload)}`);
+
+      if (!payload.sub) {
+        this.logger.warn(`Invalid JWT payload: missing 'sub' claim`);
+        throw new UnauthorizedException('Invalid token');
+      }
+
+      const user = {
+        cognitoId: payload.sub,
+        email: payload.email, // This might be undefined, which is okay
+        groups: payload['cognito:groups'] || [],
+      };
+
+      this.logger.debug(`JWT validated successfully for user: ${user.cognitoId}`);
+      return user;
+    } catch (error) {
+      this.logger.error(`JWT validation failed: ${error.message}`);
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 }

@@ -1,12 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import {
+    Injectable,
+    Logger,
+    InternalServerErrorException,
+    UnauthorizedException,
+    ConflictException
+} from '@nestjs/common';
 import { CognitoIdentityServiceProvider } from 'aws-sdk';
 import { AuthLoginUserDto } from './dto/auth-login-user.dto';
 import { AuthRegisterUserDto } from './dto/auth-register-user.dto';
 import * as crypto from 'crypto';
-import {AuthChangePasswordUserDto} from "./dto/auth-change-password-user.dto";
-import {AuthForgotPasswordUserDto} from "./dto/auth-forgot-password-user.dto";
-import {AuthConfirmPasswordUserDto} from "./dto/auth-confirm-password-user.dto";
-import {AwsConfigService} from "../config/aws-config.service";
+import { AuthChangePasswordUserDto } from "./dto/auth-change-password-user.dto";
+import { AuthForgotPasswordUserDto } from "./dto/auth-forgot-password-user.dto";
+import { AuthConfirmPasswordUserDto } from "./dto/auth-confirm-password-user.dto";
+import { AwsConfigService } from "../config/aws-config.service";
 
 @Injectable()
 export class AwsCognitoService {
@@ -14,6 +20,7 @@ export class AwsCognitoService {
     private userPoolId: string;
     private clientId: string;
     private clientSecret: string;
+    private readonly logger = new Logger(AwsCognitoService.name);
 
     constructor(private readonly awsConfigService: AwsConfigService) {
         this.userPoolId = process.env.AWS_COGNITO_USER_POOL_ID;
@@ -21,7 +28,8 @@ export class AwsCognitoService {
         this.clientSecret = process.env.AWS_COGNITO_CLIENT_SECRET;
 
         if (!this.userPoolId || !this.clientId || !this.clientSecret) {
-            throw new Error('UserPoolId, ClientId, and ClientSecret are required.');
+            this.logger.error('Missing required Cognito configuration');
+            throw new InternalServerErrorException('Service configuration error');
         }
 
         this.cognitoServiceProvider = this.awsConfigService.getCognitoClient();
@@ -34,41 +42,34 @@ export class AwsCognitoService {
             .digest('base64');
     }
 
-
-    // TODO: there is a ConfirmSignUpEndpoint that I'll probably have to use in the flow
-    // There is also an InitiateAuth endpoint that may be useful for the flow to not
-    // Have to use my authentication endpoint needlessly
     async registerUser(authRegisterUserDto: AuthRegisterUserDto): Promise<string> {
         const { email, password } = authRegisterUserDto;
         const secretHash = this.computeSecretHash(email);
 
-        // Create parameters for the signUp method
         const params = {
             ClientId: this.clientId,
             Password: password,
             Username: email,
             SecretHash: secretHash,
-            UserAttributes: []  // TODO: define attributes
+            UserAttributes: []
         };
 
-        // Sign up the user
-        let signUpResponse;
         try {
-            signUpResponse = await this.cognitoServiceProvider.signUp(params).promise();
-        } catch (err) {
-            console.error('Error during user sign-up:', err);
-            throw new Error('User registration failed.');
-        }
+            const signUpResponse = await this.cognitoServiceProvider.signUp(params).promise();
+            this.logger.log(`User registered successfully: ${email}`);
 
-        // Add the user to the Users group
-        try {
             await this.addUserToGroup(email, 'Users');
-        } catch (groupError) {
-            console.error('Error adding user to group:', groupError);
-            throw new Error('User registered but failed to add to group.');
-        }
+            this.logger.log(`User added to Users group: ${email}`);
 
-        return signUpResponse.UserSub;  // UserSub is the UUID for a user
+            return signUpResponse.UserSub;
+        } catch (error) {
+            if (error.code === 'UsernameExistsException') {
+                this.logger.warn(`Attempt to register existing user: ${email}`);
+                throw new ConflictException('User already exists');
+            }
+            this.logger.error(`Error during user registration: ${email}`, error.stack);
+            throw new InternalServerErrorException('Registration failed');
+        }
     }
 
     async addUserToGroup(email: string, groupName: string): Promise<void> {
@@ -77,99 +78,86 @@ export class AwsCognitoService {
             Username: email,
             GroupName: groupName
         };
-        await this.cognitoServiceProvider.adminAddUserToGroup(params).promise();
+        try {
+            await this.cognitoServiceProvider.adminAddUserToGroup(params).promise();
+            this.logger.log(`User ${email} added to group ${groupName}`);
+        } catch (error) {
+            this.logger.error(`Error adding user ${email} to group ${groupName}`, error.stack);
+            throw new InternalServerErrorException('Failed to add user to group');
+        }
     }
 
     async authenticateUser(authLoginUserDto: AuthLoginUserDto): Promise<{ accessToken: string; refreshToken: string }> {
         const { email, password } = authLoginUserDto;
 
-        // Create parameters for the initiateAuth method
         const params = {
             AuthFlow: 'USER_PASSWORD_AUTH',
             ClientId: this.clientId,
             AuthParameters: {
                 USERNAME: email,
                 PASSWORD: password,
-                SECRET_HASH: this.computeSecretHash(email)  // Ensure the SECRET_HASH is included when required
+                SECRET_HASH: this.computeSecretHash(email)
             }
         };
 
-        // Authenticate the user in Cognito
-        return new Promise((resolve, reject) => {
-            this.cognitoServiceProvider.initiateAuth(params, (err, authResult) => {
-                if (err) {
-                    console.error('Authentication failed:', err);
-                    reject(err);
-                } else {
-                    resolve({
-                        accessToken: authResult.AuthenticationResult.AccessToken,
-                        refreshToken: authResult.AuthenticationResult.RefreshToken,
-                    });
-                }
-            });
-        });
+        try {
+            const authResult = await this.cognitoServiceProvider.initiateAuth(params).promise();
+            return {
+                accessToken: authResult.AuthenticationResult.AccessToken,
+                refreshToken: authResult.AuthenticationResult.RefreshToken,
+            };
+        } catch (error) {
+            this.logger.error(`Authentication failed for user: ${email}`, error.stack);
+            throw new UnauthorizedException('Authentication failed');
+        }
     }
 
     async changeUserPassword(authChangePasswordUserDto: AuthChangePasswordUserDto) {
-        // Extract change password info from DTO
         const { email, currentPassword, newPassword } = authChangePasswordUserDto;
 
-        // Convert to an authenticate user DTO
-        const authLoginUserDto: AuthLoginUserDto = {
-            email,
-            password: currentPassword,
-        };
+        try {
+            const authLoginUserDto: AuthLoginUserDto = { email, password: currentPassword };
+            const { accessToken } = await this.authenticateUser(authLoginUserDto);
 
-        // Get authToken from UN/PW
-        const { accessToken } = await this.authenticateUser(authLoginUserDto);
+            const params = {
+                PreviousPassword: currentPassword,
+                ProposedPassword: newPassword,
+                AccessToken: accessToken,
+            };
 
-        // Create parameters for the changePassword method
-        const params = {
-            PreviousPassword: currentPassword,
-            ProposedPassword: newPassword,
-            AccessToken: accessToken,
-        };
-
-        // Request change password from Cognito
-        return new Promise((resolve, reject) => {
-            this.cognitoServiceProvider.changePassword(params, (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+            await this.cognitoServiceProvider.changePassword(params).promise();
+            this.logger.log(`Password changed successfully for user: ${email}`);
+            return { message: 'Password changed successfully' };
+        } catch (error) {
+            this.logger.error(`Failed to change password for user: ${email}`, error.stack);
+            throw new InternalServerErrorException('Failed to change password');
+        }
     }
 
     async forgotUserPassword(authForgotPasswordUserDto: AuthForgotPasswordUserDto) {
         const { email } = authForgotPasswordUserDto;
         const secretHash = this.computeSecretHash(email);
 
-        // Create parameters for the forgotPassword method
         const params = {
             ClientId: this.clientId,
             Username: email,
             SecretHash: secretHash,
         };
 
-        // Request a password reset in Cognito
-        return new Promise((resolve, reject) => {
-            this.cognitoServiceProvider.forgotPassword(params, (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+        try {
+            const result = await this.cognitoServiceProvider.forgotPassword(params).promise();
+            this.logger.log(`Password reset initiated for user: ${email}`);
+            return result;
+        } catch (error) {
+            this.logger.error(`Failed to initiate password reset for user: ${email}`, error.stack);
+            throw new InternalServerErrorException('Failed to initiate password reset');
+        }
     }
 
     async confirmUserPassword(authConfirmPasswordUserDto: AuthConfirmPasswordUserDto) {
         const { email, confirmationCode, newPassword } = authConfirmPasswordUserDto;
         const secretHash = this.computeSecretHash(email);
 
-        // Create parameters for the confirmForgotPassword method
         const params = {
             ClientId: this.clientId,
             Username: email,
@@ -178,15 +166,30 @@ export class AwsCognitoService {
             SecretHash: secretHash,
         };
 
-        // Confirm the new password in Cognito
-        return new Promise((resolve, reject) => {
-            this.cognitoServiceProvider.confirmForgotPassword(params, (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+        try {
+            await this.cognitoServiceProvider.confirmForgotPassword(params).promise();
+            this.logger.log(`Password reset confirmed for user: ${email}`);
+            return { message: 'Password reset successful' };
+        } catch (error) {
+            this.logger.error(`Failed to confirm password reset for user: ${email}`, error.stack);
+            throw new InternalServerErrorException('Failed to confirm password reset');
+        }
+    }
+
+    async forceChangePassword(email: string, newPassword: string): Promise<void> {
+        const params = {
+            UserPoolId: this.userPoolId,
+            Username: email,
+            Password: newPassword,
+            Permanent: true,
+        };
+
+        try {
+            await this.cognitoServiceProvider.adminSetUserPassword(params).promise();
+            this.logger.log(`Password changed successfully for user: ${email}`);
+        } catch (error) {
+            this.logger.error(`Failed to change password for user: ${email}`, error.stack);
+            throw new InternalServerErrorException('Failed to change password');
+        }
     }
 }
