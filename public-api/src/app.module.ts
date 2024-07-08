@@ -12,6 +12,8 @@ import { ImageModule } from './image/image.module';
 import {AwsCognitoService} from "./auth/aws-cognito.service";
 import {UserRepository} from "./users/user.repository";
 import {AwsConfigModule} from "./config/aws-config.module";
+import { PaymentsModule } from './payments/payments.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -23,7 +25,9 @@ import {AwsConfigModule} from "./config/aws-config.module";
       UsersModule,
       TokensModule,
       ImageModule,
-      AwsConfigModule
+      AwsConfigModule,
+      PaymentsModule,
+      SubscriptionsModule
   ],
   controllers: [AppController, ImageController],
   providers: [AppService, TokensService, AwsCognitoService, UserRepository],

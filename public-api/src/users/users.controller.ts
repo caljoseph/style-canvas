@@ -5,6 +5,7 @@ import { User } from "./user.model";
 import { AdminGuard } from "../auth/guards/admin.guard";
 import {AuthService} from "../auth/auth.service";
 import {TokensService} from "../tokens/tokens.service";
+import {UserResponseDto} from "./dto/user-response.dto";
 
 @Controller('users')
 @UseGuards(AuthGuard('jwt'), AdminGuard)
@@ -17,9 +18,14 @@ export class UsersController {
     ) {}
 
     @Get()
-    async listAllUsers(): Promise<User[]> {
+    async listAllUsers(): Promise<UserResponseDto[]> {
         try {
-            return await this.userRepo.getMany();
+            const users = await this.userRepo.getMany();
+            return users.map(user => ({
+                email: user.email,
+                cognitoId: user.cognitoId,
+                tokens: user.tokens,
+            }));
         } catch (error) {
             this.logger.error(`Failed to retrieve users: ${error.message}`, error.stack);
             throw new HttpException('Failed to retrieve users', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -27,9 +33,17 @@ export class UsersController {
     }
 
     @Get(':cognitoId')
-    async getUser(@Param('cognitoId') cognitoId: string): Promise<User> {
+    async getUser(@Param('cognitoId') cognitoId: string): Promise<UserResponseDto> {
         try {
-            return await this.userRepo.getOne(cognitoId);
+            const user = await this.userRepo.getOne(cognitoId);
+
+            const result: UserResponseDto = {
+                email: user.email,
+                cognitoId: user.cognitoId,
+                tokens: user.tokens,
+            };
+            return result
+
         } catch (error) {
             if (error instanceof HttpException) {
                 throw error;

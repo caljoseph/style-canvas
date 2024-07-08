@@ -25,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     try {
-      this.logger.debug(`Validating JWT payload: ${JSON.stringify(payload)}`);
+      // this.logger.debug(`Validating JWT payload: ${JSON.stringify(payload)}`);
 
       if (!payload.sub) {
         this.logger.warn(`Invalid JWT payload: missing 'sub' claim`);

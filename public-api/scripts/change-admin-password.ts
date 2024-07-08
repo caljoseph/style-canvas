@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import {AppModule} from "../app.module";
-import {AwsCognitoService} from "../auth/aws-cognito.service";
+import {AppModule} from "../src/app.module";
+import {AwsCognitoService} from "../src/auth/aws-cognito.service";
 
 
 async function changeAdminPassword() {
@@ -8,7 +8,7 @@ async function changeAdminPassword() {
     const cognitoService = app.get(AwsCognitoService);
 
     const email = 'therealcalebbradshaw@gmail.com';
-    const newPassword = 'Test-password1'; // Replace with a strong password
+    const newPassword = 'Test-password1';
 
     try {
         await cognitoService.forceChangePassword(email, newPassword);
