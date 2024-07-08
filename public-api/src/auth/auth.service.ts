@@ -1,4 +1,11 @@
-import {ForbiddenException, Injectable, Logger, InternalServerErrorException, ConflictException} from '@nestjs/common';
+import {
+    ForbiddenException,
+    Injectable,
+    Logger,
+    InternalServerErrorException,
+    ConflictException,
+    UnauthorizedException
+} from '@nestjs/common';
 import { AuthLoginUserDto } from "./dto/auth-login-user.dto";
 import { AwsCognitoService } from "./aws-cognito.service";
 import { AuthRegisterUserDto } from "./dto/auth-register-user.dto";
@@ -44,7 +51,16 @@ export class AuthService {
             return result;
         } catch (error) {
             this.logger.error(`Authentication failed for user: ${authLoginUserDto.email}`, error.stack);
-            throw new ForbiddenException('Authentication failed');
+            throw new UnauthorizedException('Authentication failed');
+        }
+    }
+
+    async refreshToken(cognitoId: string) {
+        try {
+            return await this.awsCognitoService.refreshToken(cognitoId);
+        } catch (error) {
+            this.logger.error(`Failed to refresh token for user: ${cognitoId}`, error.stack);
+            throw new UnauthorizedException('Failed to refresh token');
         }
     }
 

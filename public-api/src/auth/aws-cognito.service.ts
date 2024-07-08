@@ -13,6 +13,7 @@ import { AuthChangePasswordUserDto } from "./dto/auth-change-password-user.dto";
 import { AuthForgotPasswordUserDto } from "./dto/auth-forgot-password-user.dto";
 import { AuthConfirmPasswordUserDto } from "./dto/auth-confirm-password-user.dto";
 import { AwsConfigService } from "../config/aws-config.service";
+import {UserRepository} from "../users/user.repository";
 
 @Injectable()
 export class AwsCognitoService {
@@ -22,7 +23,10 @@ export class AwsCognitoService {
     private clientSecret: string;
     private readonly logger = new Logger(AwsCognitoService.name);
 
-    constructor(private readonly awsConfigService: AwsConfigService) {
+    constructor(
+        private readonly awsConfigService: AwsConfigService,
+        private readonly userRepository: UserRepository
+    ) {
         this.userPoolId = process.env.AWS_COGNITO_USER_POOL_ID;
         this.clientId = process.env.AWS_COGNITO_CLIENT_ID;
         this.clientSecret = process.env.AWS_COGNITO_CLIENT_SECRET;
@@ -87,7 +91,7 @@ export class AwsCognitoService {
         }
     }
 
-    async authenticateUser(authLoginUserDto: AuthLoginUserDto): Promise<{ accessToken: string; refreshToken: string }> {
+    async authenticateUser(authLoginUserDto: AuthLoginUserDto): Promise<{ accessToken: string }> {
         const { email, password } = authLoginUserDto;
 
         const params = {
@@ -102,14 +106,50 @@ export class AwsCognitoService {
 
         try {
             const authResult = await this.cognitoServiceProvider.initiateAuth(params).promise();
-            return {
-                accessToken: authResult.AuthenticationResult.AccessToken,
-                refreshToken: authResult.AuthenticationResult.RefreshToken,
-            };
+            const accessToken = authResult.AuthenticationResult.AccessToken;
+            const refreshToken = authResult.AuthenticationResult.RefreshToken;
+            const cognitoId = this.extractCognitoIdFromAccessToken(accessToken);
+
+            // Store the refresh token
+            await this.userRepository.updateRefreshToken(cognitoId, refreshToken);
+
+            return { accessToken }
         } catch (error) {
             this.logger.error(`Authentication failed for user: ${email}`, error.stack);
             throw new UnauthorizedException('Authentication failed');
         }
+    }
+
+    async refreshToken(cognitoId: string): Promise<{ accessToken: string }> {
+        const user = await this.userRepository.getOne(cognitoId);
+        if (!user || !user.refreshToken) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+
+        const params = {
+            AuthFlow: 'REFRESH_TOKEN_AUTH',
+            ClientId: this.clientId,
+            AuthParameters: {
+                REFRESH_TOKEN: user.refreshToken,
+                SECRET_HASH: this.computeSecretHash(user.cognitoId) // For some reason on the refresh flow we don't use the email but uuid
+            }
+        };
+
+        try {
+            const authResult = await this.cognitoServiceProvider.initiateAuth(params).promise();
+            const newAccessToken = authResult.AuthenticationResult.AccessToken;
+
+            return { accessToken: newAccessToken };
+        } catch (error) {
+            this.logger.error(`Failed to refresh token for user: ${cognitoId}`, error.stack);
+            throw new UnauthorizedException('Failed to refresh token');
+        }
+    }
+
+    private extractCognitoIdFromAccessToken(accessToken: string): string {
+        const payload = accessToken.split('.')[1];
+        const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'));
+        return decodedPayload.sub;
     }
 
     async changeUserPassword(authChangePasswordUserDto: AuthChangePasswordUserDto) {

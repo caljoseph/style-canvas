@@ -1,8 +1,9 @@
-import {Logger, UnauthorizedException} from "@nestjs/common";
-import {PassportStrategy} from "@nestjs/passport";
-import {ExtractJwt, Strategy} from "passport-jwt";
-import {passportJwtSecret} from "jwks-rsa";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { PassportStrategy } from "@nestjs/passport";
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { passportJwtSecret } from "jwks-rsa";
 
+@Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   private readonly logger = new Logger(JwtStrategy.name);
 
@@ -33,7 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
       const user = {
         cognitoId: payload.sub,
-        email: payload.email, // This might be undefined, which is okay
+        email: payload.email,
         groups: payload['cognito:groups'] || [],
       };
 

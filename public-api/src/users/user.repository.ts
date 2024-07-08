@@ -72,6 +72,58 @@ export class UserRepository {
         }
     }
 
+    async updateRefreshToken(cognitoId: string, refreshToken: string): Promise<void> {
+        const params = {
+            TableName: this.usersTable,
+            Key: { cognitoId },
+            UpdateExpression: 'set refreshToken = :refreshToken',
+            ExpressionAttributeValues: {
+                ':refreshToken': refreshToken,
+            },
+        };
+
+        try {
+            await this.dynamoDb.send(new UpdateCommand(params));
+            this.logger.log(`Updated refresh token for user ${cognitoId}`);
+        } catch (error) {
+            this.logger.error(`Failed to update refresh token for user ${cognitoId}: ${error.message}`, error.stack);
+            throw new InternalServerErrorException('Failed to update user refresh token');
+        }
+    }
+
+    async getRefreshToken(cognitoId: string): Promise<string | null> {
+        const params = {
+            TableName: this.usersTable,
+            Key: { cognitoId },
+            ProjectionExpression: 'refreshToken',
+        };
+
+        try {
+            const result = await this.dynamoDb.send(new GetCommand(params));
+            return result.Item ? result.Item.refreshToken : null;
+        } catch (error) {
+            this.logger.error(`Failed to retrieve refresh token for user ${cognitoId}: ${error.message}`, error.stack);
+            throw new InternalServerErrorException('Failed to retrieve user refresh token');
+        }
+    }
+
+    async removeRefreshToken(cognitoId: string): Promise<void> {
+        const params = {
+            TableName: this.usersTable,
+            Key: { cognitoId },
+            UpdateExpression: 'remove refreshToken',
+        };
+
+        try {
+            await this.dynamoDb.send(new UpdateCommand(params));
+            this.logger.log(`Removed refresh token for user ${cognitoId}`);
+        } catch (error) {
+            this.logger.error(`Failed to remove refresh token for user ${cognitoId}: ${error.message}`, error.stack);
+            throw new InternalServerErrorException('Failed to remove user refresh token');
+        }
+    }
+
+
     async updateTokens(cognitoId: string, newTokenAmount: number): Promise<void> {
         const params = {
             TableName: this.usersTable,

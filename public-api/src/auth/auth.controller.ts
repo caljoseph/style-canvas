@@ -9,7 +9,7 @@ import {
     Logger,
     HttpException,
     HttpStatus,
-    ConflictException
+    ConflictException, UnauthorizedException
 } from '@nestjs/common';
 import { AuthRegisterUserDto } from "./dto/auth-register-user.dto";
 import { AuthLoginUserDto } from "./dto/auth-login-user.dto";
@@ -19,6 +19,8 @@ import { AuthForgotPasswordUserDto } from "./dto/auth-forgot-password-user.dto";
 import { AuthConfirmPasswordUserDto } from "./dto/auth-confirm-password-user.dto";
 import { AuthService } from "./auth.service";
 import { AdminGuard } from "./guards/admin.guard";
+import { User } from "../users/user.model"; // Import the User model
+import { UserDecorator } from "../users/user.decorator"; // Import the custom decorator
 
 @Controller('auth')
 export class AuthController {
@@ -48,6 +50,18 @@ export class AuthController {
         } catch (error) {
             this.logger.error(`Login failed for user: ${authLoginUserDto.email}`, error.stack);
             throw new HttpException('Authentication failed', HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @Post('/refresh-token')
+    @UseGuards(AuthGuard('jwt'))
+    async refreshToken(@UserDecorator() user: User) {
+        try {
+            const result = await this.authService.refreshToken(user.cognitoId);
+            return { accessToken: result.accessToken };
+        } catch (error) {
+            this.logger.error(`Failed to refresh token for user: ${user.cognitoId}`, error.stack);
+            throw new UnauthorizedException('Failed to refresh token');
         }
     }
 
