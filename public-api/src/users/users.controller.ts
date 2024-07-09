@@ -3,7 +3,6 @@ import { AuthGuard } from "@nestjs/passport";
 import { UserRepository } from "./user.repository";
 import { User } from "./user.model";
 import { AdminGuard } from "../auth/guards/admin.guard";
-import {AuthService} from "../auth/auth.service";
 import {TokensService} from "../tokens/tokens.service";
 import {UserResponseDto} from "./dto/user-response.dto";
 
