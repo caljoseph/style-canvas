@@ -31,6 +31,7 @@ export class PaymentsService {
             ],
             mode: 'payment',
             success_url: `${process.env.DEV_APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+            // TODO: this will probably just go back to the tiers page
             cancel_url: `${process.env.DEV_APP_URL}/payments/cancel`,
             client_reference_id: userId,
             // TODO: figure out stripe tax
@@ -38,7 +39,7 @@ export class PaymentsService {
             //     enabled: true
             // },
         });
-
+        // TODO: consider saving the sessionId to the user??
         return session.url;
     }
 
