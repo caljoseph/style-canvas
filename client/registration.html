@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration</title>
+    <!-- Favicons -->
+    <link href="assets\img\main-logo.png" rel="icon">
+    <link href="assets\img\main-logo.png" rel="apple-touch-icon">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+        rel="stylesheet">
+
+    <!-- Vendor CSS Files -->
+    <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+    <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+    <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+    <!-- Main CSS File -->
+    <link href="assets/css/main.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body class="index-page">
+
+    <!-- Header section  -->
+
+    <header id="header" class="header d-flex align-items-center sticky-top">
+        <div class="container-fluid container-xl position-relative d-flex align-items-center">
+            <a href="index.html" class="logo d-flex align-items-center me-auto">
+                <!-- Uncomment the line below if you also wish to use an image logo -->
+                <img src="assets\img\main-logo.png" alt="">
+
+            </a>
+            <nav id="navmenu" class="navmenu">
+                <ul>
+                    <li><a href="./index.html">Home<br></a></li>
+                    <li><a href="./cases.html">Use Cases</a></li>
+                    <li><a href="./work.html">How Its Work </a></li>
+                    <li><a href="./models.html">AI Models</a></li>
+                    <li><a href="./pricing.html">Pricing</a></li>
+                    <li><a href="./about.html">About</a></li>
+                    <li><a href="./contact.html">Contact</a></li>
+                </ul>
+                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+            </nav>
+
+            <a class="btn-getstarted" href="./registration.html">Get Started</a>
+        </div>
+    </header>
+
+
+
+    <!-- login signup section  -->
+
+    <!-- <div class="tab-form">
+        <div class="tab-header">
+            <div>Log in</div>
+            <div class="active">
+                Sign up
+            </div>
+        </div>
+        <div class="tab-body">
+            <div class="singup active">
+                <div class="form-input">
+                    <label for="">Email</label>
+                    <input type="email" >
+                </div>
+                <div class="form-input">
+                    <label for="">Password <i>(6 characters minimum)</i></label>
+                    <input type="password" >
+                </div>
+                <div class="form-input">
+                    <label for="">Password confirmation</label>
+                    <input type="password" >
+                </div>
+                <div class="form-input form-button">
+                    <button>Sign up</button>
+                </div>
+            </div>
+            <div class="login">
+                <div class="form-input">
+                    <label for="">Email</label>
+                    <input type="email" >
+                </div>
+                <div class="form-input">
+                    <label for="">Password confirmation</label>
+                    <input type="password" >
+                </div>
+
+                <div class="form-input">
+                    <button>Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+ -->
+    <div class="tab-form">
+        <nav>
+            <div class="nav nav-tabs tab-header" id="nav-tab" role="tablist">
+                <button class="nav-link active tab-button" id="nav-home-tab" data-bs-toggle="tab"
+                    data-bs-target="#nav-home" type="button" role="tab" aria-controls="nav-home"
+                    aria-selected="true">Login</button>
+                <button class="nav-link tab-button" id="nav-profile-tab" data-bs-toggle="tab"
+                    data-bs-target="#nav-profile" type="button" role="tab" aria-controls="nav-profile"
+                    aria-selected="false">Signup</button>
+            </div>
+        </nav>
+        <div class="tab-content" id="nav-tabContent">
+            <div class="login tab-pane fade show active" id="nav-home" role="tabpanel" aria-labelledby="nav-home-tab">
+                <div class="register-with">
+                    <img src="./assets/img/fb.png" alt="Facebook">
+                    <span>Continue with Facebook</span>
+                </div>
+                <div class="register-with">
+                    <img src="./assets/img/google.png" alt="Google">
+                    <span>Continue with Google</span>
+                </div>
+                <p class="or">or</p>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" class="form-control">
+                </div>
+                <div class="form-group text-end">
+                    <a href="./forgot-password.html">Forgot Password?</a>
+                </div>
+                <div class="text-center button">
+                    <button class="btn">Login</button>
+                </div>
+            </div>
+            <div class="login tab-pane fade" id="nav-profile" role="tabpanel" aria-labelledby="nav-profile-tab">
+                <div class="register-with">
+                    <img src="./assets/img/fb.png" alt="Facebook">
+                    <span>Continue with Facebook</span>
+                </div>
+                <div class="register-with">
+                    <img src="./assets/img/google.png" alt="Google">
+                    <span>Continue with Google</span>
+                </div>
+                <p class="or">or</p>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Password <i>(6 characters minimum)</i></label>
+                    <input type="password" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Password Confirmation</label>
+                    <input type="password" class="form-control">
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="termsCheckbox">
+                    <label class="form-check-label" for="termsCheckbox">I agree to the <a href="./terms.html">terms and
+                            Service, General Terms and Conditions</a>and <a href="">Privacy Policy.</a>  </label>
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="notificationsCheckbox">
+                    <label class="form-check-label" for="notificationsCheckbox">Send me updates about rmeove.bg products and services. You can unsubscribe at any time.</label>
+                </div>
+                <div class="text-center button">
+                    <button class="btn btn-primary">Sign up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer id="footer" class="footer">
+        <div class="container">
+          <div class="copyright text-center ">
+            <p>© <span>Copyright</span> <strong class="px-1 sitename">StyleCanvasAI</strong> <span>All Rights
+                Reserved</span></p>
+          </div>
+          <div class="social-links d-flex justify-content-center">
+            <a href=""><i class="bi bi-twitter-x"></i></a>
+            <a href=""><i class="bi bi-facebook"></i></a>
+            <a href=""><i class="bi bi-instagram"></i></a>
+            <a href=""><i class="bi bi-linkedin"></i></a>
+          </div>
+         
+        </div>
+    
+      </footer>
+
+
+    <!-- Scroll Top -->
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
+            class="bi bi-arrow-up-short"></i></a>
+
+    <!-- Preloader -->
+    <div id="preloader"></div>
+
+
+
+    <!-- Vendor JS Files -->
+    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/php-email-form/validate.js"></script>
+    <script src="assets/vendor/aos/aos.js"></script>
+    <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+    <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+    <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+    <script src="assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+    <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+
+    <!-- Main JS File -->
+    <script src="assets/js/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"
+    integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js"
+    integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
