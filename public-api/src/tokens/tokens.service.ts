@@ -18,7 +18,7 @@ export class TokensService {
             throw new NotFoundException(`User with id ${cognitoId} not found`);
         }
 
-        // I should probably have some logic to send back a not enough tokens error here
+        // TODO I should probably have some logic to send back a not enough tokens error here
 
         let newTokenAmount = user.tokens + amount;
         if (newTokenAmount < 0) {

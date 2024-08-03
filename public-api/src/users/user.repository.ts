@@ -142,4 +142,51 @@ export class UserRepository {
             throw new InternalServerErrorException('Failed to update user tokens');
         }
     }
-}
+
+    async removeSubscription(cognitoId: string): Promise<void> {
+        const params = {
+            TableName: this.usersTable,
+            Key: { cognitoId },
+            UpdateExpression: 'set subscriptionType = :none',
+            ExpressionAttributeValues: {
+                ':none': 'none',
+            },
+        };
+
+        try {
+            await this.dynamoDb.send(new UpdateCommand(params));
+            this.logger.log(`Removed subscription for user ${cognitoId}`);
+        } catch (error) {
+            this.logger.error(`Failed to remove subscription for user ${cognitoId}: ${error.message}`, error.stack);
+            throw new InternalServerErrorException('Failed to remove user subscription');
+        }
+    }
+
+    async updateSubscription(cognitoId: string, subscriptionType: string): Promise<void> {
+        this.logger.log(`Attempting to update subscription for user ${cognitoId} to ${subscriptionType}`);
+
+        if (!cognitoId || !subscriptionType) {
+            this.logger.error(`Invalid input: cognitoId=${cognitoId}, subscriptionType=${subscriptionType}`);
+            throw new Error('Invalid input for updateSubscription');
+        }
+
+        const params = {
+            TableName: this.usersTable,
+            Key: { cognitoId },
+            UpdateExpression: 'set subscriptionType = :subscriptionType',
+            ExpressionAttributeValues: {
+                ':subscriptionType': subscriptionType,
+            },
+        };
+
+        try {
+            await this.dynamoDb.send(new UpdateCommand(params));
+            this.logger.log(`Updated subscription for user ${cognitoId} to ${subscriptionType}`);
+        } catch (error) {
+            this.logger.error(`Failed to update subscription for user ${cognitoId}: ${error.message}`, error.stack);
+            if (error instanceof Error) {
+                this.logger.error(`Error details: ${JSON.stringify(error, Object.getOwnPropertyNames(error))}`);
+            }
+            throw new InternalServerErrorException('Failed to update user subscription');
+        }
+    }}

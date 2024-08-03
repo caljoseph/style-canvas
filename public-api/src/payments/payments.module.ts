@@ -3,11 +3,13 @@ import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import {StripeConfigModule} from "../config/stripe-config.module";
 import {TokensModule} from "../tokens/tokens.module";
+import {UsersModule} from "../users/users.module";
 
 @Module({
   imports: [
       StripeConfigModule,
       TokensModule,
+      UsersModule,
   ],
   providers: [PaymentsService],
   controllers: [PaymentsController]
