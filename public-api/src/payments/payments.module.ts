@@ -16,6 +16,4 @@ import {UsersModule} from "../users/users.module";
 })
 export class PaymentsModule {}
 
-
-// In this module we will have all of the logic for connecting with Stripe. We will also own the payment
-// log which will be a thorough record of all transactions and their associated payment, userID, date and other metadata
+// The Payments Module handles communications with stripe. This includes one time purchases, subscription updates and their effects on user token balance.

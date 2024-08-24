@@ -17,6 +17,7 @@ export class UsersController {
     ) {}
 
     @Get()
+    @UseGuards(AuthGuard('jwt'), AdminGuard)
     async listAllUsers(): Promise<UserResponseDto[]> {
         try {
             const users = await this.userRepo.getMany();
@@ -32,6 +33,7 @@ export class UsersController {
     }
 
     @Get(':cognitoId')
+    @UseGuards(AuthGuard('jwt'), AdminGuard)
     async getUser(@Param('cognitoId') cognitoId: string): Promise<UserResponseDto> {
         try {
             const user = await this.userRepo.getOne(cognitoId);
@@ -52,18 +54,20 @@ export class UsersController {
         }
     }
 
-    @Post()
-    async createUser(@Body() user: User): Promise<User> {
-        try {
-            await this.userRepo.create(user);
-            return user;
-        } catch (error) {
-            this.logger.error(`Failed to create user: ${error.message}`, error.stack);
-            throw new HttpException('Failed to create user', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // @Post()
+    // @UseGuards(AuthGuard('jwt'), AdminGuard)
+    // async createUser(@Body() user: User): Promise<User> {
+    //     try {
+    //         await this.userRepo.create(user);
+    //         return user;
+    //     } catch (error) {
+    //         this.logger.error(`Failed to create user: ${error.message}`, error.stack);
+    //         throw new HttpException('Failed to create user', HttpStatus.INTERNAL_SERVER_ERROR);
+    //     }
+    // }
 
     @Put(':cognitoId/tokens')
+    @UseGuards(AuthGuard('jwt'), AdminGuard)
     async adjustUserTokens(
         @Param('cognitoId') cognitoId: string,
         @Body() updateData: { amount: number }
@@ -73,6 +77,7 @@ export class UsersController {
     }
 
     @Get(':cognitoId/tokens')
+    @UseGuards(AuthGuard('jwt'), AdminGuard)
     async getUserTokenBalance(@Param('cognitoId') cognitoId: string) {
         const balance = await this.tokensService.getTokenBalance(cognitoId);
         return { tokenBalance: balance };

@@ -25,6 +25,7 @@ export class PaymentsService {
     }
 
     async createOneTimeCheckoutSession(lookup_key: string, userId: string): Promise<string> {
+        // Get the prices from the lookup key
         const prices = await this.stripe.prices.list({
             lookup_keys: [lookup_key],
             expand: ['data.product'],
@@ -40,7 +41,9 @@ export class PaymentsService {
             ],
             mode: 'payment',
             success_url: `${process.env.DEV_APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-            // TODO: this will probably just go back to the tiers page
+            // TODO: redirect the user to a success page where the client would make a call with the session
+            //  id to display the results of the purchase and then return back to the home page of the website.
+            //  The cancellation url would probably just be a redirect back to the home page
             cancel_url: `${process.env.DEV_APP_URL}/payments/cancel`,
             client_reference_id: userId,
             // TODO: figure out stripe tax
@@ -60,26 +63,26 @@ export class PaymentsService {
             throw new BadRequestException('You already have this subscription');
         }
 
+        // Get the prices from the lookup key
         const prices = await this.stripe.prices.list({
             lookup_keys: [lookup_key],
             expand: ['data.product'],
         });
 
-
-
-
+        // Create a checkout session
         const session = await this.stripe.checkout.sessions.create({
             billing_address_collection: 'auto',
             line_items: [
                 {
                     price: prices.data[0].id,
                     quantity: 1,
-
                 },
             ],
             mode: 'subscription',
             success_url: `${process.env.DEV_APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-            // TODO: this will probably just go back to the tiers page
+            // TODO: redirect the user to a success page where the client would make a call with the session
+            //  id to display the details of the subscription and then return back to the home page of the website.
+            //  The cancellation url would probably just be a redirect back to the home page
             cancel_url: `${process.env.DEV_APP_URL}/payments/cancel`,
             subscription_data: {
                 metadata: {
@@ -93,6 +96,225 @@ export class PaymentsService {
         return session.url;
     }
 
+    async getSessionDetails(sessionId: string): Promise<Stripe.Checkout.Session> {
+        return this.stripe.checkout.sessions.retrieve(sessionId);
+    }
+
+    async handleWebhook(signature: string, payload: Buffer): Promise<void> {
+        let event: Stripe.Event;
+        try {
+            event = this.stripe.webhooks.constructEvent(
+                payload,
+                signature,
+                process.env.STRIPE_WEBHOOK_SECRET,
+            );
+        } catch (err) {
+            throw new Error(`Webhook Error: ${err.message}`);
+        }
+
+        switch (event.type) {
+            // ONE TIME PURCHASES
+            case 'checkout.session.completed':
+                const session = event.data.object as Stripe.Checkout.Session;
+                if (session.mode === "subscription") {
+                    // Adding tokens for a subscription is handled by invoice.paid
+                    break;
+                }
+                await this.handleSuccessfulOneTimePayment(session);
+                break;
+
+            // SUBSCRIPTIONS
+            case 'customer.subscription.created':
+                // Since invoice.paid will already handle tokens the only purpose of this webhook in our case is to set the initial type of subscription for a user.
+                this.logger.log(`Received webhook event type ${event.type}.`);
+                await this.handleSubscriptionCreated(event.data.object as Stripe.Subscription);
+                break;
+            case 'customer.subscription.deleted':
+                // This is sent when a subscription actually ends
+                this.logger.log(`Received webhook event type ${event.type}.`);
+                await this.handleSubscriptionCancelled(event.data.object as Stripe.Subscription);
+                break;
+            case 'invoice.paid':
+                // This is the work horse that gives users tokens when they pay their subscription
+                this.logger.log(`Received webhook event type ${event.type}.`);
+                await this.handleSuccessfulSubscriptionPayment(event.data.object as Stripe.Invoice);
+                break;
+            case 'invoice.payment_failed':
+                // This is when a user's payment is delinquent
+                this.logger.log(`Received webhook event type ${event.type}.`);
+                await this.handleFailedPayment(event.data.object as Stripe.Invoice);
+                break;
+            default:
+                // this.logger.log(`Unhandled webhook event type ${event.type}.`);
+                break;
+        }
+
+    }
+
+    /**
+     * Handles a successful one-time payment.
+     *
+     * This method:
+     * 1. Retrieves the line items and price details from the Stripe session.
+     * 2. Extracts the token amount from the price metadata.
+     * 3. Credits the user's account with the purchased tokens.
+     *
+     * @param session - The Stripe Checkout Session object.
+     * @returns A Promise that resolves when the tokens have been credited to the user.
+     * @private
+     */
+    private async handleSuccessfulOneTimePayment(session: Stripe.Checkout.Session): Promise<void> {
+        const userId = session.client_reference_id;
+        const lineItems = await this.stripe.checkout.sessions.listLineItems(session.id);
+        const priceId = lineItems.data[0].price.id;
+        const price = await this.stripe.prices.retrieve(priceId);
+        const tokenAmount = parseInt(price.metadata.tokens, 10);
+
+        this.logger.log(`One time payment successful for user: ${userId}. Crediting ${tokenAmount} tokens.`);
+        await this.tokensService.adjustTokens(userId, tokenAmount);
+    }
+
+    /**
+     * Handles a successful subscription payment.
+     *
+     * This method:
+     * 1. Retrieves the subscription details from the invoice.
+     * 2. Extracts the user ID and token amount from the subscription and product metadata.
+     * 3. Credits the user's account with the subscription's token amount.
+     *
+     * @param invoice - The Stripe Invoice object.
+     * @returns A Promise that resolves when the tokens have been credited to the user.
+     * @private
+     */
+    private async handleSuccessfulSubscriptionPayment(invoice: Stripe.Invoice): Promise<void> {
+        if (invoice.subscription) {
+            const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+
+            // all my custom values are undefined in the subscription
+            const userId = subscription.metadata.userId;
+
+            if (!userId) {
+                this.logger.warn(`User ID not found in metadata for subscription ${subscription.id}`);
+                return;
+            }
+
+            const priceId = subscription.items.data[0].price.id;
+            const price = await this.stripe.prices.retrieve(priceId);
+            const product = await this.stripe.products.retrieve(price.product as string);
+
+            const tokenAmount = parseInt(product.metadata.tokens, 10);
+
+            if (isNaN(tokenAmount)) {
+                this.logger.warn(`Invalid token amount in product metadata for price ID: ${priceId}`);
+                return;
+            }
+
+            await this.tokensService.adjustTokens(userId, tokenAmount);
+            this.logger.log(`Credited ${tokenAmount} tokens to user ${userId} for invoice ${invoice.id}`);
+        } else {
+            this.logger.log(`Paid invoice ${invoice.id} is not associated with a subscription`);
+        }
+    }
+
+    /**
+     * Handles the creation of a new subscription.
+     *
+     * This method:
+     * 1. Extracts the user ID from the subscription metadata.
+     * 2. Retrieves the subscription type from the associated product's metadata.
+     * 3. Updates the user's subscription type in the database.
+     *
+     * @param subscription - The Stripe Subscription object.
+     * @returns A Promise that resolves when the user's subscription has been updated.
+     * @private
+     */
+    private async handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
+        const userId = subscription.metadata.userId;
+        if (!userId) {
+            this.logger.warn(`User ID not found in metadata for subscription ${subscription.id}`);
+            return;
+        }
+
+        const product = await this.stripe.products.retrieve(subscription.items.data[0].price.product as string);
+        const subscriptionType = product.metadata.subscription_type;
+
+        await this.userRepository.updateSubscription(userId, subscriptionType);
+        this.logger.log(`Updated subscription for user ${userId} to ${subscriptionType}`);
+    }
+
+    /**
+     * Handles the cancellation of a subscription.
+     *
+     * This method:
+     * 1. Extracts the user ID from the subscription metadata.
+     * 2. Removes the subscription from the user's record in the local database.
+     *
+     * @param subscription - The Stripe Subscription object.
+     * @returns A Promise that resolves when the user's subscription has been removed.
+     * @private
+     */
+    private async handleSubscriptionCancelled(subscription: Stripe.Subscription): Promise<void> {
+        const userId = subscription.metadata.userId;
+        if (!userId) {
+            this.logger.warn(`User ID not found in metadata for cancelled subscription ${subscription.id}`);
+            return;
+        }
+
+        await this.userRepository.removeSubscription(userId);
+        this.logger.log(`Removed subscription for user ${userId}`);
+    }
+
+    private async handleFailedPayment(invoice: Stripe.Invoice): Promise<void> {
+        if (!invoice.subscription) {
+            this.logger.warn(`Failed invoice ${invoice.id} is not associated with a subscription`);
+            return;
+        }
+
+        const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
+        const userId = subscription.metadata.userId;
+        if (!userId) {
+            this.logger.warn(`User ID not found in metadata for subscription ${subscription.id}`);
+            return;
+        }
+
+        this.logger.warn(`Payment failed for user ${userId}`);
+        try {
+            // Cancel the subscription in Stripe
+            await this.stripe.subscriptions.cancel(subscription.id)
+            this.logger.log(`Cancelled Stripe subscription ${subscription.id} for user ${userId} due to payment failure`);
+
+            // Update user's subscription status in the database
+            await this.userRepository.removeSubscription(userId);
+            this.logger.log(`Removed subscription for user ${userId} in the database`);
+
+        } catch (error) {
+            this.logger.error(`Error handling failed payment for user ${userId}: ${error.message}`);
+            throw new InternalServerErrorException('Failed to process payment failure');
+        }
+
+        // TODO: Notify the user that their payment bounced when I have a notification plan
+    }
+
+    /**
+     * Updates a user's subscription to a new plan.
+     *
+     * This method performs the following steps:
+     * 1. Verifies the user has an active subscription different from the new one.
+     * 2. Retrieves the user's current Stripe subscription.
+     * 3. Fetches the new price information from Stripe.
+     * 4. Updates the subscription in Stripe to the new price.
+     * 5. Updates the subscription type in the local database.
+     *
+     * @param userId - The ID of the user whose subscription is being updated.
+     * @param newLookupKey - The lookup key for the new subscription plan.
+     * @throws BadRequestException if:
+     *   - The user doesn't have an active subscription
+     *   - The user already has the requested subscription
+     *   - No active Stripe subscription is found for the user
+     *   - The new subscription type is invalid
+     *   - Any Stripe-related error occurs
+     * @returns A Promise that resolves when the subscription has been successfully updated.
+     */
     async updateSubscription(userId: string, newLookupKey: string): Promise<void> {
         const user = await this.userRepository.getOne(userId);
 
@@ -149,148 +371,6 @@ export class PaymentsService {
             }
             throw new BadRequestException('Failed to update subscription');
         }
-    }
-
-    async getSessionDetails(sessionId: string): Promise<Stripe.Checkout.Session> {
-        return this.stripe.checkout.sessions.retrieve(sessionId);
-    }
-
-    async handleWebhook(signature: string, payload: Buffer): Promise<void> {
-        let event: Stripe.Event;
-        try {
-            event = this.stripe.webhooks.constructEvent(
-                payload,
-                signature,
-                process.env.STRIPE_WEBHOOK_SECRET,
-            );
-        } catch (err) {
-            throw new Error(`Webhook Error: ${err.message}`);
-        }
-
-        switch (event.type) {
-            // Logic for one time is simple
-            case 'checkout.session.completed':
-                const session = event.data.object as Stripe.Checkout.Session;
-                if (session.mode === "subscription") {
-                    // as far as I can tell I don't need to do anything for a checkout session for a subscription
-                    break;
-                }
-                await this.handleSuccessfulOneTimePayment(session);
-                break;
-
-            // Below is all the logic for subscriptions
-            case 'customer.subscription.created':
-                // Since invoice.paid will already handle tokens the only purpose of this webhook in our case is to set the initial type of subscription for a user.
-                this.logger.log(`Received webhook event type ${event.type}.`);
-                await this.handleSubscriptionCreated(event.data.object as Stripe.Subscription);
-                break;
-            case 'customer.subscription.deleted':
-                // This is sent when a subscription actually ends
-                this.logger.log(`Received webhook event type ${event.type}.`);
-                await this.handleSubscriptionCancelled(event.data.object as Stripe.Subscription);
-                break;
-            case 'invoice.paid':
-                // This is the big dog that should credit my user some tokens
-                this.logger.log(`Received webhook event type ${event.type}.`);
-                await this.handleSuccessfulSubscriptionPayment(event.data.object as Stripe.Invoice);
-                break;
-            case 'invoice.payment_failed':
-                this.logger.log(`Received webhook event type ${event.type}.`);
-                await this.handleFailedPayment(event.data.object as Stripe.Invoice);
-                break;
-            default:
-                // this.logger.log(`Unhandled webhook event type ${event.type}.`);
-                break;
-        }
-
-    }
-
-    private async handleSuccessfulOneTimePayment(session: Stripe.Checkout.Session): Promise<void> {
-        const userId = session.client_reference_id;
-        const lineItems = await this.stripe.checkout.sessions.listLineItems(session.id);
-        const priceId = lineItems.data[0].price.id;
-        const price = await this.stripe.prices.retrieve(priceId);
-        const tokenAmount = parseInt(price.metadata.tokens, 10);
-
-        this.logger.log(`One time payment successful for user: ${userId}. Crediting ${tokenAmount} tokens.`);
-        await this.tokensService.adjustTokens(userId, tokenAmount);
-    }
-
-    private async handleSuccessfulSubscriptionPayment(invoice: Stripe.Invoice): Promise<void> {
-        if (invoice.subscription) {
-            const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
-
-            // all my custom values are undefined in the subscription
-            const userId = subscription.metadata.userId;
-
-            if (!userId) {
-                this.logger.warn(`User ID not found in metadata for subscription ${subscription.id}`);
-                return;
-            }
-
-            const priceId = subscription.items.data[0].price.id;
-            const price = await this.stripe.prices.retrieve(priceId);
-            const product = await this.stripe.products.retrieve(price.product as string);
-
-            const tokenAmount = parseInt(product.metadata.tokens, 10);
-
-            if (isNaN(tokenAmount)) {
-                this.logger.warn(`Invalid token amount in product metadata for price ID: ${priceId}`);
-                return;
-            }
-
-            await this.tokensService.adjustTokens(userId, tokenAmount);
-            this.logger.log(`Credited ${tokenAmount} tokens to user ${userId} for invoice ${invoice.id}`);
-        } else {
-            this.logger.log(`Paid invoice ${invoice.id} is not associated with a subscription`);
-        }
-    }
-
-    private async handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
-        const userId = subscription.metadata.userId;
-        if (!userId) {
-            this.logger.warn(`User ID not found in metadata for subscription ${subscription.id}`);
-            return;
-        }
-
-        const product = await this.stripe.products.retrieve(subscription.items.data[0].price.product as string);
-        const subscriptionType = product.metadata.subscription_type;
-
-        await this.userRepository.updateSubscription(userId, subscriptionType);
-        this.logger.log(`Updated subscription for user ${userId} to ${subscriptionType}`);
-    }
-
-    private async handleSubscriptionCancelled(subscription: Stripe.Subscription): Promise<void> {
-        const userId = subscription.metadata.userId;
-        if (!userId) {
-            this.logger.warn(`User ID not found in metadata for cancelled subscription ${subscription.id}`);
-            return;
-        }
-
-        await this.userRepository.removeSubscription(userId);
-        this.logger.log(`Removed subscription for user ${userId}`);
-    }
-
-    private async handleFailedPayment(invoice: Stripe.Invoice): Promise<void> {
-        if (!invoice.subscription) {
-            this.logger.warn(`Failed invoice ${invoice.id} is not associated with a subscription`);
-            return;
-        }
-
-        const subscription = await this.stripe.subscriptions.retrieve(invoice.subscription as string);
-        const userId = subscription.metadata.userId;
-        if (!userId) {
-            this.logger.warn(`User ID not found in metadata for subscription ${subscription.id}`);
-            return;
-        }
-
-        this.logger.warn(`Payment failed for user ${userId}`);
-        // TODO:
-
-        // 1) notify the user somehow that their payment bounced
-        // 2) delete their subscription in Stripe, probably just with cancelSubscription()
-        // 3) set their subscriptionType to none
-
     }
 
     // This method would be called by the front end to cancel a subscription

@@ -106,10 +106,4 @@ export class PaymentsController {
             res.status(400).send('Unable to verify payment status. Please contact support.');
         }
     }
-
-    @Get('cancel')
-    handleCancel(@Res() res: Response) {
-        // TODO: figure out what this means
-        res.send('Payment cancelled. You can try again when your ready.');
-    }
 }

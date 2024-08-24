@@ -2,18 +2,15 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import {ConfigModule} from "@nestjs/config";
-import {config} from "rxjs";
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TokensService } from './tokens/tokens.service';
 import { TokensModule } from './tokens/tokens.module';
-import { ImageController } from './image/image.controller';
 import { ImageModule } from './image/image.module';
 import {AwsCognitoService} from "./auth/aws-cognito.service";
 import {UserRepository} from "./users/user.repository";
 import {AwsConfigModule} from "./config/aws-config.module";
 import { PaymentsModule } from './payments/payments.module';
-import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 
 @Module({
   imports: [
@@ -27,9 +24,8 @@ import { SubscriptionsModule } from './subscriptions/subscriptions.module';
       ImageModule,
       AwsConfigModule,
       PaymentsModule,
-      SubscriptionsModule
   ],
-  controllers: [AppController, ImageController],
+  controllers: [AppController],
   providers: [AppService, TokensService, AwsCognitoService, UserRepository],
 })
 export class AppModule {}
