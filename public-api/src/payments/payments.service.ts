@@ -55,12 +55,14 @@ export class PaymentsService {
     }
 
     async createSubscriptionCheckoutSession(lookup_key: string, userId: string) {
+        // TODO: you probably shouldn't be able to do this if you have subscription.
+        // When i demoed this for brandon it didn't add the subscription type to the database
         // I don't want a user to be able to create a checkout session for a subscription they currently have
         const user = await this.userRepository.getOne(userId)
         const currentPlan = user.subscriptionType
-        if (lookup_key === currentPlan) {
-            this.logger.log(`Not creating checkout session because user: ${userId} already has this subscription: ${currentPlan}`);
-            throw new BadRequestException('You already have this subscription');
+        if (currentPlan) {
+            this.logger.log(`Not creating checkout session because user: ${userId} already has subscription: ${currentPlan}`);
+            throw new BadRequestException('You already have a subscription');
         }
 
         // Get the prices from the lookup key
@@ -145,7 +147,7 @@ export class PaymentsService {
                 await this.handleFailedPayment(event.data.object as Stripe.Invoice);
                 break;
             default:
-                // this.logger.log(`Unhandled webhook event type ${event.type}.`);
+                // We get a ton more webhook events than these so we just ignore them
                 break;
         }
 
@@ -264,6 +266,23 @@ export class PaymentsService {
         this.logger.log(`Removed subscription for user ${userId}`);
     }
 
+    /**
+     * Handles a failed payment for a subscription.
+     *
+     * This method is triggered when a payment for a subscription invoice fails. It performs the following steps:
+     * 1. Verifies that the failed invoice is associated with a subscription.
+     * 2. Retrieves the subscription details and associated user ID.
+     * 3. Immediately cancels the subscription in Stripe.
+     * 4. Removes the subscription from the local database.
+     *
+     * Note: This method does not currently notify the user of the failed payment and subscription cancellation.
+     * A notification system should be implemented as a future enhancement.
+     *
+     * @param invoice - The Stripe Invoice object representing the failed payment.
+     * @throws InternalServerErrorException if an error occurs while processing the payment failure.
+     * @returns A Promise that resolves when the failed payment has been handled and the subscription cancelled.
+     * @private
+     */
     private async handleFailedPayment(invoice: Stripe.Invoice): Promise<void> {
         if (!invoice.subscription) {
             this.logger.warn(`Failed invoice ${invoice.id} is not associated with a subscription`);
@@ -357,7 +376,7 @@ export class PaymentsService {
                     id: userSubscription.items.data[0].id,
                     price: newPrice.id,
                 }],
-                proration_behavior: 'none', // No prorating
+                proration_behavior: 'none', // We don't prorate because the subscription is a once a month deposit of tokens
             });
 
             // Update our database
@@ -373,7 +392,24 @@ export class PaymentsService {
         }
     }
 
-    // This method would be called by the front end to cancel a subscription
+    /**
+     * Cancels a user's subscription at the end of the current billing period.
+     *
+     * This method performs the following steps:
+     * 1. Verifies that the user has an active subscription.
+     * 2. Retrieves the user's active Stripe subscription.
+     * 3. Updates the Stripe subscription to cancel at the end of the current period.
+     * 4. Removes the subscription from the database.
+     *
+     * @param userId - The ID of the user whose subscription is to be cancelled.
+     * @throws BadRequestException if:
+     *   - The user doesn't have an active subscription
+     *   - No active Stripe subscription is found for the user
+     * @throws InternalServerErrorException if:
+     *   - A Stripe API error occurs
+     *   - Any other unexpected error occurs during the cancellation process
+     * @returns A Promise that resolves when the subscription has been successfully cancelled.
+     */
     async cancelSubscription(userId: string): Promise<void> {
         this.logger.log(`Attempting to cancel subscription for user ${userId}`);
 
