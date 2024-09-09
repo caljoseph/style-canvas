@@ -1,10 +1,55 @@
-import { Controller } from '@nestjs/common';
+import {
+    Body,
+    Controller,
+    HttpException,
+    HttpStatus,
+    Logger,
+    Post,
+    Res,
+    UploadedFile,
+    UseGuards, UseInterceptors,
+    UsePipes, ValidationPipe
+} from '@nestjs/common';
+import {ImageService} from "./image.service";
+import {GenerateImageDto} from "./dto/image-generate-image.dto";
+import {UserDecorator} from "../users/user.decorator";
+import {User} from "../users/user.model";
+import {AuthGuard} from "@nestjs/passport";
+import { Response } from 'express';
+import {FileInterceptor} from "@nestjs/platform-express";
 
 @Controller('image')
-export class ImageController {}
+export class ImageController {
+    private readonly logger = new Logger(ImageController.name)
 
-// I think in image controller there will be the endpoint to generate image, it will take the user's info
-// Validate it and make sure they have enough tokens
-// it will take the model that they specified as well as the image
-// it will then talk to the other server (main call) and receive an image
-// on successful receipt it will decrement the tokens and return the image back to the caller.
+    constructor(private readonly imageService: ImageService) {}
+
+    @Post('/generate')
+    @UseGuards(AuthGuard('jwt'))
+    @UseInterceptors(FileInterceptor('image'))
+    async generate(
+        @UserDecorator() user: User,
+        @UploadedFile() image: Express.Multer.File,
+        @Body() generateImageDto: GenerateImageDto,
+        @Res() res: Response, // Import from 'express'
+
+    ) {
+        try {
+            if (!image) {
+                throw new HttpException('Image file is required', HttpStatus.BAD_REQUEST);
+            }
+
+            // Call the service to generate an image, passing the image buffer
+            const styledImage = await this.imageService.generateImage(user.cognitoId, generateImageDto.modelName, image);
+
+            // Send the image buffer directly as a response
+            res.status(HttpStatus.CREATED)
+                .contentType('image/png')
+                .send(styledImage);
+        } catch (error) {
+            this.logger.error(`Failed to generate image for user: ${user.cognitoId} with model type "${generateImageDto.modelName}"`, error.stack);
+            throw error;
+        }
+    }
+
+}

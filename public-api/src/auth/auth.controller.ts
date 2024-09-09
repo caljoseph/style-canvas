@@ -29,6 +29,7 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @Post('/register')
+    @UsePipes(ValidationPipe)
     async register(@Body() authRegisterUserDto: AuthRegisterUserDto) {
         try {
             return await this.authService.registerUser(authRegisterUserDto);

@@ -75,6 +75,21 @@ def TenshiAbstract(img):
     drawing = fpm.Get_Face_Drawing(img, face_drawing_styles)
     return drawing
 
+def Impasto_L1(img):
+    ai_model_name = 'Impasto_l1'
+    which_epoch= 26
+    ngf = 64
+    n_local_enhancers = 1
+    Impasto = afm.apply_filter_to_image(img, ai_model_name, which_epoch, ngf, n_local_enhancers)
+    return Impasto
+
+def Impasto(img):
+    ai_model_name = 'Impasto'
+    which_epoch= 22
+    ngf = 64
+    Impasto = afm.apply_filter_to_image(img, ai_model_name, which_epoch, ngf)
+    return Impasto
+
 
 def apply_filter(img, filter_name):
     filter_functions = {
@@ -88,7 +103,9 @@ def apply_filter(img, filter_name):
         "A_Face_OilPainting": A_Face_OilPainting,
         "BlueMist": BlueMist,
         "Chalkboard": Chalkboard,
-        "TenshiAbstract": TenshiAbstract
+        "TenshiAbstract": TenshiAbstract,
+        "Impasto": Impasto,
+        "Impasto_L1": Impasto_L1,
     }
     return filter_functions.get(filter_name, lambda x: x)(img)
 

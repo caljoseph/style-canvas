@@ -47,7 +47,7 @@ export class GenerateController {
         const tempDir = path.join(projectRoot, 'temp');
         const inputDir = path.join(tempDir, 'input');
         const outputDir = path.join(tempDir, 'output');
-        const inputFilePath = path.join(inputDir, 'input.png');
+        const inputFilePath = path.join(inputDir, 'input_image.png');
 
         try {
             // Create temp, input, and output directories
@@ -74,7 +74,6 @@ export class GenerateController {
             ]);
 
             if (stderr) {
-                // Log the stderr as a warning instead of an error
                 this.logger.warn(`Python script warning: ${stderr}`);
             }
 
@@ -104,11 +103,11 @@ export class GenerateController {
             this.logger.error(`Error generating image: ${error.message}`);
             throw new BadRequestException('Image generation failed');
         } finally {
-            // // Clean up the temp directory
-            // this.logger.log(`Cleaning up temporary directory: ${tempDir}`);
-            // await fs.promises.rm(tempDir, { recursive: true, force: true }).catch((error) => {
-            //     this.logger.warn(`Failed to clean up temp directory: ${error.message}`);
-            // });
+            // Clean up the temp directory
+            this.logger.log(`Cleaning up temporary directory: ${tempDir}`);
+            await fs.promises.rm(tempDir, { recursive: true, force: true }).catch((error) => {
+                this.logger.warn(`Failed to clean up temp directory: ${error.message}`);
+            });
         }
     }
 
