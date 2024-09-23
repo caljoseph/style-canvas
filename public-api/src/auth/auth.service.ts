@@ -55,11 +55,10 @@ export class AuthService {
         }
     }
 
-    async refreshToken(cognitoId: string) {
+    async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
         try {
-            return await this.awsCognitoService.refreshToken(cognitoId);
+            return await this.awsCognitoService.refreshToken(refreshToken);
         } catch (error) {
-            this.logger.error(`Failed to refresh token for user: ${cognitoId}`, error.stack);
             throw new UnauthorizedException('Failed to refresh token');
         }
     }

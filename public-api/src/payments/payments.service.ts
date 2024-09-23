@@ -40,11 +40,8 @@ export class PaymentsService {
                 },
             ],
             mode: 'payment',
-            success_url: `${process.env.DEV_APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-            // TODO: redirect the user to a success page where the client would make a call with the session
-            //  id to display the results of the purchase and then return back to the home page of the website.
-            //  The cancellation url would probably just be a redirect back to the home page
-            cancel_url: `${process.env.DEV_APP_URL}/payments/cancel`,
+            success_url: `${process.env.DEV_APP_URL}/index.html?payment=success`,
+            cancel_url: `${process.env.DEV_APP_URL}/index.html?payment=cancelled`,
             client_reference_id: userId,
             // TODO: figure out stripe tax
             automatic_tax: {
@@ -60,9 +57,9 @@ export class PaymentsService {
         // I don't want a user to be able to create a checkout session for a subscription they currently have
         const user = await this.userRepository.getOne(userId)
         const currentPlan = user.subscriptionType
-        if (currentPlan) {
+        if (currentPlan !== "none") {
             this.logger.log(`Not creating checkout session because user: ${userId} already has subscription: ${currentPlan}`);
-            throw new BadRequestException('You already have a subscription');
+            throw new BadRequestException('You already have a subscription. You must update it or cancel it and buy another.');
         }
 
         // Get the prices from the lookup key
@@ -81,11 +78,8 @@ export class PaymentsService {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.DEV_APP_URL}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
-            // TODO: redirect the user to a success page where the client would make a call with the session
-            //  id to display the details of the subscription and then return back to the home page of the website.
-            //  The cancellation url would probably just be a redirect back to the home page
-            cancel_url: `${process.env.DEV_APP_URL}/payments/cancel`,
+            success_url: `${process.env.DEV_APP_URL}/index.html?payment=success`,
+            cancel_url: `${process.env.DEV_APP_URL}/index.html?payment=cancelled`,
             subscription_data: {
                 metadata: {
                     userId: userId

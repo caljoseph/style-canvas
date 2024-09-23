@@ -29,32 +29,38 @@
 </head>
 
 <body class="index-page">
-    <header id="header" class="header d-flex align-items-center sticky-top">
-        <div class="container-fluid container-xl position-relative d-flex align-items-center">
+<header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+        <a href="index.html" class="logo d-flex align-items-center me-auto">
+            <img src="assets/img/main-logo.png" alt="">
+        </a>
+        <nav id="navmenu" class="navmenu">
+            <ul>
+                <li><a href="./index.html">Home</a></li>
+                <li><a href="./cases.html">Use Cases</a></li>
+                <li><a href="./work.html">How It Works</a></li>
+                <li><a href="./models.html">AI Models</a></li>
+                <li><a href="./pricing.html">Pricing</a></li>
+                <li><a href="./about.html">About</a></li>
+                <li><a href="./contact.html">Contact</a></li>
+            </ul>
+            <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
 
-            <a href="index.html" class="logo d-flex align-items-center me-auto">
-                <!-- Uncomment the line below if you also wish to use an image logo -->
-                <img src="assets\img\main-logo.png" alt="">
+        <!-- "Get Started" button -->
+        <a class="btn-getstarted" href="./registration.html" id="get-started-btn">Get Started</a>
 
-            </a>
-
-            <nav id="navmenu" class="navmenu">
-                <ul>
-                    <li><a href="./index.html">Home<br></a></li>
-                    <li><a href="./cases.html">Use Cases</a></li>
-                    <li><a href="./work.html">How Its Work </a></li>
-                    <li><a href="./models.html">AI Models</a></li>
-                    <li><a href="./pricing.html">Pricing</a></li>
-                    <li><a href="./about.html" class="active">About</a></li>
-                    <li><a href="./contact.html">Contact</a></li>
-                </ul>
-                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-            </nav>
-
-            <a class="btn-getstarted" href="./registration.html">Get Started</a>
-
+        <!-- User Profile -->
+        <div class="user-profile btn-getstarted btn-dropdown" id="user-profile" style="display: none;">
+            <div class="profile-pic" id="profile-pic">U</div>
+            <div id="profile-dropdown" class="profile-dropdown">
+                <a href="#" id="user-name">User Name <br> <span>Buy Credits or Manage Subscription</span></a>
+                <a href="./pricing.html" class="credits" id="user-credits">0 Credits <br> <span>Buy Credits or Manage Subscription</span></a>
+                <a href="#" id="logout-btn">Logout</a>
+            </div>
         </div>
-    </header>
+    </div>
+</header>
 
 
     <main class="main">
@@ -140,6 +146,7 @@
     <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
 
     <!-- Main JS File -->
+    <script src="assets/js/config.js"></script>
     <script src="assets/js/main.js"></script>
 </body>
 

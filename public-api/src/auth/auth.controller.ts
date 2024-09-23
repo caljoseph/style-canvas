@@ -55,13 +55,13 @@ export class AuthController {
     }
 
     @Post('/refresh-token')
-    @UseGuards(AuthGuard('jwt'))
-    async refreshToken(@UserDecorator() user: User) {
+    @UsePipes(ValidationPipe)
+    async refreshToken(@Body() { refreshToken }: { refreshToken: string }) {
         try {
-            const result = await this.authService.refreshToken(user.cognitoId);
-            return { accessToken: result.accessToken };
+            const result = await this.authService.refreshToken(refreshToken);
+            return result;
         } catch (error) {
-            this.logger.error(`Failed to refresh token for user: ${user.cognitoId}`, error.stack);
+            this.logger.error(`Failed to refresh token`, error.stack);
             throw new UnauthorizedException('Failed to refresh token');
         }
     }

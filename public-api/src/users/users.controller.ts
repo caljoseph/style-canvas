@@ -5,9 +5,10 @@ import { User } from "./user.model";
 import { AdminGuard } from "../auth/guards/admin.guard";
 import {TokensService} from "../tokens/tokens.service";
 import {UserResponseDto} from "./dto/user-response.dto";
+import {UserDecorator} from "./user.decorator";
 
 @Controller('users')
-@UseGuards(AuthGuard('jwt'), AdminGuard)
+@UseGuards(AuthGuard('jwt'))
 export class UsersController {
     private readonly logger = new Logger(UsersController.name);
 
@@ -29,6 +30,26 @@ export class UsersController {
         } catch (error) {
             this.logger.error(`Failed to retrieve users: ${error.message}`, error.stack);
             throw new HttpException('Failed to retrieve users', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Get('/profile')
+    @UseGuards(AuthGuard('jwt'))
+    async getUserInfo(
+        @UserDecorator() user: User,
+    ){
+        try {
+            this.logger.log(`getting profile for user: ${user.cognitoId}`)
+            const profile = await this.userRepo.getOne(user.cognitoId);
+            return {
+                email: profile.email,
+                cognitoId: profile.cognitoId,
+                tokens: profile.tokens,
+                subscriptionType: profile.subscriptionType
+            }
+        } catch (error) {
+            this.logger.error(`Failed to get profile for: ${user.cognitoId}`, error.stack);
+            throw error;
         }
     }
 

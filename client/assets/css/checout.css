@@ -600,3 +600,43 @@ body{
     font-weight: bold;
     color: #4E5150;
   }
+
+/* Password Requirements Styling */
+.password-requirements {
+    list-style: none;
+    padding-left: 0;
+}
+
+.password-requirements li {
+    font-size: 0.9em;
+    color: #dc3545; /* Red color for invalid */
+    display: flex;
+    align-items: center;
+}
+
+.password-requirements li.valid {
+    color: #28a745; /* Green color for valid */
+}
+
+.password-requirements li::before {
+    content: "✖"; /* Cross mark */
+    display: inline-block;
+    width: 20px;
+    margin-right: 8px;
+    font-weight: bold;
+}
+
+.password-requirements li.valid::before {
+    content: "✔"; /* Check mark */
+}
+
+/* Customize invalid input borders */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+/* Customize invalid feedback text */
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875em;
+}

@@ -40,6 +40,7 @@ export class PaymentsController {
         const sessionUrl = await this.paymentsService.createOneTimeCheckoutSession(
             createCheckoutSessionDto.lookup_key,
             user.cognitoId);
+
         return { sessionUrl: sessionUrl };
     }
 

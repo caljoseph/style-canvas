@@ -1,32 +1,30 @@
-
 :root {
-  --default-font: "Roboto",  system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --heading-font: "Raleway",  sans-serif;
-  --nav-font: "Poppins",  sans-serif;
+  --default-font: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --heading-font: "Raleway", sans-serif;
+  --nav-font: "Poppins", sans-serif;
 }
 
-/* Global Colors - The following color variables are used throughout the website. Updating them here will change the color scheme of the entire website */
-:root { 
-  --background-color: #ffffff; /* Background color for the entire website, including individual sections */
-  --default-color: #444444; /* Default color used for the majority of the text content across the entire website */
-  --heading-color: #222222; /* Color for headings, subheadings and title throughout the website */
-  --accent-color: #3498db; /* Accent color that represents your brand on the website. It's used for buttons, links, and other elements that need to stand out */
-  --surface-color: #ffffff; /* The surface color is used as a background of boxed elements within sections, such as cards, icon boxes, or other elements that require a visual separation from the global background. */
-  --contrast-color: #ffffff; /* Contrast color for text, ensuring readability against backgrounds of accent, heading, or default colors. */
-}
-
-/* Nav Menu Colors - The following color variables are used specifically for the navigation menu. They are separate from the global colors to allow for more customization options */
+/* Global Colors */
 :root {
-  --nav-color: #444444;  /* The default color of the main navmenu links */
-  --nav-hover-color: #3498db; /* Applied to main navmenu links when they are hovered over or active */
-  --nav-mobile-background-color: #ffffff; /* Used as the background color for mobile navigation menu */
-  --nav-dropdown-background-color: #ffffff; /* Used as the background color for dropdown items that appear when hovering over primary navigation items */
-  --nav-dropdown-color: #444444; /* Used for navigation links of the dropdown items in the navigation menu. */
-  --nav-dropdown-hover-color: #3498db; /* Similar to --nav-hover-color, this color is applied to dropdown navigation links when they are hovered over. */
+  --background-color: #ffffff;
+  --default-color: #444444;
+  --heading-color: #222222;
+  --accent-color: #3498db;
+  --surface-color: #ffffff;
+  --contrast-color: #ffffff;
 }
 
-/* Color Presets - These classes override global colors when applied to any section or element, providing reuse of the sam color scheme. */
+/* Nav Menu Colors */
+:root {
+  --nav-color: #444444;
+  --nav-hover-color: #3498db;
+  --nav-mobile-background-color: #ffffff;
+  --nav-dropdown-background-color: #ffffff;
+  --nav-dropdown-color: #444444;
+  --nav-dropdown-hover-color: #3498db;
+}
 
+/* Color Presets */
 .light-background {
   --background-color: #f4fafd;
   --surface-color: #ffffff;
@@ -75,8 +73,7 @@ h6 {
   font-family: var(--heading-font);
 }
 
-/* PHP Email Form Messages
-------------------------------*/
+/* PHP Email Form Messages */
 .php-email-form .error-message {
   display: none;
   background: #df1529;
@@ -163,13 +160,21 @@ h6 {
   margin: 0 0 0 30px;
   border-radius: 50px;
   transition: 0.3s;
+  text-decoration: none;
 }
 
-/* .header .btn-getstarted:hover,
+/* User Profile Button */
+.header .btn-dropdown,
+.header .btn-dropdown:focus {
+  background-color: var(--contrast-color);
+}
+
+/* Adjusted to prevent hover effect on "Get Started" button */
+.header .btn-getstarted:hover,
 .header .btn-getstarted:focus:hover {
   color: var(--contrast-color);
   background: color-mix(in srgb, var(--accent-color), transparent 15%);
-} */
+}
 
 @media (max-width: 1200px) {
   .header .logo {
@@ -986,25 +991,40 @@ section,
 .features .features-item {
   background-color: var(--surface-color);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 20px;
-  transition: 0.3s;
-  border: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  padding: 30px;
+  transition: all 0.3s ease-in-out;
+  border-radius: 8px;
+  box-shadow: 0 3px 20px -2px rgba(0, 0, 0, 0.1);
   position: relative;
+  overflow: hidden;
 }
 
-.features .features-item i {
-  font-size: 32px;
-  padding-right: 10px;
-  line-height: 0;
+.features .features-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 25px -2px rgba(0, 0, 0, 0.2);
+}
+
+.features .features-item img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease-in-out;
+}
+
+.features .features-item:hover img {
+  transform: scale(1.05);
 }
 
 .features .features-item h3 {
-  font-weight: 700;
+  font-weight: 600;
   margin: 0;
   padding: 0;
-  line-height: 1;
-  font-size: 16px;
+  line-height: 1.2;
+  font-size: 18px;
+  text-align: center;
 }
 
 .features .features-item h3 a {
@@ -1012,12 +1032,71 @@ section,
   transition: 0.3s;
 }
 
-.features .features-item:hover {
-  border-color: var(--accent-color);
-}
-
 .features .features-item:hover h3 a {
   color: var(--accent-color);
+}
+
+.features .features-item .stretched-link::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  content: "";
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .features .features-item {
+    padding: 20px;
+  }
+
+  .features .features-item h3 {
+    font-size: 16px;
+  }
+}
+
+/* Add this to your main CSS file */
+
+#imageUploadModal .modal-content {
+  background-color: var(--surface-color);
+  color: var(--default-color);
+}
+
+#imageUploadModal .modal-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+}
+
+#imageUploadModal .modal-footer {
+  border-top: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+}
+
+#imageUploadModal .btn-primary {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--contrast-color);
+}
+
+#imageUploadModal .btn-primary:hover {
+  background-color: color-mix(in srgb, var(--accent-color), transparent 20%);
+  border-color: color-mix(in srgb, var(--accent-color), transparent 20%);
+}
+
+#imageUploadModal .btn-secondary {
+  background-color: color-mix(in srgb, var(--default-color), transparent 80%);
+  border-color: color-mix(in srgb, var(--default-color), transparent 80%);
+  color: var(--contrast-color);
+}
+
+#imageUploadModal .btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--default-color), transparent 60%);
+  border-color: color-mix(in srgb, var(--default-color), transparent 60%);
+}
+
+#imagePreviewContainer {
+  max-height: 300px;
+  overflow-y: auto;
 }
 
 /*--------------------------------------------------------------
@@ -1329,77 +1408,56 @@ section,
   background-color: var(--surface-color);
   box-shadow: 0 3px 20px -2px rgba(0, 0, 0, 0.1);
   border-top: 4px solid var(--background-color);
-  padding: 60px 40px;
+  padding: 40px 30px;
   height: 100%;
-  border-radius: 5px;
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+}
+
+.pricing .pricing-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 25px -2px rgba(0, 0, 0, 0.2);
 }
 
 .pricing h3 {
   font-weight: 600;
   margin-bottom: 15px;
   font-size: 20px;
+  color: var(--heading-color);
 }
 
 .pricing h4 {
   color: var(--accent-color);
-  font-size: 30px;
-  font-weight: 400;
+  font-size: 36px;
+  font-weight: 600;
   font-family: var(--heading-font);
-  margin-bottom: 0;
-}
-
-.pricing h4 sup {
-  font-size: 28px;
+  margin-bottom: 5px;
 }
 
 .pricing h4 span {
   color: color-mix(in srgb, var(--default-color), transparent 50%);
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 400;
+  display: block;
 }
 
-.pricing ul {
-  padding: 20px 0;
-  list-style: none;
+.pricing .price-detail {
   color: color-mix(in srgb, var(--default-color), transparent 30%);
-  text-align: left;
-  line-height: 20px;
-}
-
-.pricing ul li {
-  padding: 10px 0;
-  display: flex;
-  align-items: center;
-}
-
-.pricing ul i {
-  color: #059652;
-  font-size: 24px;
-  padding-right: 3px;
-}
-
-.pricing ul .na {
-  color: color-mix(in srgb, var(--default-color), transparent 60%);
-}
-
-.pricing ul .na i {
-  color: color-mix(in srgb, var(--default-color), transparent 60%);
-}
-
-.pricing ul .na span {
-  text-decoration: line-through;
+  font-size: 14px;
+  margin-bottom: 20px;
 }
 
 .pricing .buy-btn {
   color: var(--accent-color);
   display: inline-block;
-  padding: 8px 35px 10px 35px;
+  padding: 10px 35px;
   border-radius: 50px;
-  transition: none;
+  transition: 0.3s;
   font-size: 16px;
   font-weight: 500;
   font-family: var(--heading-font);
-  transition: 0.3s;
-  border: 1px solid var(--accent-color);
+  border: 2px solid var(--accent-color);
+  text-transform: uppercase;
 }
 
 .pricing .buy-btn:hover {
@@ -1407,18 +1465,92 @@ section,
   color: var(--contrast-color);
 }
 
-.pricing .featured {
+/* Highlight the current subscription plan */
+.pricing .current-plan {
   border-top-color: var(--accent-color);
+  background-color: color-mix(in srgb, var(--accent-color), transparent 95%);
 }
 
-.pricing .featured .buy-btn {
-  background: var(--accent-color);
+.pricing .current-plan h3 {
+  color: var(--accent-color);
+}
+
+.pricing .current-plan .buy-btn {
+  background-color: var(--accent-color);
   color: var(--contrast-color);
 }
 
+.pricing .current-plan .buy-btn:hover {
+  background-color: color-mix(in srgb, var(--accent-color), transparent 20%);
+  border-color: color-mix(in srgb, var(--accent-color), transparent 20%);
+}
+
+.pricing .other-plan .buy-btn {
+  background-color: var(--surface-color);
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.pricing .other-plan .buy-btn:hover {
+  background-color: var(--accent-color);
+  color: var(--contrast-color);
+}
+
+/* Modal Styling */
+.modal-content {
+  background-color: var(--surface-color);
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 5px 25px -2px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  padding: 20px 30px;
+}
+
+.modal-title {
+  color: var(--heading-color);
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 30px;
+  color: var(--default-color);
+}
+
+.modal-footer {
+  border-top: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  padding: 20px 30px;
+}
+
+.btn-close {
+  color: var(--default-color);
+}
+
+.btn-secondary {
+  background-color: color-mix(in srgb, var(--default-color), transparent 80%);
+  border: none;
+  color: var(--contrast-color);
+}
+
+.btn-secondary:hover {
+  background-color: color-mix(in srgb, var(--default-color), transparent 60%);
+}
+
+.btn-primary {
+  background-color: var(--accent-color);
+  border: none;
+  color: var(--contrast-color);
+}
+
+.btn-primary:hover {
+  background-color: color-mix(in srgb, var(--accent-color), transparent 20%);
+}
+
 @media (max-width: 992px) {
-  .pricing .box {
-    max-width: 60%;
+  .pricing .pricing-item {
+    max-width: 80%;
     margin: 0 auto 30px auto;
   }
 }
@@ -1436,6 +1568,7 @@ section,
     margin: 0 auto 30px auto;
   }
 }
+
 
 /*--------------------------------------------------------------
 # Faq Section
@@ -1707,20 +1840,17 @@ section,
   /* Add your styles here */
 }
 
-
-
-
 .vertical-layout {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center the content horizontally */
-  text-align: center;  /* Center the text within the div */
+  align-items: center;
+  text-align: center;
 }
 
 .vertical-layout img {
   max-width: 100%;
   height: auto;
-  margin-bottom: 15px; /* Space between the image and the text */
+  margin-bottom: 15px;
 }
 
 .vertical-layout h3 {
@@ -1733,15 +1863,9 @@ section,
   text-align: right;
 }
 
-
-
-
 /*--------------------------------------------------------------
 # Registration Section
 --------------------------------------------------------------*/
-
-
-
 .tab-form {
   width: 95%;
   margin: 0% auto;
@@ -1767,20 +1891,25 @@ section,
   background-color: #d6d4d4;
   font-weight: bold;
 }
-.header .navmenu ul li a{
+
+.header .navmenu ul li a {
   text-decoration: none;
 }
-.btn-getstarted{
+
+.btn-getstarted {
   text-decoration: none;
 }
-.header .container-fluid .active-button{
+
+.header .container-fluid .active-button {
   background-color: var(--accent-color);
   color: black;
 }
+
 .tab-form .tab-header > .active-button {
   background-color: #fff;
 }
-.tab-form .register-with{
+
+.tab-form .register-with {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1792,31 +1921,35 @@ section,
   padding: 5px 0px;
   cursor: pointer;
 }
-.tab-form .register-with img{
+
+.tab-form .register-with img {
   height: 30px;
   margin-right: 10px;
 }
-.or{
+
+.or {
   text-align: center;
   color: #919191;
 }
-.tab-content{
+
+.tab-content {
   padding: 0px 20px 10px 20px;
 }
 
-.tab-content .login .button button{
+.tab-content .login .button button {
   background-color: var(--accent-color);
   color: #fff;
-  margin-top: 10px; 
-   border-radius: 50px;
+  margin-top: 10px;
+  border-radius: 50px;
   font-family: sans-serif;
   font-size: 15px;
   padding: 10px 25px;
 }
-.tab-content .login .form-group label{
+
+.tab-content .login .form-group label {
   padding: 5px 0px;
   color: #919191;
-} 
+}
 
 .form-group {
   margin-bottom: 15px;
@@ -1834,9 +1967,11 @@ section,
 .form-check {
   margin-bottom: 10px;
 }
-.form-check-label{
+
+.form-check-label {
   padding-bottom: 20px;
 }
+
 .form-check-label a {
   color: #007bff;
   text-decoration: none;
@@ -1845,11 +1980,11 @@ section,
 .form-check-label a:hover {
   text-decoration: underline;
 }
+
 .form-check-input[type=checkbox] {
   border-radius: .25em;
   margin-top: 10px;
 }
-
 
 @media (min-width: 360px) and (max-width: 767px) {
   .tab-form {
@@ -1863,10 +1998,10 @@ section,
   }
 }
 
-
-
- /* drop down profile  */
- .user-profile {
+/*--------------------------------------------------------------
+# User Profile Dropdown Styles
+--------------------------------------------------------------*/
+.user-profile {
   position: relative;
   display: inline-block;
 }
@@ -1875,6 +2010,12 @@ section,
   width: 40px;
   height: 40px;
   border-radius: 50%;
+  background-color: var(--accent-color);
+  color: var(--contrast-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
   cursor: pointer;
   margin-left: 0px;
 }
@@ -1883,12 +2024,16 @@ section,
   display: none;
   position: absolute;
   top: 55px;
-  right: 30px;
-  background-color: white;
+  right: 0;
+  background-color: #fff;
   min-width: 250px;
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  z-index: 1;
+  z-index: 1000;
   border-radius: 15px;
+}
+
+.profile-dropdown.show {
+  display: block;
 }
 
 .profile-dropdown a {
@@ -1901,20 +2046,48 @@ section,
 .profile-dropdown a:hover {
   background-color: #f1f1f1;
 }
-.header .btn-dropdrown,
-.header .btn-dropdrown:focus
-{
-  background-color: white;
-  background: var(--contrast-color);
+
+.header .btn-dropdown,
+.header .btn-dropdown:focus {
+  background-color: var(--contrast-color);
 }
-.profile-dropdown .credits{
+
+.profile-dropdown .credits {
   padding-bottom: 0%;
   font-weight: bold;
   font-size: 25px;
   color: darkgoldenrod;
 }
-.profile-dropdown .credits span{
+
+.profile-dropdown .credits span {
   font-size: 15px;
+  color: #007bff;
+}
+
+/* Additional Styles for User Profile */
+.profile-dropdown a#user-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.profile-dropdown a#logout-btn {
+  font-weight: normal;
+  font-size: 16px;
+  color: var(--nav-color);
+}
+
+.profile-dropdown a#logout-btn:hover {
+  color: var(--nav-hover-color);
+}
+
+.profile-dropdown a.credits#user-credits {
+  font-weight: bold;
+  font-size: 16px;
+  color: darkgoldenrod;
+}
+
+.profile-dropdown a.credits#user-credits span {
+  font-size: 14px;
   color: #007bff;
 }
 
@@ -1922,3 +2095,62 @@ section,
 # Check out page styles
 --------------------------------------------------------------*/
 
+/* Add any checkout page styles here if needed */
+/* Toast Styles */
+.toast {
+  background-color: var(--accent-color, #0d6efd);
+  color: var(--background-color, #fff);
+  font-family: var(--default-font, Arial, sans-serif);
+  font-size: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Semi-transparent border */
+  border-radius: 8px;
+  box-shadow: 0px 0 12px rgba(0, 0, 0, 0.1);
+  width: 400px;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: -500px; /* Start off-screen */
+  transition: right 0.5s ease-out;
+  z-index: 1055; /* Ensure it's above other elements */
+}
+
+.toast-container.show {
+  right: 20px; /* Slide into view */
+}
+
+.toast.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+}
+
+.toast .toast-body {
+  font-size: 16px;
+}
+
+.toast .btn-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0.7;
+}
+
+.toast .btn-close:hover {
+  opacity: 1;
+}
+
+@media (max-width: 576px) {
+  .toast {
+    width: 90%;
+  }
+  .toast-container {
+    right: -100%;
+  }
+  .toast-container.show {
+    right: 5%;
+  }
+}

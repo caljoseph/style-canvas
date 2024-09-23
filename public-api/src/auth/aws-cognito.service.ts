@@ -91,8 +91,11 @@ export class AwsCognitoService {
         }
     }
 
-    async authenticateUser(authLoginUserDto: AuthLoginUserDto): Promise<{ accessToken: string }> {
+    async authenticateUser(authLoginUserDto: AuthLoginUserDto): Promise<{ accessToken: string, refreshToken: string }> {
         const { email, password } = authLoginUserDto;
+        const secretHash = this.computeSecretHash(email);
+        this.logger.debug(`Computed SecretHash: ${secretHash}`);
+
 
         const params = {
             AuthFlow: 'USER_PASSWORD_AUTH',
@@ -113,39 +116,52 @@ export class AwsCognitoService {
             // Store the refresh token
             await this.userRepository.updateRefreshToken(cognitoId, refreshToken);
 
-            return { accessToken }
+            return { accessToken, refreshToken }
         } catch (error) {
             this.logger.error(`Authentication failed for user: ${email}`, error.stack);
             throw new UnauthorizedException('Authentication failed');
         }
     }
 
-    async refreshToken(cognitoId: string): Promise<{ accessToken: string }> {
-        const user = await this.userRepository.getOne(cognitoId);
-        if (!user || !user.refreshToken) {
-            throw new UnauthorizedException('Invalid refresh token');
+    async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+        const tokenEndpoint = 'https://style-canvas.auth.us-east-1.amazoncognito.com/oauth2/token';
+
+        const params = new URLSearchParams({
+            grant_type: 'refresh_token',
+            client_id: this.clientId,
+            refresh_token: refreshToken
+        });
+
+        if (this.clientSecret) {
+            params.append('client_secret', this.clientSecret);
         }
 
-        const params = {
-            AuthFlow: 'REFRESH_TOKEN_AUTH',
-            ClientId: this.clientId,
-            AuthParameters: {
-                REFRESH_TOKEN: user.refreshToken,
-                SECRET_HASH: this.computeSecretHash(user.cognitoId) // For some reason on the refresh flow we don't use the email but uuid
-            }
-        };
-
         try {
-            const authResult = await this.cognitoServiceProvider.initiateAuth(params).promise();
-            const newAccessToken = authResult.AuthenticationResult.AccessToken;
+            const response = await fetch(tokenEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: params
+            });
 
-            return { accessToken: newAccessToken };
+            if (!response.ok) {
+                const errorBody = await response.text();
+                this.logger.error(`Token refresh failed. Status: ${response.status}, Body: ${errorBody}`);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            this.logger.debug(`Token refresh successful`);
+
+            return {
+                accessToken: data.access_token,
+            };
         } catch (error) {
-            this.logger.error(`Failed to refresh token for user: ${cognitoId}`, error.stack);
+            this.logger.error(`Failed to refresh token: ${error.message}`);
             throw new UnauthorizedException('Failed to refresh token');
         }
     }
-
     private extractCognitoIdFromAccessToken(accessToken: string): string {
         const payload = accessToken.split('.')[1];
         const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'));

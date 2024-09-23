@@ -28,94 +28,143 @@
 </head>
 
 <body class="index-page">
-    <header id="header" class="header d-flex align-items-center sticky-top">
-        <div class="container-fluid container-xl position-relative d-flex align-items-center">
+<header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+        <a href="index.html" class="logo d-flex align-items-center me-auto">
+            <img src="assets/img/main-logo.png" alt="">
+        </a>
+        <nav id="navmenu" class="navmenu">
+            <ul>
+                <li><a href="./index.html">Home</a></li>
+                <li><a href="./cases.html">Use Cases</a></li>
+                <li><a href="./work.html">How It Works</a></li>
+                <li><a href="./models.html">AI Models</a></li>
+                <li><a href="./pricing.html">Pricing</a></li>
+                <li><a href="./about.html">About</a></li>
+                <li><a href="./contact.html">Contact</a></li>
+            </ul>
+            <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
 
-            <a href="index.html" class="logo d-flex align-items-center me-auto">
-                <!-- Uncomment the line below if you also wish to use an image logo -->
-                <img src="assets\img\main-logo.png" alt="">
+        <!-- "Get Started" button -->
+        <a class="btn-getstarted" href="./registration.html" id="get-started-btn">Get Started</a>
 
-            </a>
-
-            <nav id="navmenu" class="navmenu">
-                <ul>
-                    <li><a href="./index.html">Home<br></a></li>
-                    <li><a href="./cases.html">Use Cases</a></li>
-                    <li><a href="./work.html">How Its Work </a></li>
-                    <li><a href="./models.html">AI Models</a></li>
-                    <li><a href="./pricing.html" class="active">Pricing</a></li>
-                    <li><a href="./about.html">About</a></li>
-                    <li><a href="./contact.html">Contact</a></li>
-                </ul>
-                <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-            </nav>
-
-            <a class="btn-getstarted" href="./registration.html">Get Started</a>
-
-
+        <!-- User Profile -->
+        <div class="user-profile btn-getstarted btn-dropdown" id="user-profile" style="display: none;">
+            <div class="profile-pic" id="profile-pic">U</div>
+            <div id="profile-dropdown" class="profile-dropdown">
+                <a href="#" id="user-name">User Name</a>
+                <a href="./pricing.html" class="credits" id="user-credits">0 Credits <br> <span>Buy Credits or Manage Subscription</span></a>
+                <a href="#" id="logout-btn">Logout</a>
+            </div>
         </div>
-    </header>
+    </div>
+</header>
 
 
-    <main class="main">
-        <!-- Pricing Section -->
-        <section id="pricing" class="pricing section" style="margin-top: 0%;">
 
-            <!-- Section Title -->
-            <div class="container section-title" data-aos="fade-up">
-                <h2>Pricing</h2>
-                <p>Choose the package that suits you best:</p>
-            </div><!-- End Section Title -->
+<main class="main">
+    <!-- Pricing Section -->
+    <section id="pricing" class="pricing section" style="margin-top: 0%;">
 
-            <div class="container">
+        <!-- Section Title -->
+        <div class="container section-title" data-aos="fade-up">
+            <h2>Pricing</h2>
+            <p>Choose the package that suits you best:</p>
+        </div><!-- End Section Title -->
 
-                <div class="row gy-4">
-                    <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
-                        <div class="pricing-item featured">
-                            <h3>Standard Plan</h3>
-                            <h4><span>70 credits per month</span>$20/month ($0.29 per credit)</h4>
-                            <a href="./checkout.html" class="buy-btn" data-package="Standard Plan" data-price="20"
-                                style="margin-top: 20px; margin-left: 70px;">Buy Now</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
-                        <div class="pricing-item featured">
-                            <h3>Pro Plan</h3>
-                            <h4><span>150 credits per month</span>$35/month ($0.23 per credit)</h4>
-                            <a href="./checkout.html" class="buy-btn" data-package="Pro Plan" data-price="35"
-                                style="margin-top: 20px; margin-left: 70px;">Buy Now</a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
-                        <div class="pricing-item featured">
-                            <h3>Premium Plan</h3>
-                            <h4><span>200 credits per month</span>$50/month ($0.25 per credit)</h4>
-                            <a href="./checkout.html" class="buy-btn" data-package="Premium Plan" data-price="50"
-                                style="margin-top: 20px; margin-left: 70px;">Buy Now</a>
-                        </div>
+        <div class="container">
+
+            <div class="row gy-4">
+                <!-- Standard Plan -->
+                <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="pricing-item featured">
+                        <h3>Standard Plan</h3>
+                        <h4><span>70 credits per month</span>$20/month ($0.29 per credit)</h4>
+                        <a href="#" class="buy-btn"
+                           data-package="Standard Plan"
+                           data-price="20"
+                           data-lookup-key="standard_monthly"
+                           data-type="subscription">Buy Now</a>
+                        <span class="badge current-badge">Your Plan</span>
                     </div>
                 </div>
-                <!-- End Pricing Item -->
-                <!-- <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200" style="margin-left: 220px;">
-                        <div class="pricing-item featured">
-                            <h3>Premium Plan</h3>
-                            <h4><span> 200 credits per month for</span>$50</h4>
-
-                            <a href="#" class="buy-btn" style="margin-top: 20px; margin-left: 70px;">Buy Now</a>
-                        </div>
+                <!-- Pro Plan -->
+                <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="pricing-item featured">
+                        <h3>Pro Plan</h3>
+                        <h4><span>150 credits per month</span>$35/month ($0.23 per credit)</h4>
+                        <a href="#" class="buy-btn"
+                           data-package="Pro Plan"
+                           data-price="35"
+                           data-lookup-key="pro_monthly"
+                           data-type="subscription">Buy Now</a>
+                        <span class="badge upgrade-badge">Upgrade</span>
                     </div>
-                    <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
-                        <div class="pricing-item featured">
-                            <h3>Standard Package</h3>
-                            <h4><span> 300 Credit for</span>$149.99</h4>
+                </div>
+                <!-- Premium Plan -->
+                <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="pricing-item featured">
+                        <h3>Premium Plan</h3>
+                        <h4><span>200 credits per month</span>$50/month ($0.25 per credit)</h4>
+                        <a href="#" class="buy-btn"
+                           data-package="Premium Plan"
+                           data-price="50"
+                           data-lookup-key="premium_monthly"
+                           data-type="subscription">Buy Now</a>
+                        <span class="badge upgrade-badge">Upgrade</span>
+                    </div>
+                </div>
 
-                            <a href="#" class="buy-btn" style="margin-top: 20px; margin-left: 70px;">Buy Now</a>
-                        </div>
-                    </div> -->
+                <!-- Pay-As-You-Go (Single Credit) -->
+                <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="pricing-item featured">
+                        <h3>Pay-As-You-Go (Single Credit)</h3>
+                        <h4><span>1 credit</span>$1.99 USD per credit</h4>
+                        <a href="#" class="buy-btn"
+                           data-package="Pay-As-You-Go (Single Credit)"
+                           data-price="1.99"
+                           data-lookup-key="single_token"
+                           data-type="one_time">Buy Now</a>
+                    </div>
+                </div>
+                <!-- Pay-As-You-Go (10 Credits) -->
+                <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="pricing-item featured">
+                        <h3>Pay-As-You-Go (10 Credits)</h3>
+                        <h4><span>10 credits</span>$14.99 USD ($1.49 per credit)</h4>
+                        <a href="#" class="buy-btn"
+                           data-package="Pay-As-You-Go (10 Credits)"
+                           data-price="14.99"
+                           data-lookup-key="ten_tokens"
+                           data-type="one_time">Buy Now</a>
+                    </div>
+                </div>
+            </div><!-- End Pricing Row -->
 
-    </main>
+        </div><!-- End Container -->
+    </section><!-- End Pricing Section -->
 
-
+    <!-- Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog custom-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                    <button type="button" class="btn-close custom-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- The message will be set dynamically -->
+                    <p id="confirmationMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary custom-btn" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary custom-btn" id="confirmActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
     <footer id="footer" class="footer">
 
         <div class="container">
@@ -153,15 +202,67 @@
     <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
 
     <!-- Main JS File -->
+    <script src="assets/js/config.js"></script>
     <script src="assets/js/main.js"></script>
     <script>
-        document.querySelectorAll('.buy-btn').forEach(button => {
-            button.addEventListener('click', function (event) {
-                const packageName = this.getAttribute('data-package');
-                const packagePrice = this.getAttribute('data-price');
-                localStorage.setItem('selectedPackage', JSON.stringify({ name: packageName, price: packagePrice }));
-            });
-        });</script>
+        /**
+         * Handle "Buy Now" Button Clicks for Stripe Checkout
+         */
+        // document.querySelectorAll('.buy-btn').forEach(button => {
+        //     button.addEventListener('click', async function(event) {
+        //         event.preventDefault(); // Prevent default action
+        //
+        //         const packageName = this.getAttribute('data-package');
+        //         const packagePrice = this.getAttribute('data-price');
+        //         const lookupKey = this.getAttribute('data-lookup-key');
+        //         const packageType = this.getAttribute('data-type');
+        //
+        //         // Determine the API endpoint based on the package type
+        //         const endpoint = packageType === 'subscription'
+        //             ? 'http://localhost:3000/payments/create-subscription-checkout-session'
+        //             : 'http://localhost:3000/payments/create-one-time-checkout-session';
+        //
+        //         const requestBody = {
+        //             lookup_key: lookupKey
+        //         };
+        //
+        //         // Make authenticated API call using authFetch
+        //         try {
+        //             const response = await authFetch(endpoint, {
+        //                 method: 'POST',
+        //                 headers: {
+        //                     'Content-Type': 'application/json',
+        //                 },
+        //                 body: JSON.stringify(requestBody)
+        //             });
+        //
+        //             if (!response) {
+        //                 // authFetch handles redirection on authentication failure
+        //                 return;
+        //             }
+        //
+        //             if (!response.ok) {
+        //                 if (response.status === 400) {
+        //                     const data = await response.json();
+        //                     alert(data.message || 'Failed to create checkout session.');
+        //                 } else {
+        //                     throw new Error('Failed to create checkout session');
+        //                 }
+        //                 return;
+        //             }
+        //
+        //             const data = await response.json();
+        //             const sessionUrl = data.sessionUrl;
+        //
+        //             // Redirect to Stripe Checkout
+        //             window.location.href = sessionUrl;
+        //         } catch (error) {
+        //             console.error('Error:', error);
+        //             alert('An error occurred while creating the checkout session.');
+        //         }
+        //     });
+        // });
+    </script>
 </body>
 
 </html>
