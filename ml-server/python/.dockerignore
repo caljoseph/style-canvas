@@ -1,0 +1,88 @@
+# ===============================
+# Exclude Specific Weight Files
+# ===============================
+
+# Landmark predictor files
+shape_predictor_68_face_landmarks.dat
+shape_predictor_68_face_landmarks.dat.bz2
+
+# ===============================
+# Exclude Checkpoints Directory
+# ===============================
+
+# Exclude all contents in the checkpoints directory
+#checkpoints/*
+
+# Include only specific model weight files
+#!checkpoints/OilPainting_DiffI2I/DiffI2I_S2/diffi2i_s2_Model_*.pth.tar
+
+# ===============================
+# Exclude Other Model Weight Files and Directories
+# ===============================
+
+# Exclude specific model weight files
+Face-ParsingModels/Gen_Pix2PixHd_Models_5.pth.tar
+models/vgg19-dcbb9e9d.pth
+
+# Exclude entire directories containing other model weights
+ModelWeights/
+Resize_Model_Weights/
+
+# ===============================
+# Exclude Test Images Directories
+# ===============================
+
+Test_Images_3/
+Test_Image_WrongSizes/
+TestImages/
+
+# ===============================
+# Exclude Output Images Directories
+# ===============================
+
+Results/
+Temp/
+
+# ===============================
+# Exclude Other Unnecessary Directories
+# ===============================
+
+app/
+
+# ===============================
+# Exclude Python Cache and Temporary Files
+# ===============================
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+
+# ===============================
+# Exclude Version Control and Documentation
+# ===============================
+
+.git
+.gitignore
+README.md
+LICENSE
+Dockerfile
+
+# ===============================
+# Exclude System-Specific Files
+# ===============================
+
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Exclude Compressed and Archive Files
+# ===============================
+
+*.zip
+*.tar
+*.gz
+*.7z
+*.bz2

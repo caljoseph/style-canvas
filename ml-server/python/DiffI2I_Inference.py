@@ -14,7 +14,7 @@ class DiffI2IManager:
         self.setting_file_path = r"./checkpoints/OilPainting_DiffI2I/settings.txt"
         self.Diffi2i_S2 = None  # This will store the model after initialization
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         # Update paths and initialize the Diffi2i_S2 model
         self.update_global_paths_with_folder(parameters.Checkpoint_Name)
         self.initialize_model()
@@ -29,7 +29,7 @@ class DiffI2IManager:
         for path in paths:
             if not os.path.exists(path):
                 os.makedirs(path)
-    
+
     def manage_settings(self):
         default_settings = {
             "LEARNING_RATE": 1e-4,
@@ -65,25 +65,28 @@ class DiffI2IManager:
             with open(self.setting_file_path, 'w') as file:
                 for key, value in settings.items():
                     file.write(f"{key} = {value}\n")
-                    
+
         return settings
 
     def initialize_model(self):
         settings = self.manage_settings()
         saved_count = settings["saved_count"]
         loadpoint_diffI2I_S2 = self.CHECKPOINT_DIFFI2I_S2 + str(saved_count) + ".pth.tar"
+        print(f"Loading checkpoint: {loadpoint_diffI2I_S2}")
         self.Diffi2i_S2 = self.Get_Diffi2i_S2(loadpoint_diffI2I_S2)
+        print("Model loaded and ready for inference.")
+
 
     def Get_Diffi2i_S2(self, loadpoint_diffI2I):
-        diffi2i = DiffI2I_S2(self.parameters.n_feats, 
-                             self.parameters.n_encoder_res, 
-                             self.parameters.dim, 
-                             self.parameters.timesteps, 
-                             self.parameters.n_denoise_res,  
-                             self.parameters.img_height, 
-                             self.parameters.img_width, 
-                             self.parameters.beta_schedule, 
-                             self.parameters.bias, 
+        diffi2i = DiffI2I_S2(self.parameters.n_feats,
+                             self.parameters.n_encoder_res,
+                             self.parameters.dim,
+                             self.parameters.timesteps,
+                             self.parameters.n_denoise_res,
+                             self.parameters.img_height,
+                             self.parameters.img_width,
+                             self.parameters.beta_schedule,
+                             self.parameters.bias,
                              self.parameters.LayerNorm_type)
         diffi2i = diffi2i.to(self.device)  # Move model to the same device as input (GPU or CPU)
         diffi2i = rcpf.setup_gpus_for_training(diffi2i)
