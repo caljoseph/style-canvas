@@ -13,4 +13,25 @@ public-api/.env
 # IntelliJ IDEA
 .idea/
 
+# ssh key
 /style-canvas-public.pem
+
+# Weights
+/shape_predictor_68_face_landmarks.dat
+/shape_predictor_68_face_landmarks.dat.bz2
+/ml-server/python/checkpoints/
+/ml-server/python/Face-ParsingModels/Gen_Pix2PixHd_Models_5.pth.tar
+/ml-server/python/ModelWeights
+/ml-server/python/Resize_Model_Weights
+/ml-server/python/models/vgg19-dcbb9e9d.pth
+/ml-server/python/shape_predictor_68_face_landmarks.dat
+/ml-server/python/shape_predictor_68_face_landmarks.dat.bz2
+
+# Test Images
+/ml-server/python/Test_Images_3
+/ml-server/python/Test_Image_WrongSizes
+/ml-server/python/TestImages
+
+# Output Images
+/ml-server/python/Results
+/ml-server/python/Temp

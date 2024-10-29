@@ -1,0 +1,357 @@
+.
+├── .DS_Store
+├── .G
+├── .dockerignore
+├── .vs
+│   ├── Pix2PixHDTesters
+│   │   ├── FileContentIndex
+│   │   └── v17
+│   ├── VSWorkspaceState.json
+│   └── slnx.sqlite
+├── AdobeFilterModelLib.py
+├── ArtFunctions.py
+├── BetaSchedule.py
+├── Broken_Glass.jpg
+├── Broken_Glass.png
+├── Broken_Glass_1.jpg
+├── Broken_Glass_Assets
+│   ├── Broken_Glass_2.jpg
+│   ├── Broken_Glass_Mask_1.png
+│   └── background.png
+├── Broken_Glass_Mask.jpg
+├── Broken_Glass_Mask.png
+├── Broken_Glass_with_Background.png
+├── ChalkboardFilterLib.py
+├── Colab_Environment.txt
+├── DiffI2I_Inference.py
+├── DiffI2I_S2.py
+├── Diff_I2I_lib.py
+├── Dockerfile
+├── Face-ParsingModels
+│   └── Gen_Pix2PixHd_Models_5.pth.tar
+├── Face2Paint.py
+├── FaceDetectorLib.py
+├── Face_Art.py
+├── Face_Parsing_Model.py
+├── FacelessArtStyle.py
+├── FilmGrainTester.py
+├── FlatFaceOption.py
+├── ImageSaver.py
+├── InferenceImageProcessor.py
+├── MakeEyeDataset.py
+├── ModelWeights
+│   ├── Gen_Adobe_Filter_Models_1.pth.tar
+│   └── Gen_Chalk_Photo_Effect_128.pth.tar
+├── Pix2Pix.py
+├── Pix2PixHDUtilities.py
+├── PrepareEnvForDocker.py
+├── RITnet
+│   ├── .DS_Store
+│   ├── .git
+│   │   ├── HEAD
+│   │   ├── config
+│   │   ├── description
+│   │   ├── hooks
+│   │   ├── index
+│   │   ├── info
+│   │   ├── logs
+│   │   ├── objects
+│   │   ├── packed-refs
+│   │   └── refs
+│   ├── .gitignore
+│   ├── License.md
+│   ├── README.md
+│   ├── RITnet.egg-info
+│   │   ├── PKG-INFO
+│   │   ├── SOURCES.txt
+│   │   ├── dependency_links.txt
+│   │   ├── requires.txt
+│   │   └── top_level.txt
+│   ├── Starburst generation from train image 000000240768.pdf
+│   ├── __init__.py
+│   ├── __pycache__
+│   ├── best_model.pkl
+│   ├── dataset.py
+│   ├── densenet.py
+│   ├── environment.yml
+│   ├── models.py
+│   ├── opt.py
+│   ├── requirements.txt
+│   ├── semantic_segmentation_dataset
+│   │   ├── test
+│   │   └── train
+│   ├── setup.py
+│   ├── starburst_black.png
+│   ├── test
+│   │   ├── labels
+│   │   ├── mask
+│   │   └── output
+│   ├── test.py
+│   ├── train.py
+│   └── utils.py
+├── Results
+│   ├── .DS_Store
+│   ├── BlueShadeFace
+│   │   └── 1.png
+│   ├── Chalkboard
+│   │   ├── 1.png
+│   │   └── 6.png
+│   ├── HarmonyHue
+│   │   ├── 1.png
+│   │   ├── 6.png
+│   │   ├── 701.png
+│   │   ├── 703.png
+│   │   ├── redd-owen.png
+│   │   ├── tanner-edwards.png
+│   │   ├── tj-wells.png
+│   │   └── wally-thayne.png
+│   ├── OilPainting_OP3
+│   │   └── 1.png
+│   ├── OilPainting_SC3
+│   ├── face2paint_V3
+│   │   ├── 1.png
+│   │   ├── 6.png
+│   │   ├── 701.png
+│   │   ├── payton-plumb.png
+│   │   ├── redd-owen.png
+│   │   ├── tanner-edwards.png
+│   │   ├── tj-wells.png
+│   │   └── wally-thayne.png
+│   ├── face2paint_v2
+│   │   ├── 1.png
+│   │   ├── 6.png
+│   │   ├── 701.png
+│   │   ├── 703.png
+│   │   ├── Abe_Hinrichsen.png
+│   │   ├── Abraham_Wojcikiewicz.png
+│   │   ├── Adam_Cherne.png
+│   │   ├── AdobeStock_387576989.png
+│   │   ├── redd-owen.png
+│   │   ├── tanner-edwards.png
+│   │   ├── tj-wells.png
+│   │   └── wally-thayne.png
+│   └── pencil_blur
+│       ├── 1.png
+│       ├── 6.png
+│       ├── 701.png
+│       ├── 703.png
+│       ├── Abe_Hinrichsen.png
+│       ├── Abraham_Wojcikiewicz.png
+│       ├── Adam_Cherne.png
+│       ├── AdobeStock_387576989.png
+│       ├── Alex_Yost.png
+│       ├── Ammon_Hannemann.png
+│       ├── Andreala__Jared.png
+│       ├── Andres_Dupont.png
+│       ├── Andrew_Bertha.png
+│       ├── tanner-edwards.png
+│       ├── tj-wells.png
+│       └── wally-thayne.png
+├── S2ModelConfigurations.py
+├── S2_Parameters.py
+├── SliceStylerlib.py
+├── StyleCanvasAI.py
+├── Temp
+│   ├── 1.jpg
+│   ├── 131.jpg
+│   ├── 19881.jpg
+│   ├── Marian_Blaha_6.jpg
+│   ├── bigggwild_1.jpg
+│   ├── elderGuy.jpg
+│   ├── image_117_image.jpg
+│   ├── image_118_image.jpg
+│   └── image_95_image.jpg
+├── TensorMathTools.py
+├── Test.py
+├── TestImages
+│   ├── 1.jpg
+│   ├── 6.jpg
+│   ├── 701.jpg
+│   ├── 703.jpg
+│   ├── Abe_Hinrichsen.jpg
+│   ├── Abraham_Wojcikiewicz.jpg
+│   ├── Adam_Cherne.jpg
+│   ├── AdobeStock_387576989.jpg
+│   ├── Alex_Yost.jpg
+│   ├── Ammon_Hannemann.jpg
+│   ├── redd-owen.jpg
+│   ├── tanner-edwards.jpg
+│   ├── tj-wells.jpg
+│   └── wally-thayne.jpg
+├── Test_Functions.py
+├── Test_Image_WrongSizes
+├── Test_StyleCanvasAI.py
+├── __pycache__
+│   ├── AdobeFilterModelLib.cpython-312.pyc
+│   ├── AdobeFilterModelLib.cpython-39.pyc
+│   ├── BetaSchedule.cpython-312.pyc
+│   ├── BetaSchedule.cpython-39.pyc
+│   ├── ChalkboardFilterLib.cpython-312.pyc
+│   ├── ChalkboardFilterLib.cpython-39.pyc
+│   ├── DiffI2I_Inference.cpython-312.pyc
+│   ├── DiffI2I_Inference.cpython-39.pyc
+│   ├── DiffI2I_S2.cpython-312.pyc
+│   ├── DiffI2I_S2.cpython-39.pyc
+│   ├── Diff_I2I_lib.cpython-312.pyc
+│   ├── Diff_I2I_lib.cpython-39.pyc
+│   ├── Face2Paint.cpython-312.pyc
+│   ├── Face2Paint.cpython-39.pyc
+│   ├── FaceDetectorLib.cpython-312.pyc
+│   ├── FaceDetectorLib.cpython-39.pyc
+│   ├── Face_Art.cpython-312.pyc
+│   ├── Face_Art.cpython-38.pyc.2352619255248
+│   ├── Face_Art.cpython-39.pyc
+│   ├── Face_Parsing_Model.cpython-312.pyc
+│   ├── Face_Parsing_Model.cpython-39.pyc
+│   ├── Face_Parsing_Model_2.cpython-310.pyc
+│   ├── FlatFaceOption.cpython-312.pyc
+│   ├── FlatFaceOption.cpython-39.pyc
+│   ├── ImageSaver.cpython-312.pyc
+│   ├── ImageSaver.cpython-39.pyc
+│   ├── InferenceImageProcessor.cpython-312.pyc
+│   ├── InferenceImageProcessor.cpython-39.pyc
+│   ├── LoadTestData.cpython-310.pyc
+│   ├── LoadTestData.cpython-312.pyc
+│   ├── LoadTestData.cpython-38.pyc
+│   ├── OilPainting.cpython-39.pyc
+│   ├── Pix2Pix.cpython-312.pyc
+│   ├── Pix2Pix.cpython-39.pyc
+│   ├── Pix2PixHDUtilities.cpython-312.pyc
+│   ├── Pix2PixHDUtilities.cpython-39.pyc
+│   ├── Red_Mist.cpython-312.pyc
+│   ├── S2ModelConfigurations.cpython-312.pyc
+│   ├── S2ModelConfigurations.cpython-39.pyc
+│   ├── S2_Parameters.cpython-312.pyc
+│   ├── S2_Parameters.cpython-39.pyc
+│   ├── TensorMathTools.cpython-312.pyc
+│   ├── TensorMathTools.cpython-39.pyc
+│   ├── TestLine.cpython-38.pyc
+│   ├── WebPageImageSaver.cpython-310.pyc
+│   ├── WebPageImageSaver.cpython-312.pyc
+│   ├── WebPageImageSaver.cpython-38.pyc
+│   ├── common.cpython-312.pyc
+│   ├── common.cpython-39.pyc
+│   ├── ddpm.cpython-312.pyc
+│   ├── ddpm.cpython-39.pyc
+│   ├── draw_contour.cpython-312.pyc
+│   ├── draw_contour.cpython-39.pyc
+│   ├── face_segment_indices.cpython-312.pyc
+│   ├── face_segment_indices.cpython-39.pyc
+│   ├── networks.cpython-312.pyc
+│   ├── networks.cpython-39.pyc
+│   ├── reuseablecustompythonfunctions.cpython-312.pyc
+│   └── reuseablecustompythonfunctions.cpython-39.pyc
+├── app
+├── app.py
+├── base_model.py
+├── checkpoints
+│   ├── .DS_Store
+│   ├── Chalk_Photo
+│   │   └── 5_net_G.pth
+│   ├── FacePainting
+│   │   └── Gen_Original_Face2Paint_Models_2.pth.tar
+│   ├── Face_Parsing_Test_2
+│   │   ├── .DS_Store
+│   │   ├── DiffI2I_S2
+│   │   ├── parameters.txt
+│   │   └── settings.txt
+│   ├── HellFire
+│   │   └── 16_net_G.pth
+│   ├── Impasto
+│   │   └── 22_net_G.pth
+│   ├── Impasto_l1
+│   │   └── 26_net_G.pth
+│   ├── OilPainting_3
+│   │   ├── DiffI2I_S1
+│   │   ├── DiffI2I_S2
+│   │   ├── Evolution
+│   │   ├── OilPainting_3_Parameters.txt
+│   │   ├── Stage_1_Pretraining_logfile.csv
+│   │   ├── Stage_2_Pretraining_logfile.csv
+│   │   └── settings.txt
+│   ├── OilPainting_SC3
+│   │   ├── DiffI2I_S2
+│   │   ├── OilPainting_SC3_Parameters.txt
+│   │   └── settings.txt
+│   ├── T1_Pencil_Face
+│   │   ├── DiffI2I_S2
+│   │   ├── parameters.txt
+│   │   └── settings.txt
+│   └── VanGogh_OB
+│       └── latest_net_G.pth
+├── common.py
+├── ddpm.py
+├── directory_structure.txt
+├── draw_contour.py
+├── environment.yml
+├── face_segment_indices.py
+├── ldm
+│   ├── .DS_Store
+│   ├── __pycache__
+│   │   ├── util.cpython-312.pyc
+│   │   ├── util.cpython-39.pyc
+│   │   ├── util2.cpython-312.pyc
+│   │   └── util2.cpython-39.pyc
+│   ├── classifier.py
+│   ├── ddim.py
+│   ├── ddpm.py
+│   ├── lr_scheduler.py
+│   ├── util.py
+│   └── util2.py
+├── models
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── __init__.cpython-39.pyc
+│   │   ├── models.cpython-312.pyc
+│   │   └── models.cpython-39.pyc
+│   ├── base_model.py
+│   ├── models.py
+│   ├── networks.py
+│   ├── pix2pixHD_model.py
+│   ├── ui_model.py
+│   └── vgg19-dcbb9e9d.pth
+├── networks.py
+├── options
+│   ├── AdobefilterDefaultOptions.py
+│   ├── Make_Docker_file.py
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── AdobefilterDefaultOptions.cpython-312.pyc
+│   │   ├── AdobefilterDefaultOptions.cpython-39.pyc
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── __init__.cpython-39.pyc
+│   │   ├── base_options.cpython-312.pyc
+│   │   ├── base_options.cpython-39.pyc
+│   │   ├── enhanced_face_parsing.cpython-312.pyc
+│   │   ├── enhanced_face_parsing.cpython-39.pyc
+│   │   ├── face_parsing_options.cpython-312.pyc
+│   │   ├── face_parsing_options.cpython-39.pyc
+│   │   ├── test_options.cpython-312.pyc
+│   │   └── test_options.cpython-39.pyc
+│   ├── base_options.py
+│   ├── enhanced_face_parsing.py
+│   ├── face_parsing_options.py
+│   ├── test_options.py
+│   └── train_options.py
+├── pix2pixHD_model.py
+├── requirements.txt
+├── reuseablecustompythonfunctions.py
+├── sagemaker_test.py
+├── shape_predictor_68_face_landmarks.dat
+├── shape_predictor_68_face_landmarks.dat.bz2
+├── test5.py
+├── util
+│   ├── __init__.py
+│   ├── __pycache__
+│   │   ├── __init__.cpython-312.pyc
+│   │   ├── __init__.cpython-39.pyc
+│   │   ├── util.cpython-312.pyc
+│   │   └── util.cpython-39.pyc
+│   ├── html.py
+│   ├── image_pool.py
+│   ├── util.py
+│   └── visualizer.py
+└── yolov8n.pt
+
+64 directories, 1506 files

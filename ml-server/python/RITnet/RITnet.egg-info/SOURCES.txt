@@ -1,0 +1,8 @@
+License.md
+README.md
+setup.py
+RITnet.egg-info/PKG-INFO
+RITnet.egg-info/SOURCES.txt
+RITnet.egg-info/dependency_links.txt
+RITnet.egg-info/requires.txt
+RITnet.egg-info/top_level.txt

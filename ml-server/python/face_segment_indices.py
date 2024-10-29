@@ -1,0 +1,21 @@
+face_segment_indices = {
+    "background": 0,
+    "head_face": 1,
+    "l_brow": 2,
+    "r_brow": 3,
+    "l_eye": 4,
+    "r_eye": 5,
+    "eyeglasses": 6,
+    "l_ear": 7,
+    "r_ear": 8,
+    "ear_r": 9,
+    "nose": 10,
+    "mouth": 11,
+    "upper_lip": 12,
+    "lower_lip": 13,
+    "neck": 14,
+    "neck_l": 15,
+    "cloth": 16,
+    "hair": 17,
+    "hat": 18
+}

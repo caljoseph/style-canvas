@@ -1,0 +1,12 @@
+torchsummary
+tqdm
+matplotlib
+numpy
+torch 
+Pillow   
+cv2   
+argparse  
+pprint 
+torchvision
+os
+

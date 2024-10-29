@@ -1,0 +1,15 @@
+Metadata-Version: 2.1
+Name: RITnet
+Version: 0.1
+Summary: RITnet: A deep learning project for eye segmentation
+Home-page: https://github.com/AayushKrChaudhary/RITnet
+Author: Brandon Boone
+Author-email: bboone900@gmail.com
+License-File: License.md
+Requires-Dist: torch
+Requires-Dist: torchsummary
+Requires-Dist: tqdm
+Requires-Dist: matplotlib
+Requires-Dist: numpy
+Requires-Dist: scikit-learn
+Requires-Dist: opencv-python
