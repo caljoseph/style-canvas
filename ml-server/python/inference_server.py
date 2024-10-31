@@ -5,6 +5,7 @@ import pickle
 import torch
 from PIL import Image
 from torchvision import transforms as T
+from FaceImageProcessor import FaceImageProcessor
 from DiffI2I_Inference import DiffI2IManager
 from S2ModelConfigurations import S2ModelConfigurations
 import os
@@ -30,6 +31,13 @@ DEBUG_IMAGE_DIR = "/app/Server_Debug_Images"  # Directory to save debug images
 
 # Ensure debug directory exists
 os.makedirs(DEBUG_IMAGE_DIR, exist_ok=True)
+
+def Generate_Face_Parsing_image(img, parameters):
+    global manager
+    processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
+    processed_image = processor_images.process_image(img)
+    processed_image = manager.run_Diffi2i_S2(processed_image)
+    return processed_image
 
 def save_debug_image(tensor, filename):
     """Convert a tensor to a PIL image and save it for debugging."""
@@ -74,25 +82,22 @@ def load_model():
 async def infer_image(file: UploadFile = File(...)):
     logger.info("=== Starting new inference request ===")
     try:
-        # Load tensor from the uploaded file
-        logger.info("Reading uploaded file...")
-        buffer = await file.read()
-        logger.info(f"File size: {len(buffer)} bytes")
-
-        logger.info("Loading tensor from buffer...")
-        input_tensor = torch.load(io.BytesIO(buffer))
-        logger.info(f"Input tensor shape: {input_tensor.shape}")
-
-        # Save received input tensor as an image for debugging
-        logger.info("Saving debug input image...")
-        save_debug_image(input_tensor, "received_input.png")
+        # Read the uploaded file as an image
+        logger.info("Reading uploaded file as an image...")
+        image_bytes = await file.read()
+        logger.info(f"File size: {len(image_bytes)} bytes")
+        
+        # Open the image with PIL
+        img = Image.open(io.BytesIO(image_bytes))
+        logger.info(f"Image loaded with size: {img.size} and mode: {img.mode}")
 
         # Run inference
         logger.info("Starting inference...")
-        result_tensor = manager.run_Diffi2i_S2(input_tensor)
+       
+        result_tensor =  Generate_Face_Parsing_image(img,S2ModelConfigurations.FaceParsing_T2_Parameters)
         logger.info(f"Inference completed. Output tensor shape: {result_tensor.shape}")
 
-        # Save output tensor as an image for debugging
+        # Save the output tensor as an image for debugging
         logger.info("Saving debug output image...")
         save_debug_image(result_tensor, "output_result.png")
 
