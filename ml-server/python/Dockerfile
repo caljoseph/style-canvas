@@ -1,5 +1,5 @@
-# Use NVIDIA PyTorch image with CUDA and cuDNN preconfigured
-FROM nvcr.io/nvidia/pytorch:22.08-py3
+# Use NVIDIA base image with CUDA 11.8 and cuDNN 8
+FROM continuumio/miniconda3:latest
 
 # Set working directory
 WORKDIR /app
