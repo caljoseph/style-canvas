@@ -5,11 +5,14 @@ import pickle
 import torch
 from PIL import Image
 from torchvision import transforms as T
-from FaceImageProcessor import FaceImageProcessor
 from DiffI2I_Inference import DiffI2IManager
 from S2ModelConfigurations import S2ModelConfigurations
 import os
+from ImageSaver import ImageSaver
 import logging
+import asyncio
+import numpy as np
+import reuseablecustompythonfunctions as rcpf
 
 # Set up logging
 logging.basicConfig(
@@ -32,12 +35,6 @@ DEBUG_IMAGE_DIR = "/app/Server_Debug_Images"  # Directory to save debug images
 # Ensure debug directory exists
 os.makedirs(DEBUG_IMAGE_DIR, exist_ok=True)
 
-def Generate_Face_Parsing_image(img, parameters):
-    global manager
-    processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
-    processed_image = processor_images.process_image(img)
-    processed_image = manager.run_Diffi2i_S2(processed_image)
-    return processed_image
 
 def save_debug_image(tensor, filename):
     """Convert a tensor to a PIL image and save it for debugging."""
@@ -57,7 +54,7 @@ def save_debug_image(tensor, filename):
     except Exception as e:
         logger.error(f"Failed to save debug image {filename}: {e}")
 
-@app.on_event("startup")
+
 def load_model():
     global is_FaceParsing_T2_loaded, manager
     logger.info(f"Attempting to load model... is_FaceParsing_T2_loaded: {is_FaceParsing_T2_loaded}")
@@ -77,27 +74,32 @@ def load_model():
             logger.info("FaceParsing_T2 model loaded successfully.")
         except Exception as e:
             logger.error(f"Error loading FaceParsing_T2 model: {e}")
+    
+    asyncio.run(Run_Test())
 
 @app.post("/infer")
 async def infer_image(file: UploadFile = File(...)):
     logger.info("=== Starting new inference request ===")
     try:
-        # Read the uploaded file as an image
-        logger.info("Reading uploaded file as an image...")
-        image_bytes = await file.read()
-        logger.info(f"File size: {len(image_bytes)} bytes")
-        
-        # Open the image with PIL
-        img = Image.open(io.BytesIO(image_bytes))
-        logger.info(f"Image loaded with size: {img.size} and mode: {img.mode}")
+        # Load tensor from the uploaded file
+        logger.info("Reading uploaded file...")
+        buffer = await file.read()
+        logger.info(f"File size: {len(buffer)} bytes")
+
+        logger.info("Loading tensor from buffer...")
+        input_tensor = torch.load(io.BytesIO(buffer))
+        logger.info(f"Input tensor shape: {input_tensor.shape}")
+
+        # Save received input tensor as an image for debugging
+        logger.info("Saving debug input image...")
+        save_debug_image(input_tensor, "received_input.png")
 
         # Run inference
         logger.info("Starting inference...")
-       
-        result_tensor =  Generate_Face_Parsing_image(img,S2ModelConfigurations.FaceParsing_T2_Parameters)
+        result_tensor = manager.run_Diffi2i_S2(input_tensor)
         logger.info(f"Inference completed. Output tensor shape: {result_tensor.shape}")
 
-        # Save the output tensor as an image for debugging
+        # Save output tensor as an image for debugging
         logger.info("Saving debug output image...")
         save_debug_image(result_tensor, "output_result.png")
 
@@ -110,3 +112,72 @@ async def infer_image(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error during inference: {e}", exc_info=True)
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+def normalize_images(input_image):
+    # Convert images to numpy arrays
+    input_image_np = np.array(input_image)
+
+    # Normalize the image data to 0-1
+    input_image_np = input_image_np.astype('float32') / 255.0
+
+    # Convert numpy arrays back to PIL Images
+    input_image = Image.fromarray((input_image_np * 255).astype(np.uint8))
+
+    return input_image
+
+class ImageProcessor:
+    def __init__(self):
+        # Set up transformations to convert to a tensor
+        self.transforms = T.ToTensor()
+
+    def process_face_image_Non_AI_2(self, input_image):
+        print("Inside of process_face_image_Non_AI_2")
+        # Normalize the image
+        face_image = normalize_images(input_image)
+        
+        # Convert normalized image to tensor
+        face_tensor = self.transforms(face_image)  # Now face_tensor is a torch.Tensor
+        
+        # Add a batch dimension
+        face_tensor = face_tensor.unsqueeze(0)
+        
+        return face_tensor
+
+
+def Generate_Face_Parsing_image(img):
+    global manager
+    pi =  ImageProcessor()
+    processed_image = pi.process_face_image_Non_AI_2(img)
+    processed_image = manager.run_Diffi2i_S2(processed_image)
+    return processed_image
+
+
+
+def FaceParsing_T3(img):
+    global is_FaceParsing_T2_loaded, manager
+    if not is_FaceParsing_T2_loaded:
+        manager = None
+        manager = DiffI2IManager(S2ModelConfigurations.FaceParsing_T2_Parameters)
+        is_FaceParsing_T2_loaded = True
+    return Generate_Face_Parsing_image(img)
+
+
+
+def FaceParsing_T2(img):
+    face_parsing = FaceParsing_T3(img)
+    return  rcpf.tensor2im(face_parsing, normalize=False)
+
+@app.on_event("startup")
+def Run_Test():
+    destination_folder = r"./Results"
+    source_image = r'./Test_Images/IMG_7369.JPG'
+    image_saver = ImageSaver(destination_folder) 
+    img = Image.open(source_image)
+    print(" Image loaded ")
+    processed_image = FaceParsing_T2(img)
+    image_saver.save_image("IMG_7369.JPG", processed_image)
+
+
+
+

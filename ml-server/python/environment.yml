@@ -1,18 +1,17 @@
-name: Pix2PixTester
+name: StyleCanvasAI
 
 channels:
+  - pytorch
   - conda-forge
   - defaults
 
 dependencies:
-  - python=3.12
+  - python=3.9
   - matplotlib
   - numpy
   - opencv
   - pillow
   - scikit-image
-  - torchaudio
-  - torchvision
   - tqdm
   - natsort
   - ultralytics
@@ -21,8 +20,12 @@ dependencies:
   - fastapi
   - dlib
   - lmdb
+  - cudatoolkit=11.7
+  - cudnn=9.2.1.18
   - pip
-  - einops
+  - pytorch=2.0.1
+  - torchvision=0.15.2
+  - torchaudio=2.0.2
   - pip:
       - basicsr
       - realesrgan

@@ -95,9 +95,11 @@ class DiffI2IManager:
         return diffi2i
 
     def run_Diffi2i_S2(self, img):
+        print("inside of run_Diffi2i_S2")
         img = img.to(self.device)  # Move image tensor to the same device as the model (GPU or CPU)
         with torch.no_grad():  # Ensure no gradient tracking during inference
             y = self.Diffi2i_S2(img)  # Run the model on the input image
+            print("after running model ")
         if torch.cuda.is_available():  # Check if CUDA is available
             torch.cuda.synchronize()  # Ensure all CUDA operations are finished
             torch.cuda.empty_cache()  # Clear the CUDA cache to free up memory

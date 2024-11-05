@@ -2,11 +2,13 @@ import reuseablecustompythonfunctions as rcpf
 from FaceImageProcessor import FaceImageProcessor
 from DiffI2I_Inference import DiffI2IManager
 from S2ModelConfigurations import S2ModelConfigurations
+from InferenceImageProcessor import InferenceImageProcessor
 import io
 import requests
 from torchvision import transforms as T
 import pickle
 import torch
+import torchvision.transforms as T
 
 
 manager = None
@@ -20,7 +22,7 @@ is_verdant_flame_loaded = False
 
 def Generate_Face_image(img, parameters):
     global manager
-    processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
+    processor_images = InferenceImageProcessor(parameters.img_width, parameters.img_height)
     processed_image = processor_images.process_image(img)
     OilPainting = manager.run_Diffi2i_S2(processed_image)
     OilPainting = rcpf.tensor2im(OilPainting, normalize=False)
@@ -28,14 +30,14 @@ def Generate_Face_image(img, parameters):
 
 def Generate_Face_Parsing_image(img, parameters):
     global manager
-    processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
-    processed_image = processor_images.process_image(img)
+    processor_images = InferenceImageProcessor(parameters.img_width, parameters.img_height)
+    processed_image = processor_images.process_face_image_Non_AI_2(img)
     processed_image = manager.run_Diffi2i_S2(processed_image)
     return processed_image
 
 def Generate_Full_Body_image(img, parameters):
     global manager
-    processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
+    processor_images = InferenceImageProcessor(parameters.img_width, parameters.img_height)
     processed_image = processor_images.process_image(img)
     processed_image = manager.run_Diffi2i_S2(processed_image)
     processed_image = rcpf.tensor2im(processed_image, normalize=False)
@@ -86,13 +88,14 @@ def FaceParsing_T1(img):
         is_FaceParsing_T1_loaded = True
     return Generate_Face_Parsing_image(img, S2ModelConfigurations.FaceParsing_T1_Parameters)
 
-import io
-import requests
-import pickle
-from PIL import Image
-from FaceImageProcessor import FaceImageProcessor
-import torch
-import torchvision.transforms as T
+def FaceParsing_T3(img):
+    global is_FaceParsing_T2_loaded, manager
+    if not is_FaceParsing_T2_loaded:
+        manager = None
+        manager = DiffI2IManager(S2ModelConfigurations.FaceParsing_T2_Parameters)
+        is_FaceParsing_T2_loaded = True
+    return Generate_Face_Parsing_image(img, S2ModelConfigurations.FaceParsing_T2_Parameters)
+
 
 # Preprocessing Function
 def FaceParsing_T2(img):
@@ -145,6 +148,7 @@ def FaceParsing_T2(img):
         print(f"Unexpected error: {str(e)}")
         return None
 # Convert the returned tensor back to a PIL image
+
 def tensor_to_pil(tensor):
     mean = torch.tensor([0.5, 0.5, 0.5]).view(3, 1, 1)
     std = torch.tensor([0.5, 0.5, 0.5]).view(3, 1, 1)

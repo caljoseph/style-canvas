@@ -152,6 +152,7 @@ class InferenceImageProcessor:
         return face_tensor
 
     def process_face_image_Non_AI_2(self, input_image):
+        print("Inside of process_face_image_Non_AI_2")
         input_image = rcpf.rotate_image_based_on_exif(input_image) 
         resized_img = FCL.resize_image(input_image, self.img_width, self.img_height)
         face_image = normalize_images(resized_img)
