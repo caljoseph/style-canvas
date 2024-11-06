@@ -12,6 +12,7 @@ from ImageSaver import ImageSaver
 import logging
 import asyncio
 import numpy as np
+import traceback
 import reuseablecustompythonfunctions as rcpf
 
 # Set up logging
@@ -54,64 +55,44 @@ def save_debug_image(tensor, filename):
     except Exception as e:
         logger.error(f"Failed to save debug image {filename}: {e}")
 
-
+@app.on_event("startup")
 def load_model():
     global is_FaceParsing_T2_loaded, manager
     logger.info(f"Attempting to load model... is_FaceParsing_T2_loaded: {is_FaceParsing_T2_loaded}")
 
     if not is_FaceParsing_T2_loaded:
-        try:
-            # Initialize the model manager
-            manager = DiffI2IManager(S2ModelConfigurations.FaceParsing_T2_Parameters)
-            is_FaceParsing_T2_loaded = True
+        manager = None
+        manager = DiffI2IManager(S2ModelConfigurations.FaceParsing_T2_Parameters)
+        is_FaceParsing_T2_loaded = True
 
-            if manager.Diffi2i_S2 is not None:
-                logger.info("Model loaded into manager.Diffi2i_S2")
-                logger.info(f"Model device: {manager.device}")
-                logger.info(f"Loaded model parameters: {[param.shape for param in manager.Diffi2i_S2.parameters()]}")
-            else:
-                logger.error("Model was not loaded correctly; manager.Diffi2i_S2 is None.")
-            logger.info("FaceParsing_T2 model loaded successfully.")
-        except Exception as e:
-            logger.error(f"Error loading FaceParsing_T2 model: {e}")
-    
-    asyncio.run(Run_Test())
 
 @app.post("/infer")
 async def infer_image(file: UploadFile = File(...)):
-    logger.info("=== Starting new inference request ===")
     try:
-        # Load tensor from the uploaded file
-        logger.info("Reading uploaded file...")
+        # Read the uploaded image file
         buffer = await file.read()
-        logger.info(f"File size: {len(buffer)} bytes")
+        img = Image.open(io.BytesIO(buffer)).convert("RGB")  # Open as RGB
 
-        logger.info("Loading tensor from buffer...")
-        input_tensor = torch.load(io.BytesIO(buffer))
-        logger.info(f"Input tensor shape: {input_tensor.shape}")
+        # Run inference on the image using FaceParsing_T2
+        processed_image = FaceParsing_T2(img)
 
-        # Save received input tensor as an image for debugging
-        logger.info("Saving debug input image...")
-        save_debug_image(input_tensor, "received_input.png")
+        # Convert numpy array to PIL Image if needed
+        if isinstance(processed_image, np.ndarray):
+            processed_image = Image.fromarray(processed_image)
 
-        # Run inference
-        logger.info("Starting inference...")
-        result_tensor = manager.run_Diffi2i_S2(input_tensor)
-        logger.info(f"Inference completed. Output tensor shape: {result_tensor.shape}")
+        # Save the processed image to a buffer to send as response
+        buf = io.BytesIO()
+        processed_image.save(buf, format="JPEG")
+        buf.seek(0)
 
-        # Save output tensor as an image for debugging
-        logger.info("Saving debug output image...")
-        save_debug_image(result_tensor, "output_result.png")
-
-        # Serialize result tensor for response
-        logger.info("Serializing result tensor...")
-        tensor_bytes = pickle.dumps(result_tensor.cpu())
-        logger.info("Sending response...")
-        return StreamingResponse(io.BytesIO(tensor_bytes), media_type="application/octet-stream")
+        return StreamingResponse(buf, media_type="image/jpeg")
 
     except Exception as e:
-        logger.error(f"Error during inference: {e}", exc_info=True)
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        # Log the full traceback for debugging
+        error_message = f"Error during inference: {str(e)}\n{traceback.format_exc()}"
+        print(error_message)
+        return JSONResponse(content={"error": error_message}, status_code=500)
+    
 
 
 def normalize_images(input_image):
@@ -132,7 +113,6 @@ class ImageProcessor:
         self.transforms = T.ToTensor()
 
     def process_face_image_Non_AI_2(self, input_image):
-        print("Inside of process_face_image_Non_AI_2")
         # Normalize the image
         face_image = normalize_images(input_image)
         
@@ -152,8 +132,6 @@ def Generate_Face_Parsing_image(img):
     processed_image = manager.run_Diffi2i_S2(processed_image)
     return processed_image
 
-
-
 def FaceParsing_T3(img):
     global is_FaceParsing_T2_loaded, manager
     if not is_FaceParsing_T2_loaded:
@@ -168,15 +146,31 @@ def FaceParsing_T2(img):
     face_parsing = FaceParsing_T3(img)
     return  rcpf.tensor2im(face_parsing, normalize=False)
 
-@app.on_event("startup")
+
 def Run_Test():
+    print("CUDA is ", torch.cuda.is_available())
     destination_folder = r"./Results"
-    source_image = r'./Test_Images/IMG_7369.JPG'
-    image_saver = ImageSaver(destination_folder) 
-    img = Image.open(source_image)
-    print(" Image loaded ")
-    processed_image = FaceParsing_T2(img)
-    image_saver.save_image("IMG_7369.JPG", processed_image)
+    source_folder = r'./Test_Images'
+    image_saver = ImageSaver(destination_folder)
+
+    # Ensure destination folder exists
+    os.makedirs(destination_folder, exist_ok=True)
+
+    # Iterate through each file in the source folder
+    for filename in os.listdir(source_folder):
+        if filename.endswith(('.jpeg', '.jpg', '.png')):  # Filter for common image formats
+            source_image_path = os.path.join(source_folder, filename)
+            img = Image.open(source_image_path)
+            print(f"Processing image: {filename}")
+
+            # Process the image
+            processed_image = FaceParsing_T2(img)
+
+            # Save the processed image with the same filename
+            image_saver.save_image(filename, processed_image)
+            print(f"Saved processed image: {filename}")
+
+
 
 
 

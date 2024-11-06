@@ -1,4 +1,4 @@
-# Use NVIDIA base image with CUDA 11.8 and cuDNN 8
+
 FROM continuumio/miniconda3:latest
 
 # Set working directory
@@ -29,7 +29,7 @@ COPY options/ ./options/
 COPY ldm/ ./ldm/
 COPY checkpoints/Face_Parsing_Test_2/DiffI2I_S2/diffi2i_s2_Model_971.pth.tar checkpoints/Face_Parsing_Test_2/DiffI2I_S2/
 COPY checkpoints/Face_Parsing_Test_2/settings.txt checkpoints/Face_Parsing_Test_2/
-COPY Test_Images/IMG_7369.JPG Test_Images/IMG_7369.JPG
+COPY Test_Images/ ./Test_Images/
 
 # Expose port 8000 for the FastAPI application
 EXPOSE 8000

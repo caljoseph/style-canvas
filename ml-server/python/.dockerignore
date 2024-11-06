@@ -34,13 +34,11 @@ Resize_Model_Weights/
 
 Test_Images_3/
 Test_Image_WrongSizes/
-TestImages/
 
 # ===============================
 # Exclude Output Images Directories
 # ===============================
 
-Results/
 Temp/
 
 # ===============================
