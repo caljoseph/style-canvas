@@ -6,7 +6,7 @@ from options.AdobefilterDefaultOptions import AdobefilterDefaultOptions
 import Pix2PixHDUtilities as p2pUtil
 from ImageSaver import ImageSaver
 from FaceImageProcessor import FaceImageProcessor
-import reuseablecustompythonfunctions as rcpf
+import style_canvas_utils as rcpf
 
 
 def GetAdobeFilterModel(ai_model_name, which_epoch, ngf = 64, n_local_enhancers = 2):

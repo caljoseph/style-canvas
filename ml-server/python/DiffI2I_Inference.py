@@ -1,10 +1,9 @@
-import torch
-import reuseablecustompythonfunctions as rcpf
+
+import style_canvas_utils as scu
 from DiffI2I_S2 import DiffI2I_S2
 import os
+import torch
 from S2_Parameters import S2_Parameters
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-
 
 class DiffI2IManager:
     def __init__(self, parameters: S2_Parameters):
@@ -13,7 +12,7 @@ class DiffI2IManager:
         self.CHECKPOINT_DIFFI2I_S2_DIR = r"./checkpoints/OilPainting_DiffI2I/DiffI2I_S2"
         self.setting_file_path = r"./checkpoints/OilPainting_DiffI2I/settings.txt"
         self.Diffi2i_S2 = None  # This will store the model after initialization
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = scu.DEVICE
 
         # Update paths and initialize the Diffi2i_S2 model
         self.update_global_paths_with_folder(parameters.Checkpoint_Name)
@@ -89,8 +88,8 @@ class DiffI2IManager:
                              self.parameters.bias,
                              self.parameters.LayerNorm_type)
         diffi2i = diffi2i.to(self.device)  # Move model to the same device as input (GPU or CPU)
-        diffi2i = rcpf.setup_gpus_for_training(diffi2i)
-        rcpf.load_checkpoint(loadpoint_diffI2I, diffi2i)
+        diffi2i = scu.setup_gpus(diffi2i)
+        scu.load_checkpoint(loadpoint_diffI2I, diffi2i)
         diffi2i = diffi2i.eval()
         return diffi2i
 

@@ -1,9 +1,7 @@
 import torch
 import networks as Networks
 import torch.optim as optim
-import reuseablecustompythonfunctions as rcpf
-from torchvision import transforms as T
-from PIL import Image
+import style_canvas_utils as rcpf
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 from InferenceImageProcessor import InferenceImageProcessor
 img_height=1024
@@ -52,7 +50,7 @@ def get_chalkboard_model():
     LEARNING_RATE = 2e-4
     
     generator_model = generator_model.to(DEVICE)
-    generator_model = rcpf.setup_gpus_for_training(generator_model)
+    generator_model = rcpf.setup_gpus(generator_model)
     generator_optimizer = optim.Adam(generator_model.parameters(), lr = LEARNING_RATE , betas = (0.5, 0.999))
     map_location = 'cuda' if torch.cuda.is_available() else 'cpu'
     load_checkpoint(LOAD_CHECKPOINT_GEN, generator_model, generator_optimizer, LEARNING_RATE, map_location=map_location)

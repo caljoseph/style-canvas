@@ -1,32 +1,9 @@
-import os
 from PIL import Image
-from tqdm import tqdm
 from ultralytics import YOLO
-from natsort import natsorted
 import math
 import torchvision.transforms as T
-import numpy as np
-import matplotlib.pyplot as plt
-import FaceDetectorLib as FCL
-from ImageSaver import ImageSaver
-import reuseablecustompythonfunctions as rcpf
+import style_canvas_utils as scu
 
-def load_image(input_image):
-    if isinstance(input_image, str):
-        input_image = Image.open(input_image)
-    return input_image
-
-def normalize_images(input_image):
-    # Convert images to numpy arrays
-    input_image_np = np.array(input_image)
-
-    # Normalize the image data to 0-1
-    input_image_np = input_image_np.astype('float32') / 255.0
-
-    # Convert numpy arrays back to PIL Images
-    input_image = Image.fromarray((input_image_np * 255).astype(np.uint8))
-
-    return input_image
 
 def process_face_image(image):
     """
@@ -54,7 +31,7 @@ class InferenceImageProcessor:
         self.transforms = T.Compose([
             T.ToTensor(),  # Convert image to tensor
         ])
-        self.model = YOLO('yolov8n.pt', verbose=False)
+        self.model = YOLO('./Resize_Model_Weights/yolov8n.pt', verbose=False)
 
     def calculate_image_dimensions(self, img_width, img_height):
         divisions_width = math.ceil(math.log2(self.img_width / img_width)) if self.img_width > img_width else 0
@@ -124,13 +101,13 @@ class InferenceImageProcessor:
             return image
 
     def process_image_path(self, image_path):
-        input_image = load_image(image_path)
+        input_image = scu.load_image(image_path)
         return self.process_image(input_image)
 
     def process_image(self, input_image):
-        input_image = rcpf.rotate_image_based_on_exif(input_image)        
+        input_image = scu.rotate_image_based_on_exif(input_image)        
         input_image = self.is_aspect_ratio_match(input_image)
-        input_image = normalize_images(input_image)
+        input_image = scu.normalize_images(input_image)
         
         if input_image.mode != 'RGB':
             input_image = input_image.convert('RGB')
@@ -144,80 +121,3 @@ class InferenceImageProcessor:
         
         return input_image
 
-    def process_face_image_Non_AI(self, input_image):
-        input_image = rcpf.rotate_image_based_on_exif(input_image) 
-        resized_img = FCL.resize_image(input_image, self.img_width, self.img_height)
-        face_tensor = process_face_image(resized_img)
-        face_tensor = face_tensor.unsqueeze(0)
-        return face_tensor
-
-    def process_face_image_Non_AI_2(self, input_image):
-        print("Inside of process_face_image_Non_AI_2")
-        input_image = rcpf.rotate_image_based_on_exif(input_image) 
-        resized_img = FCL.resize_image(input_image, self.img_width, self.img_height)
-        face_image = normalize_images(resized_img)
-        face_tensor = self.transforms(face_image)
-        face_tensor = face_tensor.unsqueeze(0)
-        return face_tensor
-    
-    def process_face_image_Non_AI_3(self, input_image):
-        input_image = rcpf.rotate_image_based_on_exif(input_image) 
-        resized_img = FCL.resize_image(input_image, self.img_width, self.img_height)
-        return resized_img
-
-
-    def image_loader(self, source_folder):
-        image_paths = natsorted(os.listdir(source_folder))
-        processed_images = []
-
-        for image_name in image_paths:
-            try:
-                if image_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
-                    image_path = os.path.join(source_folder, image_name)
-                    img = self.process_image_path(image_path)
-                    processed_images.append((img, image_name))  # Append as a tuple (img, image_name)
-
-            except Exception as e:
-                print(f"Failed to process {image_name}: {e}")
-                
-        return processed_images
-
-    def display_image(self, image_tensor):
-        if len(image_tensor.shape) == 4:
-            image_tensor = image_tensor.squeeze(0)
-        # Convert the tensor back to a PIL image and display it
-        image = T.ToPILImage()(image_tensor)
-        plt.imshow(image)
-        plt.axis('off')  # Hide axes
-        plt.show()
-
-def process_images_from_folder():
-    source_folder = r'./source_images'
-    destination_folder = r"./results"
-    
-    # Create destination folder if it doesn't exist
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
-
-    processor = InferenceImageProcessor(img_width=2048, img_height=4096)
-    image_paths = natsorted(os.listdir(source_folder))
-    loop = tqdm(image_paths, leave=True)
-
-    for image_name in loop:
-        try:
-            # Check if file is an image
-            if image_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
-                image_path = os.path.join(source_folder, image_name)
-                img = Image.open(image_path)
-                img = rcpf.rotate_image_based_on_exif(img)
-                
-                processed_image = processor.is_aspect_ratio_match(img)
-                if processed_image is not None:
-                    save_path = os.path.join(destination_folder, image_name)
-                    processed_image.save(save_path)
-
-        except Exception as e:
-            print(f"Failed to process {image_name}: {e}")
-
-if __name__ == "__main__":
-    process_images_from_folder()

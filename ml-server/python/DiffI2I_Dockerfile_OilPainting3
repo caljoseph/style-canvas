@@ -1,0 +1,42 @@
+FROM continuumio/miniconda3:latest
+
+# Set working directory
+WORKDIR /app
+
+# Copy the DiffI2I_Environment.yml file
+COPY DiffI2I_Environment.yml .
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends wget bzip2 build-essential libgl1 libglib2.0-0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Mamba and create the Conda DiffI2I_Environment
+RUN conda install -n base -c conda-forge mamba && \
+    mamba env update -f DiffI2I_Environment.yml && \
+    conda clean --all --yes
+
+# Pre-install pip packages including dill
+RUN pip install dill
+
+# Set the Conda DiffI2I_Environment to PATH and activate by default
+ENV PATH="/opt/conda/envs/StyleCanvasAI/bin:$PATH"
+
+# Activate the Conda environment by default
+SHELL ["conda", "run", "-n", "StyleCanvasAI", "/bin/bash", "-c"]
+
+# Copy application files
+COPY Diffi2i_Inference_Server.py DiffI2IModelEnum.py BetaSchedule.py S2_Parameters.py DiffI2I_S2.py common.py ddpm.py TensorMathTools.py style_canvas_utils.py InferenceImageProcessor.py DiffI2I_Inference.py S2ModelConfigurations.py FaceImageProcessor.py Face_Parsing_Model.py Diff_I2I_lib.py ./
+COPY options/ ./options/
+COPY ldm/ ./ldm/
+COPY Resize_Model_Weights/yolov8l-face.pt Resize_Model_Weights/
+COPY Resize_Model_Weights/RealESRGAN_x4plus.pth Resize_Model_Weights/
+COPY checkpoints/OilPainting_SC3/DiffI2I_S2/diffi2i_s2_Model_1699.pth.tar checkpoints/OilPainting_SC3/DiffI2I_S2/
+COPY checkpoints/OilPainting_SC3/settings.txt checkpoints/OilPainting_SC3/
+COPY Test_Images/ ./Test_Images/
+
+# Expose port 8000 for the FastAPI application
+EXPOSE 8000
+
+# Set entrypoint for running the server
+CMD ["uvicorn", "Diffi2i_Inference_Server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

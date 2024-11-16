@@ -13,7 +13,7 @@ import logging
 import asyncio
 import numpy as np
 import traceback
-import reuseablecustompythonfunctions as rcpf
+import style_canvas_utils as scu
 
 # Set up logging
 logging.basicConfig(
@@ -144,7 +144,7 @@ def FaceParsing_T3(img):
 
 def FaceParsing_T2(img):
     face_parsing = FaceParsing_T3(img)
-    return  rcpf.tensor2im(face_parsing, normalize=False)
+    return  scu.tensor2im(face_parsing, normalize=False)
 
 
 def Run_Test():

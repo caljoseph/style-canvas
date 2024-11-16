@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import reuseablecustompythonfunctions as rcpf
+import reuseablecustompythonfunctions as scu
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LEARNING_RATE = 2e-4
@@ -123,6 +123,6 @@ def create_and_load_model(model_path, model_class):
     model.load_state_dict(checkpoint['state_dict'])
     optimizer.load_state_dict(checkpoint['optimizer'])
 
-    model = rcpf.setup_gpus_for_training(model)
+    model = scu.setup_gpus(model)
     model.eval()
     return model, optimizer

@@ -5,7 +5,7 @@ import Face2Paint as f2p
 import Diff_I2I_lib as Diff
 from Face_Parsing_Model import FaceDrawingTypes 
 import os
-import reuseablecustompythonfunctions as rcpf
+import style_canvas_utils as scu
 from tqdm import tqdm
 from ImageSaver import ImageSaver
 import numpy as np
@@ -119,7 +119,7 @@ def VanGogh(img):
 
 def BlueMist(img):
     red_mist = RedMist(img)
-    blue_mist  =  rcpf.TurnBlue(red_mist)
+    blue_mist  =  scu.TurnBlue(red_mist)
     return blue_mist
 
 def Chalkboard(img):

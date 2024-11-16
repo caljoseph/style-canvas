@@ -5,7 +5,7 @@ from torchvision.utils import save_image
 import networks as Networks
 import os
 from PIL import Image
-import reuseablecustompythonfunctions as rcpf
+import reuseablecustompythonfunctions as scu
 from torchvision import transforms as T
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as TF
@@ -142,7 +142,7 @@ def apply_filter_to_image(generator_model, input_tensor):
 def get_image(reference_image_path, img_width=1024, img_height=1024):
     if isinstance(reference_image_path, str):
         reference_image = Image.open(reference_image_path)
-        reference_image = rcpf.rotate_image_based_on_exif(reference_image)
+        reference_image = scu.rotate_image_based_on_exif(reference_image)
         reference_tensor = process_image(reference_image, img_height, img_width)
     return reference_tensor
 
@@ -171,7 +171,7 @@ def get_original_image(reference_image_path, img_width=1024, img_height=1024):
     return reference_tensor
 
 def get_image_count(folder_path):
-    folder_items = rcpf.load_paths(folder_path)
+    folder_items = scu.load_paths(folder_path)
     return len(folder_items)
 
 def display_images(reference_tensor, generated_tensor):

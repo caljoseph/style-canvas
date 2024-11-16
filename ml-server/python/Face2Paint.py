@@ -1,6 +1,6 @@
 from Pix2Pix import Generator
 import Pix2Pix as p2p
-import reuseablecustompythonfunctions as rcpf
+import FaceDetectorLib as scu
 import torch
 from InferenceImageProcessor import InferenceImageProcessor
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -29,5 +29,5 @@ def Generate_Face2Paint_image(img):
     processed_image = processed_image.to(DEVICE)
     with torch.no_grad():   
         face_painting = face_2_paint_model(processed_image)
-    face_painting = rcpf.tensor2im(face_painting, normalize=False)
+    face_painting = scu.tensor2im(face_painting, normalize=False)
     return face_painting
