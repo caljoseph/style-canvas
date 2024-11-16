@@ -97,7 +97,7 @@ def FaceParsing_T3(img):
     return Generate_Face_Parsing_image(img, S2ModelConfigurations.FaceParsing_T2_Parameters)
 
 
-# Preprocessing Function
+
 def FaceParsing_T2(img):
     """
     Preprocesses the image using FaceImageProcessor, sends it to the server for inference,
@@ -123,7 +123,7 @@ def FaceParsing_T2(img):
         response = requests.post(
             INFERENCE_API_URL,
             files={"file": ("image.pt", buffer, "application/octet-stream")},
-            timeout=30  # Add timeout
+            timeout=60
         )
         print(f"Server response status code: {response.status_code}")
 
@@ -131,23 +131,17 @@ def FaceParsing_T2(img):
             print(f"Server error response: {response.text}")
             return None
 
-        response.raise_for_status()
-
-        # Deserialize the tensor from server response
-        result_tensor = pickle.loads(response.content)
+        # Load the tensor directly from response content
+        result_tensor = torch.load(io.BytesIO(response.content))
         print(f"Received result tensor shape: {result_tensor.shape}")
         return result_tensor
 
     except requests.exceptions.RequestException as e:
         print(f"Network error during inference: {str(e)}")
         return None
-    except pickle.UnpicklingError as e:
-        print(f"Error deserializing tensor: {str(e)}")
-        return None
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
         return None
-# Convert the returned tensor back to a PIL image
 
 def tensor_to_pil(tensor):
     mean = torch.tensor([0.5, 0.5, 0.5]).view(3, 1, 1)
@@ -155,7 +149,6 @@ def tensor_to_pil(tensor):
     tensor = tensor.squeeze(0).cpu() * std + mean
     tensor = torch.clamp(tensor, 0, 1)
     return T.ToPILImage()(tensor)
-
 
 def Verdant_Flame(img):
     global is_verdant_flame_loaded, manager

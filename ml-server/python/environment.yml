@@ -20,12 +20,8 @@ dependencies:
   - fastapi
   - dlib
   - lmdb
-  - cudatoolkit=11.7
-  - cudnn=9.2.1.18
+  - torchvision<0.17.0
   - pip
-  - pytorch=2.0.1
-  - torchvision=0.15.2
-  - torchaudio=2.0.2
   - pip:
       - basicsr
       - realesrgan
