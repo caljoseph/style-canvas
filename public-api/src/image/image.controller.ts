@@ -38,6 +38,13 @@ export class ImageController {
         return { status };
     }
 
+    @Get('/server-config')
+    @UseGuards(AuthGuard('jwt'))
+    async getMLServerConfig() {
+        const config = await this.mlServerService.getServerConfig()
+        return { config }
+    }
+
     @Post('/generate')
     @UseGuards(AuthGuard('jwt'))
     @UseInterceptors(FileInterceptor('image'))
@@ -100,6 +107,7 @@ export class ImageController {
             estimatedWaitTime
         };
     }
+
 
     @Get('/retrieve/:requestHash')
     @UseGuards(AuthGuard('jwt'))
