@@ -1,0 +1,184 @@
+[+] Building 437.4s (10/17)                                                                                                                                                                              docker:desktop-linux 
+ => [internal] load build definition from DiffI2I_Dockerfile_OilPainting3                                                                                                                                                0.0s 
+ => => transferring dockerfile: 1.71kB                                                                                                                                                                                   0.0s 
+ => [internal] load metadata for docker.io/continuumio/miniconda3:latest                                                                                                                                                 0.8s 
+ => [auth] continuumio/miniconda3:pull token for registry-1.docker.io                                                                                                                                                    0.0s 
+ => [internal] load .dockerignore                                                                                                                                                                                        0.0s 
+ => => transferring context: 1.88kB                                                                                                                                                                                      0.0s 
+ => [ 1/12] FROM docker.io/continuumio/miniconda3:latest@sha256:15f887d74b3ffe0fa21a741bfeaec8ccc8947b527acfb7542eff84ae1bfdd6bf                                                                                         0.0s 
+ => => resolve docker.io/continuumio/miniconda3:latest@sha256:15f887d74b3ffe0fa21a741bfeaec8ccc8947b527acfb7542eff84ae1bfdd6bf                                                                                           0.0s 
+ => [internal] load build context                                                                                                                                                                                        0.1s
+ => => transferring context: 3.36kB                                                                                                                                                                                      0.1s
+ => CACHED [ 2/12] WORKDIR /app                                                                                                                                                                                          0.0s
+ => CACHED [ 3/12] COPY DiffI2I_Environment.yml .                                                                                                                                                                        0.0s
+ => CACHED [ 4/12] RUN apt-get update &&     apt-get install -y --no-install-recommends wget bzip2 build-essential libgl1 libglib2.0-0 &&     rm -rf /var/lib/apt/lists/*                                                0.0s
+ => ERROR [ 5/12] RUN conda install -n base -c conda-forge mamba &&     mamba env update -f DiffI2I_Environment.yml &&     conda clean --all --yes                                                                     435.6s
+------
+ > [ 5/12] RUN conda install -n base -c conda-forge mamba &&     mamba env update -f DiffI2I_Environment.yml &&     conda clean --all --yes:
+1.162 Channels:
+1.162  - conda-forge
+1.162  - defaults
+1.162 Platform: linux-64
+1.162 Collecting package metadata (repodata.json): ...working... done
+12.18 Solving environment: ...working... done
+12.94 
+12.94 ## Package Plan ##
+12.94 
+12.94   environment location: /opt/conda
+12.94 
+12.94   added / updated specs:
+12.94     - mamba
+12.94 
+12.94
+12.94 The following packages will be downloaded:
+12.94
+12.94     package                    |            build
+12.94     ---------------------------|-----------------
+12.94     _libgcc_mutex-0.1          |      conda_forge           3 KB  conda-forge
+12.94     _openmp_mutex-4.5          |            2_gnu          23 KB  conda-forge
+12.94     c-ares-1.34.3              |       heb4867d_0         201 KB  conda-forge
+12.94     certifi-2024.8.30          |     pyhd8ed1ab_0         160 KB  conda-forge
+12.94     conda-24.9.2               |  py312h7900ff3_0         1.1 MB  conda-forge
+12.94     fmt-11.0.2                 |       h434a139_0         194 KB  conda-forge
+12.94     icu-75.1                   |       he02047a_0        11.6 MB  conda-forge
+12.94     keyutils-1.6.1             |       h166bdaf_0         115 KB  conda-forge
+12.94     krb5-1.21.3                |       h659f571_0         1.3 MB  conda-forge
+12.94     libarchive-3.7.4           |       hfca40fe_0         851 KB  conda-forge
+12.94     libcurl-8.10.1             |       hbbe4b11_0         415 KB  conda-forge
+12.94     libexpat-2.6.3             |       h5888daf_0          72 KB  conda-forge
+12.94     libgcc-14.2.0              |       h77fa898_1         829 KB  conda-forge
+12.94     libgcc-ng-14.2.0           |       h69a702a_1          53 KB  conda-forge
+12.94     libgomp-14.2.0             |       h77fa898_1         450 KB  conda-forge
+12.94     libiconv-1.17              |       hd590300_2         689 KB  conda-forge
+12.94     libmamba-1.5.10            |       hf72d635_1         1.6 MB  conda-forge
+12.94     libmambapy-1.5.10          |  py312hf3f0a4e_1         318 KB  conda-forge
+12.94     libnghttp2-1.64.0          |       h161d5f1_0         632 KB  conda-forge
+12.94     libnsl-2.0.1               |       hd590300_0          33 KB  conda-forge
+12.94     libsolv-0.7.30             |       h3509ff9_0         460 KB  conda-forge
+12.94     libsqlite-3.45.2           |       h2797004_0         837 KB  conda-forge
+12.94     libssh2-1.11.0             |       h0841786_0         265 KB  conda-forge
+12.94     libstdcxx-14.2.0           |       hc0a3c3a_1         3.7 MB  conda-forge
+12.94     libstdcxx-ng-14.2.0        |       h4852527_1          53 KB  conda-forge
+12.94     libuuid-2.38.1             |       h0b41bf4_0          33 KB  conda-forge
+12.94     libxcrypt-4.4.36           |       hd590300_1          98 KB  conda-forge
+12.94     libxml2-2.13.5             |       hb346dea_0         673 KB  conda-forge
+12.94     libzlib-1.3.1              |       hb9d3cd8_2          60 KB  conda-forge
+12.94     lzo-2.10                   |    hd590300_1001         167 KB  conda-forge
+12.94     mamba-1.5.10               |  py312h9460a1c_1          63 KB  conda-forge
+12.94     openssl-3.4.0              |       hb9d3cd8_0         2.8 MB  conda-forge
+12.94     pcre2-10.44                |       hba22ea6_2         930 KB  conda-forge
+12.94     pybind11-abi-4             |       hd8ed1ab_3          10 KB  conda-forge
+12.94     python-3.12.2              |hab00c5b_0_cpython        30.8 MB  conda-forge
+12.94     python_abi-3.12            |          5_cp312           6 KB  conda-forge
+12.94     sqlite-3.45.2              |       h2c6b66d_0         829 KB  conda-forge
+12.94     tk-8.6.13                  |noxft_h4845f30_101         3.2 MB  conda-forge
+12.94     zlib-1.3.1                 |       hb9d3cd8_2          90 KB  conda-forge
+12.94     zstd-1.5.6                 |       ha6fb4c9_0         542 KB  conda-forge
+12.94     ------------------------------------------------------------
+12.94                                            Total:        66.0 MB
+12.94
+12.94 The following NEW packages will be INSTALLED:
+12.94
+12.94   keyutils           conda-forge/linux-64::keyutils-1.6.1-h166bdaf_0
+12.94   libexpat           conda-forge/linux-64::libexpat-2.6.3-h5888daf_0
+12.94   libgcc             conda-forge/linux-64::libgcc-14.2.0-h77fa898_1
+12.94   libiconv           conda-forge/linux-64::libiconv-1.17-hd590300_2
+12.94   libnsl             conda-forge/linux-64::libnsl-2.0.1-hd590300_0
+12.94   libsqlite          conda-forge/linux-64::libsqlite-3.45.2-h2797004_0
+12.94   libstdcxx          conda-forge/linux-64::libstdcxx-14.2.0-hc0a3c3a_1
+12.94   libxcrypt          conda-forge/linux-64::libxcrypt-4.4.36-hd590300_1
+12.94   libzlib            conda-forge/linux-64::libzlib-1.3.1-hb9d3cd8_2
+12.94   lzo                conda-forge/linux-64::lzo-2.10-hd590300_1001
+12.94   mamba              conda-forge/linux-64::mamba-1.5.10-py312h9460a1c_1
+12.94   python_abi         conda-forge/linux-64::python_abi-3.12-5_cp312
+12.94
+12.94 The following packages will be UPDATED:
+12.94
+12.94   c-ares                pkgs/main::c-ares-1.19.1-h5eee18b_0 --> conda-forge::c-ares-1.34.3-heb4867d_0
+12.94   fmt                       pkgs/main::fmt-9.1.0-hdb19cb5_1 --> conda-forge::fmt-11.0.2-h434a139_0
+12.94   icu                        pkgs/main::icu-73.1-h6a678d5_0 --> conda-forge::icu-75.1-he02047a_0
+12.94   krb5                    pkgs/main::krb5-1.20.1-h143b758_1 --> conda-forge::krb5-1.21.3-h659f571_0
+12.94   libcurl               pkgs/main::libcurl-8.9.1-h251f7ec_0 --> conda-forge::libcurl-8.10.1-hbbe4b11_0
+12.94   libgcc-ng          pkgs/main::libgcc-ng-11.2.0-h1234567_1 --> conda-forge::libgcc-ng-14.2.0-h69a702a_1
+12.94   libgomp              pkgs/main::libgomp-11.2.0-h1234567_1 --> conda-forge::libgomp-14.2.0-h77fa898_1
+12.94   libmamba             pkgs/main::libmamba-1.5.8-hfe524e5_3 --> conda-forge::libmamba-1.5.10-hf72d635_1
+12.94   libmambapy         pkgs/main::libmambapy-1.5.8-py312h2da~ --> conda-forge::libmambapy-1.5.10-py312hf3f0a4e_1
+12.94   libnghttp2         pkgs/main::libnghttp2-1.57.0-h2d74bed~ --> conda-forge::libnghttp2-1.64.0-h161d5f1_0
+12.94   libsolv              pkgs/main::libsolv-0.7.24-he621ea3_1 --> conda-forge::libsolv-0.7.30-h3509ff9_0
+12.94   libstdcxx-ng       pkgs/main::libstdcxx-ng-11.2.0-h12345~ --> conda-forge::libstdcxx-ng-14.2.0-h4852527_1
+12.94   libuuid              pkgs/main::libuuid-1.41.5-h5eee18b_0 --> conda-forge::libuuid-2.38.1-h0b41bf4_0
+12.94   libxml2              pkgs/main::libxml2-2.13.1-hfdd30dd_2 --> conda-forge::libxml2-2.13.5-hb346dea_0
+12.94   openssl              pkgs/main::openssl-3.0.15-h5eee18b_0 --> conda-forge::openssl-3.4.0-hb9d3cd8_0
+12.94   pcre2                   pkgs/main::pcre2-10.42-hebb0a14_1 --> conda-forge::pcre2-10.44-hba22ea6_2
+12.94   zlib                    pkgs/main::zlib-1.2.13-h5eee18b_1 --> conda-forge::zlib-1.3.1-hb9d3cd8_2
+12.94
+12.94 The following packages will be SUPERSEDED by a higher-priority channel:
+12.94
+12.94   _libgcc_mutex           pkgs/main::_libgcc_mutex-0.1-main --> conda-forge::_libgcc_mutex-0.1-conda_forge
+12.94   _openmp_mutex          pkgs/main::_openmp_mutex-5.1-1_gnu --> conda-forge::_openmp_mutex-4.5-2_gnu
+12.94   certifi            pkgs/main/linux-64::certifi-2024.8.30~ --> conda-forge/noarch::certifi-2024.8.30-pyhd8ed1ab_0
+12.94   conda              pkgs/main::conda-24.9.2-py312h06a4308~ --> conda-forge::conda-24.9.2-py312h7900ff3_0
+12.94   libarchive         pkgs/main::libarchive-3.7.4-hfab0078_0 --> conda-forge::libarchive-3.7.4-hfca40fe_0
+12.94   libssh2              pkgs/main::libssh2-1.11.0-h251f7ec_0 --> conda-forge::libssh2-1.11.0-h0841786_0
+12.94   pybind11-abi         pkgs/main::pybind11-abi-5-hd3eb1b0_0 --> conda-forge::pybind11-abi-4-hd8ed1ab_3
+12.94   python                pkgs/main::python-3.12.7-h5148396_0 --> conda-forge::python-3.12.2-hab00c5b_0_cpython
+12.94   sqlite                pkgs/main::sqlite-3.45.3-h5eee18b_0 --> conda-forge::sqlite-3.45.2-h2c6b66d_0
+12.94   tk                        pkgs/main::tk-8.6.14-h39e8969_0 --> conda-forge::tk-8.6.13-noxft_h4845f30_101
+12.94   zstd                     pkgs/main::zstd-1.5.6-hc292b87_0 --> conda-forge::zstd-1.5.6-ha6fb4c9_0
+12.94
+12.94
+12.94 Proceed ([y]/n)?
+15.20
+15.20 Downloading and Extracting Packages: ...working... done
+15.20 Preparing transaction: ...working... done
+15.29 Verifying transaction: ...working... done
+15.86 Executing transaction: ...working... done
+47.56 /opt/conda/lib/python3.12/argparse.py:2000: FutureWarning: `remote_definition` is deprecated and will be removed in 25.9. Use `conda env create --file=URL` instead.
+47.56   action(self, namespace, argument_values, option_string)
+47.76 Channels:
+47.76  - pytorch
+47.76  - conda-forge
+47.76  - defaults
+47.76 Platform: linux-64
+47.76 Collecting package metadata (repodata.json): ...working... done
+58.47 Solving environment: ...working... done
+121.3
+121.3 Downloading and Extracting Packages: ...working... done
+121.3 Preparing transaction: ...working... done
+123.2 Verifying transaction: ...working... done
+134.8 Executing transaction: ...working... By downloading and using the CUDA Toolkit conda packages, you accept the terms and conditions of the CUDA End User License Agreement (EULA): https://docs.nvidia.com/cuda/eula/index.html
+155.9
+155.9
+155.9
+155.9 done
+156.3 Installing pip dependencies: ...working... Pip subprocess error:
+431.5 ERROR: Could not find a version that satisfies the requirement torch==2.0.1+cu118 (from versions: 1.7.1, 1.8.0, 1.8.1, 1.9.0, 1.9.1, 1.10.0, 1.10.1, 1.10.2, 1.11.0, 1.12.0, 1.12.1, 1.13.0, 1.13.1, 2.0.0, 2.0.1, 2.1.0, 2.1.1, 2.1.2, 2.2.0, 2.2.1, 2.2.2, 2.3.0, 2.3.1, 2.4.0, 2.4.1, 2.5.0, 2.5.1)
+431.5 ERROR: No matching distribution found for torch==2.0.1+cu118
+431.5
+431.5 Ran pip subprocess with arguments:
+431.5 ['/opt/conda/envs/StyleCanvasAI/bin/python', '-m', 'pip', 'install', '-U', '-r', '/app/condaenv.udq8q_20.requirements.txt', '--exists-action=b']
+431.5 Pip subprocess output:
+431.5 Collecting realesrgan==0.3.0 (from -r /app/condaenv.udq8q_20.requirements.txt (line 1))
+431.5   Downloading realesrgan-0.3.0-py3-none-any.whl.metadata (17 kB)
+431.5 Collecting basicsr==1.4.2 (from -r /app/condaenv.udq8q_20.requirements.txt (line 2))
+431.5   Downloading basicsr-1.4.2.tar.gz (172 kB)
+431.5   Preparing metadata (setup.py): started
+431.5   Preparing metadata (setup.py): still running...
+431.5   Preparing metadata (setup.py): finished with status 'done'
+431.5 Requirement already satisfied: uvicorn in /opt/conda/envs/StyleCanvasAI/lib/python3.9/site-packages (from -r /app/condaenv.udq8q_20.requirements.txt (line 3)) (0.32.0)
+431.5
+431.5 failed
+431.6
+431.6 CondaEnvException: Pip failed
+431.6
+------
+DiffI2I_Dockerfile_OilPainting3:15
+--------------------
+  14 |     # Install Mamba and create the Conda environment
+  15 | >>> RUN conda install -n base -c conda-forge mamba && \
+  16 | >>>     mamba env update -f DiffI2I_Environment.yml && \
+  17 | >>>     conda clean --all --yes
+  18 |
+--------------------
+ERROR: failed to solve: process "/bin/sh -c conda install -n base -c conda-forge mamba &&     mamba env update -f DiffI2I_Environment.yml &&     conda clean --all --yes" did not complete successfully: exit code: 1
+(StyleCanvasAI) PS F:\style-canvas\ml-server\python> 

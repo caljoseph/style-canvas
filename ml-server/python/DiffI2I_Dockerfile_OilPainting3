@@ -1,0 +1,36 @@
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
+
+# Install Miniconda
+WORKDIR /app
+RUN apt-get update && apt-get install -y wget bzip2 build-essential libgl1 libglib2.0-0 && \
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /miniconda.sh && \
+    bash /miniconda.sh -b -p /opt/conda && \
+    rm /miniconda.sh && \
+    rm -rf /var/lib/apt/lists/*
+ENV PATH="/opt/conda/bin:$PATH"
+
+# Copy the Conda environment file and install
+COPY DiffI2I_Environment.yml .
+RUN conda install -n base -c conda-forge mamba && \
+    mamba env update -f DiffI2I_Environment.yml && \
+    conda clean --all --yes
+
+# Activate the Conda environment by default
+ENV PATH="/opt/conda/envs/StyleCanvasAI/bin:$PATH"
+SHELL ["conda", "run", "-n", "StyleCanvasAI", "/bin/bash", "-c"]
+
+# Copy application files
+COPY Diffi2i_Inference_Server.py DiffI2IModelEnum.py BetaSchedule.py S2_Parameters.py DiffI2I_S2.py common.py ddpm.py TensorMathTools.py style_canvas_utils.py InferenceImageProcessor.py DiffI2I_Inference.py S2ModelConfigurations.py FaceImageProcessor.py Face_Parsing_Model.py Diff_I2I_lib.py ./
+COPY options/ ./options/
+COPY ldm/ ./ldm/
+COPY Resize_Model_Weights/yolov8l-face.pt Resize_Model_Weights/
+COPY Resize_Model_Weights/RealESRGAN_x4plus.pth Resize_Model_Weights/
+COPY checkpoints/OilPainting_SC3/DiffI2I_S2/diffi2i_s2_Model_1699.pth.tar checkpoints/OilPainting_SC3/DiffI2I_S2/
+COPY checkpoints/OilPainting_SC3/settings.txt checkpoints/OilPainting_SC3/
+COPY Test_Images/ ./Test_Images/
+
+# Expose port 8000 for the FastAPI application
+EXPOSE 8000
+
+# Set entrypoint for running the server
+CMD ["uvicorn", "Diffi2i_Inference_Server:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

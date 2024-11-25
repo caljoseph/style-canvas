@@ -27,6 +27,7 @@ models/vgg19-dcbb9e9d.pth
 # Exclude entire directories containing other model weights
 ModelWeights/
 
+
 # ===============================
 # Exclude Test Images Directories
 # ===============================
