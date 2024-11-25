@@ -40,8 +40,8 @@ export class MLServerService {
             if (currentStatus === 'RUNNING') {
                 const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
                 this.logger.debug(`Inactive time: ${inactiveTime}ms`);
-                if (inactiveTime > 1 * 60 * 1000) { // 1 minute
-                    this.logger.warn('ML server inactive for over 1 minute. Initiating shutdown...');
+                if (inactiveTime > 30 * 60 * 1000) { // 30 minutes
+                    this.logger.warn('ML server inactive for over 30 minute. Initiating shutdown...');
                     await this.stopServer().catch((error) =>
                         this.logger.error('Error shutting down ML server in inactivity monitor', error)
                     );
@@ -49,7 +49,7 @@ export class MLServerService {
             } else {
                 this.logger.debug('Server is not running; no action taken by inactivity monitor.');
             }
-        }, 1 * 60 * 1000); // Check every minute
+        }, 5 * 60 * 1000); // Check every 5 minutes
     }
 
     async getServerConfig(): Promise<{ instanceId: string; port: number; ipAddress: string | null }> {
