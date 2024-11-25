@@ -18,7 +18,6 @@ export class MLServerService {
     private readonly logger = new Logger(MLServerService.name);
     private readonly ML_INSTANCE_ID = 'i-00dacca11c59a3374';
     private readonly ML_PORT = 3000;
-    private serverStatus: ServerStatus = 'STOPPED';
     private lastActivityTimestamp: Date = new Date();
     private inactivityCheckInterval: NodeJS.Timeout | null = null;
     private currentServerIP: string | null = null;
@@ -37,11 +36,12 @@ export class MLServerService {
 
         this.inactivityCheckInterval = setInterval(async () => {
             this.logger.debug('Inactivity monitor triggered.');
-            if (this.serverStatus === 'RUNNING') {
+            const currentStatus = await this.getServerStatus();
+            if (currentStatus === 'RUNNING') {
                 const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
                 this.logger.debug(`Inactive time: ${inactiveTime}ms`);
                 if (inactiveTime > 1 * 60 * 1000) { // 1 minute
-                    this.logger.warn('ML server inactive for over 1 hour. Initiating shutdown...');
+                    this.logger.warn('ML server inactive for over 1 minute. Initiating shutdown...');
                     await this.stopServer().catch((error) =>
                         this.logger.error('Error shutting down ML server in inactivity monitor', error)
                     );
@@ -97,7 +97,6 @@ export class MLServerService {
             return;
         }
 
-        this.serverStatus = 'STARTING';
         this.logger.log('Starting ML server...');
 
         try {
@@ -119,12 +118,10 @@ export class MLServerService {
             // Wait for ML service to be ready
             await this.waitForHealthCheck();
 
-            this.serverStatus = 'RUNNING';
             this.updateLastActivity();
             this.logger.log('ML server is now running and ready.');
         } catch (error) {
             this.logger.error('Failed to start ML server', error);
-            this.serverStatus = 'STOPPED';
             this.currentServerIP = null;
             throw new MLServerStartupException();
         }
@@ -142,7 +139,6 @@ export class MLServerService {
             await exec(`aws ec2 stop-instances --instance-ids ${this.ML_INSTANCE_ID}`);
             this.logger.debug('Waiting for EC2 instance to reach "stopped" state...');
             await exec(`aws ec2 wait instance-stopped --instance-ids ${this.ML_INSTANCE_ID}`);
-            this.serverStatus = 'STOPPED';
             this.currentServerIP = null;
             this.logger.log('ML server stopped successfully.');
         } catch (error) {
