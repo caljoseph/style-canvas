@@ -44,7 +44,25 @@ export class MLServerService {
     }
 
     async getServerStatus(): Promise<ServerStatus> {
-        return this.serverStatus;
+        try {
+            const { stdout } = await exec(
+                `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
+                `--query 'Reservations[0].Instances[0].State.Name' --output text`
+            );
+            const instanceStatus = stdout.trim();
+            switch (instanceStatus) {
+                case 'running':
+                    return 'RUNNING';
+                case 'stopping':
+                case 'stopped':
+                    return 'STOPPED';
+                default:
+                    return 'STARTING';
+            }
+        } catch (error) {
+            this.logger.error('Failed to get server status', error);
+            return 'STOPPED';
+        }
     }
 
     async getServerIP(): Promise<string | null> {
@@ -52,8 +70,9 @@ export class MLServerService {
     }
 
     async startServer(): Promise<void> {
-        if (this.serverStatus !== 'STOPPED') {
-            this.logger.log(`Server already ${this.serverStatus.toLowerCase()}`);
+        const currentStatus = await this.getServerStatus();
+        if (currentStatus !== 'STOPPED') {
+            this.logger.log(`Server already ${currentStatus.toLowerCase()}`);
             return;
         }
 
@@ -89,7 +108,9 @@ export class MLServerService {
     }
 
     async stopServer(): Promise<void> {
-        if (this.serverStatus !== 'RUNNING') {
+        const currentStatus = await this.getServerStatus();
+        if (currentStatus !== 'RUNNING') {
+            this.logger.log('Server is not running, skipping stop');
             return;
         }
 
