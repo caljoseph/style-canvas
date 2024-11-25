@@ -20,6 +20,7 @@ dependencies:
   - fastapi
   - dlib
   - lmdb
+  - mamba
   - cudatoolkit=11.7
   - cudnn=9.2.1.18
   - pip

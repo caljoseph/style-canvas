@@ -6,6 +6,7 @@ import os
 import logging
 import numpy as np
 import traceback
+import torch
 import Diff_I2I_lib as Diff
 from DiffI2IModelEnum import DiffI2IModelEnum
 
@@ -22,12 +23,28 @@ logger = logging.getLogger("inference_server")
 app = FastAPI()
 model_enum = None
 
+@app.get("/ping")
+async def ping():
+    """Health check endpoint."""
+    return JSONResponse(content={"status": "Healthy"}, status_code=200)
+
+@app.post("/invocations")
+async def invoke(file: UploadFile = File(...)):
+    """SageMaker inference endpoint."""
+    return await infer_image(file)
+
+
 
 @app.on_event("startup")
 def configuring_model_settings():
     global model_enum
     checkpoints_path = "./checkpoints"
     model_enum = get_model_from_checkpoints(checkpoints_path)
+    
+    if torch.cuda.is_available():
+        print(f"CUDA is available. Device: {torch.cuda.get_device_name(0)}")
+    else:
+        print("CUDA is not available.")
 
 
 @app.post("/infer")

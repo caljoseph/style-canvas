@@ -1,28 +1,22 @@
-FROM continuumio/miniconda3:latest
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
-# Set working directory
+# Install Miniconda
 WORKDIR /app
-
-# Copy the DiffI2I_Environment.yml file
-COPY DiffI2I_Environment.yml .
-
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends wget bzip2 build-essential libgl1 libglib2.0-0 && \
+RUN apt-get update && apt-get install -y wget bzip2 build-essential libgl1 libglib2.0-0 && \
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /miniconda.sh && \
+    bash /miniconda.sh -b -p /opt/conda && \
+    rm /miniconda.sh && \
     rm -rf /var/lib/apt/lists/*
+ENV PATH="/opt/conda/bin:$PATH"
 
-# Install Mamba and create the Conda DiffI2I_Environment
+# Copy the Conda environment file and install
+COPY DiffI2I_Environment.yml .
 RUN conda install -n base -c conda-forge mamba && \
     mamba env update -f DiffI2I_Environment.yml && \
     conda clean --all --yes
 
-# Pre-install pip packages including dill
-RUN pip install dill
-
-# Set the Conda DiffI2I_Environment to PATH and activate by default
-ENV PATH="/opt/conda/envs/StyleCanvasAI/bin:$PATH"
-
 # Activate the Conda environment by default
+ENV PATH="/opt/conda/envs/StyleCanvasAI/bin:$PATH"
 SHELL ["conda", "run", "-n", "StyleCanvasAI", "/bin/bash", "-c"]
 
 # Copy application files
