@@ -1,18 +1,18 @@
+import argparse
+import sys
+import os
 import Face_Parsing_Model as fpm
 import AdobeFilterModelLib as afm
 import ChalkboardFilterLib as cbf
 import Face2Paint as f2p
 import Diff_I2I_lib as Diff
-from Face_Parsing_Model import FaceDrawingTypes 
-import os
+from Face_Parsing_Model import FaceDrawingTypes
 import style_canvas_utils as scu
-from tqdm import tqdm
 from ImageSaver import ImageSaver
 import numpy as np
 import FaceImageProcessor as im
 from FaceImageProcessor import FaceImageProcessor
 from PIL import Image, ImageChops
-from natsort import natsorted
 
 fpm.use_default_face_model = True
 
@@ -145,7 +145,7 @@ def Verdant_Flame(img):
 def face2paint(img):
     return f2p.Generate_Face2Paint_image(img)
 
-# uses YOLO from ultralytics:
+# Uses YOLO from ultralytics:
 
 def crop_and_resize_face_image(img , img_width=4096, img_height=4096):
     processor_images = FaceImageProcessor(img_width, img_height)
@@ -157,14 +157,14 @@ def apply_broken_glass_effect(img):
     top_layer_path = r"./Broken_Glass_Assets/Broken_Glass_2.jpg"
     mask_path = r"./Broken_Glass_Assets/Broken_Glass_Mask_1.png"
     background_path = r"./Broken_Glass_Assets/background.png"  # Update with correct extension
-    
+
     processor_images = FaceImageProcessor(4096, 4096)
     img = processor_images.process_image3(img)
 
     # Open and resize the mask to match the dimensions of the given image
     mask = Image.open(mask_path).convert("L")  # Convert to grayscale (L) for mask
     mask = mask.resize(img.size)
-    
+
     # Add the mask as an alpha channel to the given image
     img_with_alpha = img.copy().convert("RGBA")  # Ensure the image has an alpha channel
     img_with_alpha.putalpha(mask)
@@ -194,40 +194,75 @@ def apply_broken_glass_effect(img):
 
     return final_image_np
 
-# RealESRGANer model 
+# RealESRGANer model
 
 def Upsample(img, scale = 2):
     return im.upsampler_image(img, scale)
 
-# Function for testing other Functions above :
-def process_images_with_function(processing_function):
-    source_folder = r'./Test_Image_WrongSizes'
-    destination_root_folder = r"./Results"
-    destination_subfolder_name = processing_function.__name__
-    destination_folder = os.path.join(destination_root_folder, destination_subfolder_name)
-    
-    # Create destination folder if it doesn't exist
-    if not os.path.exists(destination_folder):
-        os.makedirs(destination_folder)
+# Map filter names to functions
+filter_functions = {
+    'ShadowSplit_Abstract': ShadowSplit_Abstract,
+    'ShadowSplit': ShadowSplit,
+    'Kai_Face': Kai_Face,
+    'TriadShade': TriadShade,
+    'HarmonyHue': HarmonyHue,
+    'TriadicVision': TriadicVision,
+    'BlueShadeFace': BlueShadeFace,
+    'CrimsonCanvas': CrimsonCanvas,
+    'DarkColorBlend': DarkColorBlend,
+    'DotLineFace': DotLineFace,
+    'CrimsonContour': CrimsonContour,
+    'Tenshi': Tenshi,
+    'TenshiAbstract': TenshiAbstract,
+    'ScarletFrame': ScarletFrame,
+    'RedMist': RedMist,
+    'Impasto_L1': Impasto_L1,
+    'Impasto': Impasto,
+    'VanGogh': VanGogh,
+    'BlueMist': BlueMist,
+    'Chalkboard': Chalkboard,
+    'OilPainting_SC3': OilPainting_SC3,
+    'OilPainting_OP3': OilPainting_OP3,
+    'pencil_blur': pencil_blur,
+    'Verdant_Flame': Verdant_Flame,
+    'face2paint': face2paint,
+    'crop_and_resize_face_image': crop_and_resize_face_image,
+    'apply_broken_glass_effect': apply_broken_glass_effect,
+    'Upsample': Upsample
+}
 
-    image_paths = natsorted(os.listdir(source_folder))  # Sort images alphabetically and numerically
-    image_saver = ImageSaver(destination_folder)  
-    loop = tqdm(image_paths, leave=True)
+# Function for processing a single image:
 
-    for image_name in loop:
-        try:
-            # Check if file is an image
-            if image_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
-                image_path = os.path.join(source_folder, image_name)
-                img = Image.open(image_path)
-                # Call the function passed in to process the image
-                processed_image = processing_function(img) 
-                if processed_image is not None:
-                    image_saver.save_image(image_name, processed_image)
-        except Exception as e:
-            print(f"Failed to process {image_name}: {e}")
+def process_single_image_with_function(processing_function, input_file, output_file):
+    try:
+        # Open the image
+        img = Image.open(input_file)
+        # Call the processing function
+        processed_image = processing_function(img)
+        if processed_image is not None:
+            # Save the image
+            if isinstance(processed_image, np.ndarray):
+                processed_image = Image.fromarray(processed_image)
+            processed_image.save(output_file)
+    except Exception as e:
+        print(f"Failed to process {input_file}: {e}")
 
+if __name__ == "__main__":
+    import argparse
 
-if __name__ == "__main__": 
-    process_images_with_function(BlueShadeFace)
+    parser = argparse.ArgumentParser(description='Process a single image with a specified filter.')
+    parser.add_argument('--input_file', required=True, help='Path to the input image file.')
+    parser.add_argument('--output_file', required=True, help='Path to save the output image.')
+    parser.add_argument('--filter_name', required=True, help='Name of the filter function to apply.')
 
+    args = parser.parse_args()
+
+    filter_name = args.filter_name
+
+    if filter_name not in filter_functions:
+        print(f"Filter '{filter_name}' not found.")
+        sys.exit(1)
+
+    processing_function = filter_functions[filter_name]
+
+    process_single_image_with_function(processing_function, args.input_file, args.output_file)
