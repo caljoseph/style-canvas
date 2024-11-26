@@ -1,6 +1,6 @@
 from Pix2Pix import Generator
 import Pix2Pix as p2p
-import FaceDetectorLib as scu
+import style_canvas_utils as scu
 import torch
 from InferenceImageProcessor import InferenceImageProcessor
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import torch
+import torchvision.transforms as T
 from PIL import Image, ExifTags
 from torchvision import transforms
 import torch.nn as nn
@@ -125,3 +126,21 @@ def TurnBlue(img):
      img = img.astype(np.uint8)   
   blue_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
   return blue_image
+
+def process_face_image(image):
+    """
+    Process an image by resizing, converting to tensor, and normalizing.
+    This function expects a PIL.Image as input and returns a normalized tensor.
+
+    Returns:
+    torch.Tensor: The processed image tensor, ready for model input.
+    """
+    # Define the transformation pipeline
+    transformation_pipeline = T.Compose([
+        T.ToTensor(),                      # Convert the image to a tensor
+        T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize the tensor
+    ])
+    
+    # Apply the transformations
+    processed_image = transformation_pipeline(image)
+    return processed_image

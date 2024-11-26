@@ -10,6 +10,7 @@ from Face_Parsing_Model import FaceDrawingTypes
 import style_canvas_utils as scu
 from ImageSaver import ImageSaver
 import numpy as np
+import argparse
 import FaceImageProcessor as im
 from FaceImageProcessor import FaceImageProcessor
 from PIL import Image, ImageChops
@@ -55,7 +56,7 @@ def BlueShadeFace(img):
 
 def CrimsonCanvas(img):
     face_drawing_styles = FaceDrawingTypes.CrimsonCanvas
-    drawing = fpm.Generate_Face_Drawing(img, face_drawing_styles, True)
+    drawing = fpm.Generate_Face_Drawing(img, face_drawing_styles, False, True)
     return drawing
 
 def DarkColorBlend(img):
@@ -248,8 +249,7 @@ def process_single_image_with_function(processing_function, input_file, output_f
         print(f"Failed to process {input_file}: {e}")
 
 if __name__ == "__main__":
-    import argparse
-
+  
     parser = argparse.ArgumentParser(description='Process a single image with a specified filter.')
     parser.add_argument('--input_file', required=True, help='Path to the input image file.')
     parser.add_argument('--output_file', required=True, help='Path to save the output image.')

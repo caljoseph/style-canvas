@@ -6,13 +6,16 @@ from realesrgan import RealESRGANer
 import math
 import style_canvas_utils as scu
 import torch
+import torchvision.transforms as T
 
 minimum_required_image_height = 1024  
 minimum_required_image_width = 1024
 
 def upsampler_image(img, scale=2):
-    torch.cuda.empty_cache()  # Clear any unused GPU memory before upsampling
-
+    if torch.cuda.is_available():  # Check if CUDA is available
+            torch.cuda.synchronize()  # Ensure all CUDA operations are finished
+            torch.cuda.empty_cache()  # Clear the CUDA cache to free up memory
+  
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
     upsampler = RealESRGANer(
         scale=scale,
@@ -27,12 +30,36 @@ def upsampler_image(img, scale=2):
     
     return Image.fromarray(output_img)
 
+def enhance_image_resolution(img, scale=2):
+    if torch.cuda.is_available():  # Check if CUDA is available
+        torch.cuda.synchronize()  # Ensure all CUDA operations are finished
+        torch.cuda.empty_cache()  # Clear the CUDA cache to free up memory
+
+    # Initialize the model and upsampler
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+    upsampler = RealESRGANer(
+        scale=scale,
+        model_path=r'./Resize_Model_Weights/RealESRGAN_x4plus.pth',
+        model=model,
+        device=scu.DEVICE,
+        gpu_id=scu.gpu_id,
+    )
+
+    # Process the image
+    img_np = np.array(img)  # Convert PIL Image to NumPy array
+    output_img, _ = upsampler.enhance(img_np)
+
+    return output_img  # Return the NumPy array directly
+
 class FaceImageProcessor:
     def __init__(self, img_width=4096, img_height=4096):
         self.img_width = img_width
         self.img_height = img_height
         self.model = YOLO('./Resize_Model_Weights/yolov8l-face.pt', verbose=False)
-
+        self.transforms = T.Compose([
+            T.ToTensor(), 
+        ])
+        
     def calculate_image_dimensions(self, img_width, img_height):
         # Calculate how many times we need to divide both dimensions by 2
         divisions_width = math.ceil(math.log2(self.img_width / img_width)) if self.img_width > img_width else 0
@@ -54,9 +81,8 @@ class FaceImageProcessor:
         img_width, img_height = img.size
         results = self.model(img)
         
-        processed_faces = []  # To store each processed face image
-        for box_data in results[0].boxes:  # Loop over all detected faces
-            box = box_data.xyxy[0].cpu().numpy()  # Left, Top, Right, Bottom
+        if len(results[0].boxes) > 0:
+            box = results[0].boxes[0].xyxy[0].cpu().numpy()  # Left, Top, Right, Bottom
             left, top, right, bottom = map(int, box)
 
             # Extend bounding box for hair, neck, shoulders
@@ -81,16 +107,10 @@ class FaceImageProcessor:
             cropped_width, cropped_height = cropped_img.size
             new_width, new_height = self.resize_object_to_fit(cropped_width, cropped_height, self.img_width, self.img_height)
 
-            # Place the resized image on a white canvas
-            processed_face = self.place_on_white_canvas(cropped_img.resize((new_width, new_height), Image.LANCZOS))
-            processed_faces.append(processed_face)  # Add processed face to list
+            return self.place_on_white_canvas(cropped_img.resize((new_width, new_height), Image.LANCZOS))
 
-        # Return all processed faces or save them individually
-        if not processed_faces:
-            print("No object detected.")
-            return None
-        
-        return processed_faces
+        else:
+            raise Exception("No object detected.")
 
     def resize_to_fill_target(self, img, target_width, target_height):
             """Resize the cropped image to fill the target dimensions without leaving any white space."""
@@ -117,7 +137,6 @@ class FaceImageProcessor:
     
     def place_on_white_canvas(self, img):
         """Place the image on a white canvas of the target size (self.img_width x self.img_height)."""
-        print("Placing image on white canvas")
         canvas = Image.new("RGB", (self.img_width, self.img_height), (255, 255, 255))  # White canvas
         img_width, img_height = img.size
         x_offset = (self.img_width - img_width) // 2
@@ -145,6 +164,28 @@ class FaceImageProcessor:
             if input_image.mode != 'RGB':
                 input_image = input_image.convert('RGB')
 
-            input_image = rcpf.normalize_images(input_image)
+            input_image =  scu.normalize_images(input_image)
 
             return input_image
+    
+    def process_image2(self, input_image):
+            input_image = scu.rotate_image_based_on_exif(input_image)
+            resized_img = self.crop_and_resize_image(input_image)
+
+            if resized_img.mode != 'RGB':
+                resized_img = resized_img.convert('RGB')
+
+            face_tensor = scu.process_face_image(resized_img)
+            face_tensor = face_tensor.unsqueeze(0)
+            return face_tensor
+    
+    def process_image_for_diffI2I_models(self, input_image):
+        processed_image =  self.process_image(input_image)
+        face_tensor = self.transforms(processed_image)
+        face_tensor = face_tensor.unsqueeze(0)
+        return face_tensor
+    
+    def process_image3(self, input_image):
+        input_image = scu.rotate_image_based_on_exif(input_image) 
+        resized_img = self.crop_and_resize_image(input_image)
+        return resized_img

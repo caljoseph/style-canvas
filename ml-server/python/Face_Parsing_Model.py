@@ -900,9 +900,6 @@ def Generate_Face_Drawing(img, face_drawing_style, is_dotted=False, gap_width=12
     with torch.no_grad():
         generated_image_tensor = Diff.FaceParsing_T2(img)
 
-    generated_image = Diff.tensor_to_pil(generated_image_tensor)
-    save_debug_image(generated_image, "face_parsing_output")
-
     shapes_tensor = segmentation_map_postprocessing(generated_image_tensor)
     segmented_face_tensor = shapes_tensor.cpu().numpy()
     if(crazy_neck):

@@ -16,7 +16,7 @@ is_verdant_flame_loaded = False
 def Generate_Face_image(img, parameters):
     global manager
     processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
-    processed_image = processor_images.process_image(img)
+    processed_image = processor_images.process_image_for_diffI2I_models(img)
     OilPainting = manager.run_Diffi2i_S2(processed_image)
     OilPainting = scu.tensor2im(OilPainting, normalize=False)
     return OilPainting
@@ -24,7 +24,7 @@ def Generate_Face_image(img, parameters):
 def Generate_Face_Parsing_image(img, parameters):
     global manager
     processor_images = FaceImageProcessor(parameters.img_width, parameters.img_height)
-    processed_image = processor_images.process_image(img)
+    processed_image = processor_images.process_image_for_diffI2I_models(img)
     processed_image = manager.run_Diffi2i_S2(processed_image)
     return processed_image
 

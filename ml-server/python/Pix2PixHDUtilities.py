@@ -5,7 +5,7 @@ from torchvision.utils import save_image
 import networks as Networks
 import os
 from PIL import Image
-import reuseablecustompythonfunctions as scu
+import style_canvas_utils as scu
 from torchvision import transforms as T
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as TF

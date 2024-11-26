@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import reuseablecustompythonfunctions as scu
+import style_canvas_utils as scu
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 LEARNING_RATE = 2e-4
