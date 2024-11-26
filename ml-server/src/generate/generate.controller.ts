@@ -6,17 +6,34 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 enum ModelName {
+    ShadowSplit_Abstract = 'ShadowSplit_Abstract',
+    ShadowSplit = 'ShadowSplit',
+    Kai_Face = 'Kai_Face',
+    TriadShade = 'TriadShade',
+    HarmonyHue = 'HarmonyHue',
+    TriadicVision = 'TriadicVision',
     BlueShadeFace = 'BlueShadeFace',
     CrimsonCanvas = 'CrimsonCanvas',
     CrimsonContour = 'CrimsonContour',
     DarkColorBlend = 'DarkColorBlend',
     DotLineFace = 'DotLineFace',
+    Tenshi = 'Tenshi',
+    TenshiAbstract = 'TenshiAbstract',
+    ScarletFrame = 'ScarletFrame',
     RedMist = 'RedMist',
+    Impasto_L1 = 'Impasto_L1',
+    Impasto = 'Impasto',
     VanGogh = 'VanGogh',
-    A_Face_OilPainting = 'A_Face_OilPainting',
     BlueMist = 'BlueMist',
     Chalkboard = 'Chalkboard',
-    TenshiAbstract = 'TenshiAbstract'
+    OilPainting_SC3 = 'OilPainting_SC3',
+    OilPainting_OP3 = 'OilPainting_OP3',
+    pencil_blur = 'pencil_blur',
+    Verdant_Flame = 'Verdant_Flame',
+    face2paint = 'face2paint',
+    crop_and_resize_face_image = 'crop_and_resize_face_image',
+    apply_broken_glass_effect = 'apply_broken_glass_effect',
+    Upsample = 'Upsample'
 }
 
 class GenerateImageDto {
@@ -45,16 +62,14 @@ export class GenerateController {
         const projectRoot = '/Users/calebbradshaw/style-canvas/ml-server';
         const pythonDir = path.join(projectRoot, 'python');
         const tempDir = path.join(projectRoot, 'temp');
-        const inputDir = path.join(tempDir, 'input');
-        const outputDir = path.join(tempDir, 'output');
-        const inputFilePath = path.join(inputDir, 'input_image.png');
+        const inputFilePath = path.join(tempDir, 'input_image.png');
+        const outputFilePath = path.join(tempDir, 'output_image.png');
 
         try {
-            // Create temp, input, and output directories
-            this.logger.log('Creating temporary directories');
+            // Create temp directory
+            this.logger.log('Creating temporary directory');
             await fs.promises.rm(tempDir, { recursive: true, force: true }).catch(() => {});
-            await fs.promises.mkdir(inputDir, { recursive: true });
-            await fs.promises.mkdir(outputDir, { recursive: true });
+            await fs.promises.mkdir(tempDir, { recursive: true });
 
             // Save the uploaded file
             this.logger.log(`Saving uploaded file to ${inputFilePath}`);
@@ -64,12 +79,12 @@ export class GenerateController {
             const pythonScriptPath = 'StyleCanvasAI.py';
 
             // Construct and log the shell command
-            const shellCommand = `cd ${pythonDir} && conda run -n Pix2PixTester python ${pythonScriptPath} --input_path ${inputDir} --output_path ${outputDir} --filter_name ${generateImageDto.modelName}`;
+            const shellCommand = `cd ${pythonDir} && conda run -n Pix2PixTester python ${pythonScriptPath} --input_file ${inputFilePath} --output_file ${outputFilePath} --filter_name ${generateImageDto.modelName}`;
             this.logger.log(`Executing shell command: ${shellCommand}`);
 
             const { stdout, stderr } = await this.executePythonScript(pythonDir, pythonScriptPath, [
-                '--input_path', inputDir,
-                '--output_path', outputDir,
+                '--input_file', inputFilePath,
+                '--output_file', outputFilePath,
                 '--filter_name', generateImageDto.modelName,
             ]);
 
@@ -79,13 +94,7 @@ export class GenerateController {
 
             this.logger.log(`Python script output: ${stdout}`);
 
-            // Check if the output file exists, regardless of stderr
-            const outputFiles = await fs.promises.readdir(outputDir);
-            if (outputFiles.length === 0) {
-                throw new Error('No output file generated');
-            }
-            const outputFilePath = path.join(outputDir, outputFiles[0]);
-
+            // Check if the output file exists
             if (!(await fs.promises.stat(outputFilePath).then(() => true).catch(() => false))) {
                 throw new Error(`Output file not found: ${outputFilePath}`);
             }
