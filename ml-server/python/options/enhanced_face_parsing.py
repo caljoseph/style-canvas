@@ -1,14 +1,12 @@
-from .test_options import TestOptions
+from .base_options import BaseOptions
 
-class Enhanced_Face_Parsing(TestOptions):
+class Enhanced_Face_Parsing(BaseOptions):
     def __init__(self,  which_epoch = 'latest'):
         super(Enhanced_Face_Parsing, self).__init__()
         self. which_epoch =  which_epoch
         self.initialize()
 
     def initialize(self):
-        super(Enhanced_Face_Parsing, self).initialize()
-        
         # Override default options specific to Face Parsing
         self.parser.set_defaults(
             label_nc=0, 

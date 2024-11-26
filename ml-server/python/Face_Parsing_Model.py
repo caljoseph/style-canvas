@@ -387,22 +387,22 @@ def GetFaceParsingModel(model_type: FaceParsingModelType = FaceParsingModelType.
     
     if model_type == FaceParsingModelType.F256_FACE_PARSING:
         print("F256_FACE_PARSING ")
-        options = FaceParsingOptions('F256_Face_Parsing').parse(save=False)
+        options = FaceParsingOptions('F256_Face_Parsing')
     elif model_type == FaceParsingModelType.D256_LE_2_FACE_PARSING:
         print("D256_LE_2_FACE_PARSING ")
-        options = FaceParsingOptions('D256_LE_2_Face_Parsing', 2, which_epoch).parse(save=False)
+        options = FaceParsingOptions('D256_LE_2_Face_Parsing', 2, which_epoch)
     elif model_type == FaceParsingModelType.D128_FACE_PARSING:
         print("D128_FACE_PARSING ")
-        options = FaceParsingOptions('D128_Face_Parsing').parse(save=False)
+        options = FaceParsingOptions('D128_Face_Parsing')
     elif model_type == FaceParsingModelType.G128_FACE_PARSING:
         print("G128_FACE_PARSING")
-        options = FaceParsingOptions('G128_Face_Parsing', 1, which_epoch, 512, 512).parse(save=False)
+        options = FaceParsingOptions('G128_Face_Parsing', 1, which_epoch, 512, 512)
     elif model_type == FaceParsingModelType.SUPER_FACE_PARSING:
         print("FaceParsingModelType.SUPER_FACE_PARSING")
-        options = FaceParsingOptions('Super_Face_Parsing', 4, which_epoch, 512, 256, 128).parse(save=False)
+        options = FaceParsingOptions('Super_Face_Parsing', 4, which_epoch, 512, 256, 128)
     elif model_type == FaceParsingModelType.Enhanced_Face_Parsing:
         print("FaceParsingModelType.Enhanced_Face_Parsing")
-        options = Enhanced_Face_Parsing(which_epoch).parse(save=False)
+        options = Enhanced_Face_Parsing(which_epoch)
 
  
     print("create_model(options)")

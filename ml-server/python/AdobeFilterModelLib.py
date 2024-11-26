@@ -10,7 +10,7 @@ import style_canvas_utils as rcpf
 
 
 def GetAdobeFilterModel(ai_model_name, which_epoch, ngf = 64, n_local_enhancers = 2):
-    options = AdobefilterDefaultOptions(ai_model_name, which_epoch, ngf, n_local_enhancers).parse(save=False)
+    options = AdobefilterDefaultOptions(ai_model_name, which_epoch, ngf, n_local_enhancers)
     AdobeFilterModel = create_model(options)
     return AdobeFilterModel
 
