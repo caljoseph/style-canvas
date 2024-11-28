@@ -113,7 +113,10 @@ export class ImageService {
                     // Ensure server is running
                     while (true) {
                         const serverStatus = await this.mlServerService.getServerStatus();
-                        if (serverStatus === 'RUNNING') break;
+                        if (serverStatus === 'RUNNING') {
+                            this.mlServerService.updateLastActivity(); // Update activity when server is found running
+                            break;
+                        }
                         if (serverStatus === 'STOPPED') {
                             this.logger.log('Starting ML server for request processing...');
                             await this.mlServerService.startServer();
@@ -136,6 +139,7 @@ export class ImageService {
                     const serverIP = await this.mlServerService.getServerIP();
                     if (!serverIP) throw new MLServerOfflineException();
 
+                    this.logger.debug(`Sending request to ML server at http://${serverIP}:${this.ML_PORT}/generate/image`);
                     const response = await fetch(`http://${serverIP}:${this.ML_PORT}/generate/image`, {
                         method: 'POST',
                         body: formData,
@@ -155,6 +159,8 @@ export class ImageService {
                             await this.queueService.markRequestCompleted(requestHash);
                             await fs.unlink(filePath);
                             this.logger.log(`Successfully completed request ${requestHash}`);
+                            // Update activity after successful processing
+                            this.mlServerService.updateLastActivity();
                             break;
 
                         case HttpStatus.BAD_REQUEST:
