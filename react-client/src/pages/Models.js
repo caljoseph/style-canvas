@@ -277,6 +277,43 @@ const Models = () => {
         }
     };
 
+    const fetchProcessedImage = async (requestHash) => {
+        try {
+            const response = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to retrieve processed image: ${response.status}`);
+            }
+
+            // Create a blob from the image data
+            const blob = await response.blob();
+            if (!blob.type.startsWith('image/')) {
+                throw new Error('Received invalid image data');
+            }
+
+            // Create an object URL for the blob
+            const imageUrl = URL.createObjectURL(blob);
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'complete',
+                resultImage: imageUrl,
+                progress: 100
+            }));
+        } catch (error) {
+            console.error('Error fetching processed image:', error);
+            setError('Failed to retrieve the processed image');
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'error',
+                progress: 0
+            }));
+        }
+    };
+
     const pollStatus = async (requestHash) => {
         try {
             const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
@@ -285,18 +322,16 @@ const Models = () => {
                 }
             });
 
-            if (!response.ok) throw new Error('Failed to check status');
+            if (!response.ok) {
+                throw new Error('Failed to check status');
+            }
 
             const data = await response.json();
 
             if (data.status === 'completed') {
-                await fetchProcessedImage(requestHash);
                 clearInterval(pollInterval.current);
-                setProcessingState(prev => ({
-                    ...prev,
-                    status: 'complete',
-                    progress: 100
-                }));
+                // Immediately fetch the processed image
+                await fetchProcessedImage(requestHash);
             } else if (data.status === 'failed') {
                 clearInterval(pollInterval.current);
                 setError('Processing failed. Please try again.');
@@ -316,26 +351,6 @@ const Models = () => {
             console.error('Error polling status:', error);
             clearInterval(pollInterval.current);
             setError('Failed to check processing status');
-            setProcessingState(prev => ({ ...prev, status: 'error' }));
-        }
-    };
-
-    const fetchProcessedImage = async (requestHash) => {
-        try {
-            const response = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to retrieve processed image');
-
-            const blob = await response.blob();
-            const imageUrl = URL.createObjectURL(blob);
-            setProcessingState(prev => ({ ...prev, resultImage: imageUrl }));
-        } catch (error) {
-            console.error('Error fetching processed image:', error);
-            setError('Failed to retrieve the processed image');
             setProcessingState(prev => ({ ...prev, status: 'error' }));
         }
     };
