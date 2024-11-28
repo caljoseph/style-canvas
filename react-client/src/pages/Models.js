@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import ReactCrop from 'react-image-crop';
+import { useAuth } from '../context/AuthContext';
+import Config from '../config';
 import 'react-image-crop/dist/ReactCrop.css';
 
 const Models = () => {
@@ -13,14 +15,43 @@ const Models = () => {
     const [crop, setCrop] = useState(null);
     const [imgLoaded, setImgLoaded] = useState(false);
     const [originalDimensions, setOriginalDimensions] = useState({ width: 0, height: 0 });
+    const [processingState, setProcessingState] = useState({
+        status: 'idle', // idle, uploading, processing, complete, error
+        requestHash: null,
+        estimatedTime: null,
+        progress: 0,
+        resultImage: null
+    });
     const [statusMessage, setStatusMessage] = useState({
         text: "Please upload an image of at least 1024x1024px",
         type: "info"
     });
+
     const imageRef = useRef(null);
+    const pollInterval = useRef(null);
+    const { user } = useAuth();
 
     const MIN_DIMENSION = 1024;
     const DISPLAY_DIMENSION = 400;
+
+    // Prevent navigation while processing
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (processingState.status === 'processing' || processingState.status === 'uploading') {
+                e.preventDefault();
+                e.returnValue = 'Your image is still processing. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+            }
+        };
+    }, [processingState.status]);
 
     const models = [
         { name: "Abstract Face Line", image: "/assets/Face Sample/Abstract Face Line/BrennanMcCleary.png" },
@@ -34,20 +65,6 @@ const Models = () => {
         { name: "Kai Face", image: "/assets/Face Sample/Kai Face/image_117_image.png" },
         { name: "Line Sketch", image: "/assets/Face Sample/LineSketch/BrennanMcCleary.png" },
     ];
-
-    const handleModelClick = (modelName) => {
-        setSelectedModel(modelName);
-        setShowModal(true);
-        setError(null);
-        setIsCropping(true);
-        setPreviewImage(null);
-        setCroppedImage(null);
-        setOriginalDimensions({ width: 0, height: 0 });
-        setStatusMessage({
-            text: "Please upload an image of at least 1024x1024px",
-            type: "info"
-        });
-    };
 
     const validateImageDimensions = (width, height) => {
         if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
@@ -79,13 +96,38 @@ const Models = () => {
         return { width: displayWidth, height: displayHeight };
     };
 
+    const handleModelClick = (modelName) => {
+        if (!user || user.tokens < 1) {
+            setError("You don't have enough tokens to process an image. Please purchase more tokens to continue.");
+            return;
+        }
+
+        setSelectedModel(modelName);
+        setShowModal(true);
+        setError(null);
+        setIsCropping(true);
+        setPreviewImage(null);
+        setCroppedImage(null);
+        setOriginalDimensions({ width: 0, height: 0 });
+        setProcessingState({
+            status: 'idle',
+            requestHash: null,
+            estimatedTime: null,
+            progress: 0,
+            resultImage: null
+        });
+        setStatusMessage({
+            text: "Please upload an image of at least 1024x1024px",
+            type: "info"
+        });
+    };
+
     const onImageLoad = (e) => {
         const { naturalWidth, naturalHeight, width, height } = e.currentTarget;
         setOriginalDimensions({ width: naturalWidth, height: naturalHeight });
         setImgLoaded(true);
 
         if (!validateImageDimensions(naturalWidth, naturalHeight)) {
-            // Set maximum possible crop area even if image is too small
             const minDimension = Math.min(width, height);
             setCrop({
                 unit: 'px',
@@ -98,7 +140,6 @@ const Models = () => {
             return;
         }
 
-        // Set maximum possible crop area
         const minDimension = Math.min(width, height);
         setCrop({
             unit: 'px',
@@ -110,56 +151,18 @@ const Models = () => {
         });
     };
 
-    // Message style mapping
-    const STATUS_STYLES = {
-        error: {
-            backgroundColor: '#fee2e2',
-            color: '#dc2626',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            marginBottom: '12px',
-            width: '100%',
-            textAlign: 'center'
-        },
-        success: {
-            backgroundColor: '#dcfce7',
-            color: '#16a34a',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            marginBottom: '12px',
-            width: '100%',
-            textAlign: 'center'
-        },
-        info: {
-            backgroundColor: '#dbeafe',
-            color: '#2563eb',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            marginBottom: '12px',
-            width: '100%',
-            textAlign: 'center'
-        }
-    };
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
         if (file) {
-            // Check file type
-            const fileType = file.type;
             const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
 
-            if (!validTypes.includes(fileType)) {
+            if (!validTypes.includes(file.type)) {
                 setStatusMessage({
                     text: "Please upload a JPG, PNG, or WebP image",
                     type: "error"
                 });
                 return;
             }
-
-            const img = new Image();
-            img.onload = () => {
-                URL.revokeObjectURL(img.src);
-            };
-            img.src = URL.createObjectURL(file);
 
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -257,7 +260,143 @@ const Models = () => {
         }
     };
 
+    const pollStatus = async (requestHash) => {
+        try {
+            const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to check status');
+
+            const data = await response.json();
+
+            if (data.status === 'completed') {
+                await fetchProcessedImage(requestHash);
+                clearInterval(pollInterval.current);
+                setProcessingState(prev => ({
+                    ...prev,
+                    status: 'complete',
+                    progress: 100
+                }));
+            } else if (data.status === 'failed') {
+                clearInterval(pollInterval.current);
+                setError('Processing failed. Please try again.');
+                setProcessingState(prev => ({ ...prev, status: 'error' }));
+            } else {
+                // Calculate progress based on queue position
+                const progress = data.queuePosition === 1 ? 75 :
+                    Math.min(50, Math.max(25, 100 - (data.queuePosition * 10)));
+
+                setProcessingState(prev => ({
+                    ...prev,
+                    progress,
+                    estimatedTime: data.estimatedWaitTime
+                }));
+            }
+        } catch (error) {
+            console.error('Error polling status:', error);
+            clearInterval(pollInterval.current);
+            setError('Failed to check processing status');
+            setProcessingState(prev => ({ ...prev, status: 'error' }));
+        }
+    };
+
+    const fetchProcessedImage = async (requestHash) => {
+        try {
+            const response = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to retrieve processed image');
+
+            const blob = await response.blob();
+            const imageUrl = URL.createObjectURL(blob);
+            setProcessingState(prev => ({ ...prev, resultImage: imageUrl }));
+        } catch (error) {
+            console.error('Error fetching processed image:', error);
+            setError('Failed to retrieve the processed image');
+            setProcessingState(prev => ({ ...prev, status: 'error' }));
+        }
+    };
+
+    const handleApplyStyle = async () => {
+        if (!croppedImage) return;
+
+        try {
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'uploading',
+                progress: 25
+            }));
+
+            // Convert base64/URL to blob
+            const response = await fetch(croppedImage);
+            const blob = await response.blob();
+
+            const formData = new FormData();
+            formData.append('image', blob, 'image.png');
+            formData.append('modelName', selectedModel);
+
+            const generateResponse = await fetch(`${Config.apiUrl}/image/generate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+                body: formData
+            });
+
+            if (!generateResponse.ok) {
+                const errorData = await generateResponse.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to start image processing');
+            }
+
+            const { requestHash, estimatedWaitTime } = await generateResponse.json();
+
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'processing',
+                requestHash,
+                estimatedTime: estimatedWaitTime,
+                progress: 50
+            }));
+
+            // Start polling
+            pollInterval.current = setInterval(() => pollStatus(requestHash), 3000);
+
+        } catch (error) {
+            console.error('Error processing image:', error);
+            setError(error.message || 'Failed to process image');
+            setProcessingState(prev => ({ ...prev, status: 'error' }));
+        }
+    };
+
+    const handleDownload = () => {
+        if (processingState.resultImage) {
+            const link = document.createElement('a');
+            link.href = processingState.resultImage;
+            link.download = `styled-image-${selectedModel}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
     const handleCloseModal = () => {
+        if (processingState.status === 'processing' || processingState.status === 'uploading') {
+            const confirm = window.confirm(
+                'Your image is still processing. If you close this window, you will lose your result. Are you sure you want to continue?'
+            );
+            if (!confirm) return;
+
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+            }
+        }
+
         setShowModal(false);
         setPreviewImage(null);
         setCroppedImage(null);
@@ -267,33 +406,19 @@ const Models = () => {
         setCrop(null);
         setImgLoaded(false);
         setOriginalDimensions({ width: 0, height: 0 });
-        setStatusMessage({
-            text: "Please upload an image of at least 1024x1024px",
-            type: "info"
+        setProcessingState({
+            status: 'idle',
+            requestHash: null,
+            estimatedTime: null,
+            progress: 0,
+            resultImage: null
         });
-    };
-
-    const handleApplyStyle = () => {
-        alert(`Styling image with ${selectedModel}. This feature will be implemented soon!`);
-        handleCloseModal();
     };
 
     const handleCropChange = (newCrop) => {
         setCrop(newCrop);
         if (newCrop.width && newCrop.height) {
             validateCropDimensions(newCrop);
-        }
-    };
-
-    const getStatusStyles = (type) => {
-        switch (type) {
-            case 'error':
-                return 'font-medium text-red-600 bg-red-50 px-3 py-2 rounded';
-            case 'success':
-                return 'font-medium text-green-600 bg-green-50 px-3 py-2 rounded';
-            case 'info':
-            default:
-                return 'font-medium text-blue-600 bg-blue-50 px-3 py-2 rounded';
         }
     };
 
@@ -334,9 +459,9 @@ const Models = () => {
             >
                 <Modal.Header closeButton>
                     <div className="w-100 position-relative d-flex align-items-center">
-                        {!isCropping && (
+                        {!isCropping && processingState.status === 'idle' && (
                             <button
-                                className="btn btn-secondary"
+                                className="btn btn-secondary me-3"
                                 onClick={() => {
                                     setIsCropping(true);
                                     setCroppedImage(null);
@@ -349,87 +474,154 @@ const Models = () => {
                                 ← Back to Crop
                             </button>
                         )}
-                        <Modal.Title className="modal-title">
+                        <Modal.Title>
                             Style: {selectedModel}
                         </Modal.Title>
                     </div>
                 </Modal.Header>
 
                 <Modal.Body>
-                    {isCropping && (
-                        <div className="mb-3">
-                            <div style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                {statusMessage.text && (
-                                    <div style={STATUS_STYLES[statusMessage.type]}>
-                                        {statusMessage.text}
-                                    </div>
-                                )}
+                    {error && (
+                        <div className="alert alert-danger mb-3" role="alert">
+                            {error}
+                        </div>
+                    )}
+
+                    {processingState.status === 'processing' || processingState.status === 'uploading' ? (
+                        <div className="text-center p-4">
+                            <div className="spinner-border text-primary mb-3" role="status">
+                                <span className="visually-hidden">Loading...</span>
                             </div>
-                            <input
-                                className="form-control"
-                                type="file"
-                                id="imageInput"
-                                accept="image/jpeg,image/png,image/webp"
-                                onChange={handleImageUpload}
-                                required
-                            />
+                            <div className="progress mb-3">
+                                <div
+                                    className="progress-bar"
+                                    role="progressbar"
+                                    style={{ width: `${processingState.progress}%` }}
+                                    aria-valuenow={processingState.progress}
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                >
+                                    {processingState.progress}%
+                                </div>
+                            </div>
+                            <p className="mb-3">
+                                {processingState.status === 'uploading' ? 'Uploading image...' :
+                                    `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
+                            </p>
+                            <div className="alert alert-warning" role="alert">
+                                <strong>Please don't close this window</strong><br/>
+                                Your image is being processed. Closing this window will cancel the process.
+                            </div>
                         </div>
-                    )}
-
-                    {isCropping && previewImage && (
-                        <div className="d-flex justify-content-center">
-                            <ReactCrop
-                                crop={crop}
-                                onChange={handleCropChange}
-                                aspect={1}
-                            >
+                    ) : processingState.status === 'complete' ? (
+                        <div className="text-center">
+                            <div className="alert alert-success mb-3" role="alert">
+                                <i className="bi bi-check-circle me-2"></i>
+                                Processing Complete!
+                            </div>
+                            <div className="position-relative mb-3">
                                 <img
-                                    ref={imageRef}
-                                    src={previewImage}
-                                    alt="Upload"
-                                    style={{
-                                        maxWidth: `${DISPLAY_DIMENSION}px`,
-                                        maxHeight: `${DISPLAY_DIMENSION}px`,
-                                        width: 'auto',
-                                        height: 'auto'
-                                    }}
-                                    onLoad={onImageLoad}
+                                    src={processingState.resultImage}
+                                    alt="Styled Result"
+                                    className="img-fluid rounded"
+                                    style={{ maxHeight: '500px' }}
                                 />
-                            </ReactCrop>
+                            </div>
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleDownload}
+                            >
+                                <i className="bi bi-download me-2"></i>
+                                Download Image
+                            </button>
                         </div>
-                    )}
+                    ) : (
+                        <>
+                            {isCropping && (
+                                <div className="mb-3">
+                                    {statusMessage.text && (
+                                        <div className={`alert alert-${statusMessage.type === 'error' ? 'danger' :
+                                            statusMessage.type === 'success' ? 'success' : 'info'} text-center`}>
+                                            {statusMessage.text}
+                                        </div>
+                                    )}
+                                    <input
+                                        className="form-control"
+                                        type="file"
+                                        id="imageInput"
+                                        accept="image/jpeg,image/png,image/webp"
+                                        onChange={handleImageUpload}
+                                        required
+                                    />
+                                </div>
+                            )}
 
-                    {!isCropping && croppedImage && (
-                        <div className="d-flex justify-content-center">
-                            <img
-                                src={croppedImage}
-                                alt="Cropped Preview"
-                                style={{
-                                    maxWidth: `${DISPLAY_DIMENSION}px`,
-                                    maxHeight: `${DISPLAY_DIMENSION}px`,
-                                    width: 'auto',
-                                    height: 'auto'
-                                }}
-                            />
-                        </div>
+                            {isCropping && previewImage && (
+                                <div className="d-flex justify-content-center">
+                                    <ReactCrop
+                                        crop={crop}
+                                        onChange={handleCropChange}
+                                        aspect={1}
+                                    >
+                                        <img
+                                            ref={imageRef}
+                                            src={previewImage}
+                                            alt="Upload"
+                                            style={{
+                                                maxWidth: `${DISPLAY_DIMENSION}px`,
+                                                maxHeight: `${DISPLAY_DIMENSION}px`,
+                                                width: 'auto',
+                                                height: 'auto'
+                                            }}
+                                            onLoad={onImageLoad}
+                                        />
+                                    </ReactCrop>
+                                </div>
+                            )}
+
+                            {!isCropping && croppedImage && (
+                                <div className="d-flex justify-content-center">
+                                    <img
+                                        src={croppedImage}
+                                        alt="Cropped Preview"
+                                        style={{
+                                            maxWidth: `${DISPLAY_DIMENSION}px`,
+                                            maxHeight: `${DISPLAY_DIMENSION}px`,
+                                            width: 'auto',
+                                            height: 'auto'
+                                        }}
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
                 </Modal.Body>
 
                 <Modal.Footer>
-                    {isCropping ? (
+                    {processingState.status === 'idle' && (
+                        isCropping ? (
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleCropImage}
+                                disabled={!previewImage || !imgLoaded}
+                            >
+                                Crop Image
+                            </button>
+                        ) : (
+                            <button
+                                className="btn btn-primary"
+                                onClick={handleApplyStyle}
+                            >
+                                Apply Style
+                            </button>
+                        )
+                    )}
+                    {processingState.status === 'complete' && (
                         <button
-                            className="btn btn-primary"
-                            onClick={handleCropImage}
-                            disabled={!previewImage || !imgLoaded}
+                            className="btn btn-secondary"
+                            onClick={handleCloseModal}
                         >
-                            Crop Image
-                        </button>
-                    ) : (
-                        <button
-                            className="btn btn-primary"
-                            onClick={handleApplyStyle}
-                        >
-                            Apply Style
+                            Close
                         </button>
                     )}
                 </Modal.Footer>
