@@ -21,6 +21,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MLServerService } from './ml-server.service';
+import { QueueService } from './queue.service';
+import { validateImage } from './image-validation';
 
 @Controller('image')
 export class ImageController {
@@ -28,7 +30,8 @@ export class ImageController {
 
     constructor(
         private readonly imageService: ImageService,
-        private readonly mlServerService: MLServerService
+        private readonly mlServerService: MLServerService,
+        private readonly queueService: QueueService
     ) {}
 
     @Get('/server-status')
@@ -36,13 +39,6 @@ export class ImageController {
     async getMLServerStatus() {
         const status = await this.mlServerService.getServerStatus();
         return { status };
-    }
-
-    @Get('/server-config')
-    @UseGuards(AuthGuard('jwt'))
-    async getMLServerConfig() {
-        const config = await this.mlServerService.getServerConfig()
-        return { config }
     }
 
     @Post('/generate')
@@ -55,14 +51,18 @@ export class ImageController {
         @Res() res: Response,
     ) {
         try {
-            if (!image) {
-                throw new HttpException('Image file is required', HttpStatus.BAD_REQUEST);
-            }
+            validateImage(image);
 
             const serverStatus = await this.mlServerService.getServerStatus();
             const requestHash = await this.imageService.addToQueue(user.cognitoId, generateImageDto.modelName, image);
 
-            let estimatedWaitTime = '30 seconds';
+            // Get queue info using QueueService
+            const queueInfo = await this.queueService.getRequestStatus(requestHash, user.cognitoId);
+            const queueLength = await this.queueService.getQueueLength();
+
+            let estimatedWaitTime = queueInfo.position === 1 ? '30 seconds' :
+                `approximately ${queueInfo.position * 30} seconds`;
+
             if (serverStatus === 'STOPPED') {
                 estimatedWaitTime = '2-3 minutes';
                 // Start server if it's stopped
@@ -74,18 +74,23 @@ export class ImageController {
             res.status(HttpStatus.ACCEPTED).json({
                 requestHash,
                 serverStatus,
-                estimatedWaitTime
+                estimatedWaitTime,
+                queuePosition: queueInfo.position,
+                queueLength
             });
         } catch (error) {
+            if (error instanceof HttpException) {
+                throw error;
+            }
             this.logger.error(`Failed to queue image generation request for user: ${user.cognitoId}`, error.stack);
-            throw error;
+            throw new HttpException(error.message || 'Failed to process request', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Get('/status/:requestHash')
     @UseGuards(AuthGuard('jwt'))
     async getStatus(@Param('requestHash') requestHash: string, @UserDecorator() user: User) {
-        const queueInfo = await this.imageService.getRequestStatus(requestHash, user.cognitoId);
+        const queueInfo = await this.queueService.getRequestStatus(requestHash, user.cognitoId);
         const serverStatus = await this.mlServerService.getServerStatus();
 
         let estimatedWaitTime: string;
@@ -107,7 +112,6 @@ export class ImageController {
             estimatedWaitTime
         };
     }
-
 
     @Get('/retrieve/:requestHash')
     @UseGuards(AuthGuard('jwt'))

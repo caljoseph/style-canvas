@@ -1,3 +1,6 @@
+
+
+
 :root {
   --default-font: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --heading-font: "Raleway", sans-serif;
@@ -1057,46 +1060,113 @@ section,
   }
 }
 
-/* Add this to your main CSS file */
+/* Add to your main.css */
 
-#imageUploadModal .modal-content {
+/* Modal Base Styles */
+.style-transfer-modal .modal-content {
   background-color: var(--surface-color);
   color: var(--default-color);
 }
 
-#imageUploadModal .modal-header {
+/* Modal Header */
+.style-transfer-modal .modal-header {
   border-bottom: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  padding: 1rem;
 }
 
-#imageUploadModal .modal-footer {
+.style-transfer-modal .modal-header-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  position: relative;
+}
+
+.style-transfer-modal .modal-header-wrapper .modal-title {
+  text-align: center;
+  width: 100%;
+  margin: 0;
+  position: absolute;
+  left: 0;
+  pointer-events: none;
+}
+
+/* Back Button */
+.style-transfer-modal .modal-header .style-transfer-back-btn {
+  position: relative;
+  z-index: 1;
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  padding: 4px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.style-transfer-modal .modal-header .style-transfer-back-btn:hover {
+  color: color-mix(in srgb, var(--accent-color), transparent 20%);
+}
+
+/* Close Button */
+.style-transfer-modal .modal-header .style-transfer-close {
+  position: relative;
+  z-index: 1;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  padding: 0;
+  margin-left: auto;
+  color: var(--default-color);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Body Content */
+.style-transfer-modal .modal-body {
+  padding: 1rem;
+}
+
+.style-transfer-modal .crop-container,
+.style-transfer-modal .preview-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+/* Footer */
+.style-transfer-modal .modal-footer {
   border-top: 1px solid color-mix(in srgb, var(--default-color), transparent 90%);
+  padding: 1rem;
 }
 
-#imageUploadModal .btn-primary {
+/* Action Buttons */
+.modal-footer button {
   background-color: var(--accent-color);
-  border-color: var(--accent-color);
+  border: 2px solid var(--accent-color);
   color: var(--contrast-color);
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-weight: 500;
 }
 
-#imageUploadModal .btn-primary:hover {
+#models .modal .modal-footer button:hover {
   background-color: color-mix(in srgb, var(--accent-color), transparent 20%);
   border-color: color-mix(in srgb, var(--accent-color), transparent 20%);
 }
 
-#imageUploadModal .btn-secondary {
-  background-color: color-mix(in srgb, var(--default-color), transparent 80%);
-  border-color: color-mix(in srgb, var(--default-color), transparent 80%);
-  color: var(--contrast-color);
+.style-transfer-modal .modal-footer .style-transfer-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-#imageUploadModal .btn-secondary:hover {
-  background-color: color-mix(in srgb, var(--default-color), transparent 60%);
-  border-color: color-mix(in srgb, var(--default-color), transparent 60%);
-}
-
-#imagePreviewContainer {
-  max-height: 300px;
-  overflow-y: auto;
+/* Dialog Styles */
+.style-transfer-dialog {
+  max-width: 800px;
 }
 
 /*--------------------------------------------------------------
