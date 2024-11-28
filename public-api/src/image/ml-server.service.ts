@@ -41,7 +41,7 @@ export class MLServerService {
                 const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
                 this.logger.debug(`Inactive time: ${inactiveTime}ms`);
                 if (inactiveTime > 30 * 60 * 1000) { // 30 minutes
-                    this.logger.warn('ML server inactive for over 30 minute. Initiating shutdown...');
+                    this.logger.warn('ML server inactive for over 30 minutes. Initiating shutdown...');
                     await this.stopServer().catch((error) =>
                         this.logger.error('Error shutting down ML server in inactivity monitor', error)
                     );
@@ -70,17 +70,27 @@ export class MLServerService {
             );
             const instanceStatus = stdout.trim();
             this.logger.log(`AWS CLI returned server status: ${instanceStatus}`);
-            switch (instanceStatus) {
-                case 'running':
-                    return 'RUNNING';
-                case 'stopping':
-                case 'stopped':
-                    return 'STOPPED';
-                default:
-                    return 'STARTING';
+
+            if (instanceStatus === 'running') {
+                // Get IP if instance is running
+                const { stdout: ipStdout } = await exec(
+                    `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
+                    `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
+                );
+                this.currentServerIP = ipStdout.trim();
+                this.logger.log(`Updated ML server IP: ${this.currentServerIP}`);
+                return 'RUNNING';
             }
+
+            if (instanceStatus === 'stopping' || instanceStatus === 'stopped') {
+                this.currentServerIP = null;
+                return 'STOPPED';
+            }
+
+            return 'STARTING';
         } catch (error) {
             this.logger.error('Failed to retrieve server status via AWS CLI', error);
+            this.currentServerIP = null;
             return 'STOPPED';
         }
     }
