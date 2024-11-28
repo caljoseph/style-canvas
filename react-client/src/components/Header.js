@@ -1,14 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+// components/Header.js
+import React, { useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useMobileNav } from '../hooks/useMobileNav';
 
 const Header = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const [isMobileNavActive, setIsMobileNavActive] = useState(false);
     const [isProfileDropdownVisible, setIsProfileDropdownVisible] = useState(false);
     const dropdownRef = useRef(null);
     const profileRef = useRef(null);
+
+    // Use the mobile nav hook
+    useMobileNav();
 
     const getSubscriptionText = (type) => {
         const types = {
@@ -18,23 +22,6 @@ const Header = () => {
             pro_monthly: 'pro subscription',
         };
         return types[type] || 'unknown subscription type';
-    };
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && profileRef.current &&
-                !dropdownRef.current.contains(event.target) &&
-                !profileRef.current.contains(event.target)) {
-                setIsProfileDropdownVisible(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const toggleMobileNav = () => {
-        setIsMobileNavActive(!isMobileNavActive);
     };
 
     const toggleProfileDropdown = () => {
@@ -58,7 +45,7 @@ const Header = () => {
                     <img src="/assets/img/main-logo.png" alt="" />
                 </Link>
 
-                <nav id="navmenu" className={`navmenu ${isMobileNavActive ? 'mobile-nav-active' : ''}`}>
+                <nav id="navmenu" className="navmenu">
                     <ul>
                         <li><Link to="/">Home</Link></li>
                         <li><Link to="/cases">Use Cases</Link></li>
@@ -68,10 +55,7 @@ const Header = () => {
                         <li><Link to="/about">About</Link></li>
                         <li><Link to="/contact">Contact</Link></li>
                     </ul>
-                    <i
-                        className={`mobile-nav-toggle d-xl-none bi ${isMobileNavActive ? 'bi-x' : 'bi-list'}`}
-                        onClick={toggleMobileNav}
-                    />
+                    <i className="mobile-nav-toggle d-xl-none bi bi-list" />
                 </nav>
 
                 {!user ? (
