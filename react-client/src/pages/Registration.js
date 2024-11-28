@@ -229,20 +229,6 @@ const Registration = () => {
                                         </label>
                                         {errors.terms && <div className="invalid-feedback">{errors.terms}</div>}
                                     </div>
-
-                                    <div className="form-check">
-                                        <input
-                                            type="checkbox"
-                                            id="notificationsAccepted"
-                                            name="notificationsAccepted"
-                                            className="form-check-input"
-                                            checked={formData.notificationsAccepted}
-                                            onChange={handleInputChange}
-                                        />
-                                        <label className="form-check-label" htmlFor="notificationsAccepted">
-                                            Send me updates about StyleCanvasAI products and services
-                                        </label>
-                                    </div>
                                 </>
                             )}
 

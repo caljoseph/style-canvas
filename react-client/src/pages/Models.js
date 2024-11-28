@@ -4,6 +4,7 @@ import ReactCrop from 'react-image-crop';
 import { useAuth } from '../context/AuthContext';
 import Config from '../config';
 import 'react-image-crop/dist/ReactCrop.css';
+import { useNavigate } from 'react-router-dom';
 
 const Models = () => {
     const [selectedModel, setSelectedModel] = useState('');
@@ -15,6 +16,8 @@ const Models = () => {
     const [crop, setCrop] = useState(null);
     const [imgLoaded, setImgLoaded] = useState(false);
     const [originalDimensions, setOriginalDimensions] = useState({ width: 0, height: 0 });
+    const navigate = useNavigate();
+    const [showAuthModal, setShowAuthModal] = useState(false);
     const [processingState, setProcessingState] = useState({
         status: 'idle', // idle, uploading, processing, complete, error
         requestHash: null,
@@ -97,8 +100,15 @@ const Models = () => {
     };
 
     const handleModelClick = (modelName) => {
-        if (!user || user.tokens < 1) {
+        if (!user) {
+            setSelectedModel(modelName);
+            setShowAuthModal(true);
+            return;
+        }
+
+        if (user.tokens < 1) {
             setError("You don't have enough tokens to process an image. Please purchase more tokens to continue.");
+            setShowModal(true);
             return;
         }
 
@@ -121,7 +131,14 @@ const Models = () => {
             type: "info"
         });
     };
+    const handleAuthModalClose = () => {
+        setShowAuthModal(false);
+        setSelectedModel('');
+    };
 
+    const redirectToRegistration = () => {
+        navigate('/registration');
+    };
     const onImageLoad = (e) => {
         const { naturalWidth, naturalHeight, width, height } = e.currentTarget;
         setOriginalDimensions({ width: naturalWidth, height: naturalHeight });
@@ -449,6 +466,34 @@ const Models = () => {
                 </div>
             </div>
 
+            {/* Authentication Required Modal */}
+            <Modal
+                show={showAuthModal}
+                onHide={handleAuthModalClose}
+                centered
+                size="md"
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Authentication Required</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <i className="bi bi-lock text-primary" style={{ fontSize: '3rem' }}></i>
+                        </div>
+                        <h5 className="mb-3">Want to try {selectedModel}?</h5>
+                        <p className="mb-4">Please sign in or create an account to use our AI models.</p>
+                        <button
+                            className="btn btn-primary btn-lg w-100 mb-3"
+                            onClick={redirectToRegistration}
+                        >
+                            Sign In / Sign Up
+                        </button>
+                    </div>
+                </Modal.Body>
+            </Modal>
+
+            {/* Image Processing Modal */}
             <Modal
                 show={showModal}
                 onHide={handleCloseModal}
