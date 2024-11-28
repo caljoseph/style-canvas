@@ -58,7 +58,7 @@ const Models = () => {
 
     const models = [
         { name: "Abstract Face Line", image: "/assets/Face Sample/Abstract Face Line/BrennanMcCleary.png" },
-        { name: "Blue Shade Face", image: "/assets/Face Sample/Blue Shade Face/BrennanMcCleary.png" },
+        { name: "BlueShadeFace", image: "/assets/Face Sample/Blue Shade Face/BrennanMcCleary.png" },
         { name: "Chalk Drawing", image: "/assets/Face Sample/Chalk Drawing/BrennanMcCleary.png" },
         { name: "Crimson Canvas", image: "/assets/Face Sample/Crimson Canvas/Faces_Dataset_401.png" },
         { name: "Crimson Contour", image: "/assets/Face Sample/Crimson Contour/BrennanMcCleary.png" },
