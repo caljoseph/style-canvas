@@ -278,6 +278,7 @@ const Models = () => {
     };
 
     const fetchProcessedImage = async (requestHash) => {
+        console.log('Fetching processed image for hash:', requestHash);
         try {
             const response = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
                 headers: {
@@ -285,27 +286,34 @@ const Models = () => {
                 }
             });
 
+            console.log('Image retrieve response status:', response.status);
+
             if (!response.ok) {
                 throw new Error(`Failed to retrieve processed image: ${response.status}`);
             }
 
-            // Get the blob directly
             const blob = await response.blob();
+            console.log('Retrieved blob:', blob.type, blob.size);
+
             if (!blob.type.startsWith('image/')) {
                 throw new Error('Received invalid image data');
             }
 
-            // Create an object URL immediately
             const imageUrl = URL.createObjectURL(blob);
-            setProcessingState(prev => ({
-                ...prev,
-                status: 'complete',
-                resultImage: imageUrl,
-                progress: 100
-            }));
+            console.log('Created image URL:', imageUrl);
+
+            setProcessingState(prev => {
+                console.log('Updating processing state to complete');
+                return {
+                    ...prev,
+                    status: 'complete',
+                    resultImage: imageUrl,
+                    progress: 100
+                };
+            });
         } catch (error) {
-            console.error('Error fetching processed image:', error);
-            setError(error.message || 'Failed to retrieve the processed image');
+            console.error('Error in fetchProcessedImage:', error);
+            setError('Failed to retrieve the processed image');
             setProcessingState(prev => ({
                 ...prev,
                 status: 'error',
@@ -313,7 +321,10 @@ const Models = () => {
             }));
         }
     };
+
+
     const pollStatus = async (requestHash) => {
+        console.log('Polling status for hash:', requestHash);
         try {
             const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
                 headers: {
@@ -326,16 +337,19 @@ const Models = () => {
             }
 
             const data = await response.json();
+            console.log('Poll status response:', data);
 
             if (data.status === 'completed') {
+                console.log('Processing completed, fetching image');
                 clearInterval(pollInterval.current);
                 await fetchProcessedImage(requestHash);
             } else if (data.status === 'failed') {
+                console.log('Processing failed');
                 clearInterval(pollInterval.current);
                 setError('Processing failed. Please try again.');
                 setProcessingState(prev => ({ ...prev, status: 'error' }));
             } else {
-                // Update progress based on queue position
+                console.log('Still processing, queue position:', data.queuePosition);
                 const progress = data.queuePosition === 1 ? 75 :
                     Math.min(50, Math.max(25, 100 - (data.queuePosition * 10)));
 
@@ -346,7 +360,7 @@ const Models = () => {
                 }));
             }
         } catch (error) {
-            console.error('Error polling status:', error);
+            console.error('Error in pollStatus:', error);
             clearInterval(pollInterval.current);
             setError('Failed to check processing status');
             setProcessingState(prev => ({ ...prev, status: 'error' }));
@@ -355,6 +369,7 @@ const Models = () => {
 
     const handleApplyStyle = async () => {
         if (!croppedImage) return;
+        console.log('Starting style application');
 
         try {
             setProcessingState(prev => ({
@@ -363,14 +378,15 @@ const Models = () => {
                 progress: 25
             }));
 
-            // Convert base64/URL to blob
             const response = await fetch(croppedImage);
             const blob = await response.blob();
+            console.log('Blob created from cropped image:', blob.type, blob.size);
 
             const formData = new FormData();
             formData.append('image', blob, 'image.png');
             formData.append('modelName', selectedModel);
 
+            console.log('Sending generate request for model:', selectedModel);
             const generateResponse = await fetch(`${Config.apiUrl}/image/generate`, {
                 method: 'POST',
                 headers: {
@@ -384,24 +400,24 @@ const Models = () => {
                 throw new Error(errorData.message || 'Failed to start image processing');
             }
 
-            const { requestHash, estimatedWaitTime } = await generateResponse.json();
+            const data = await generateResponse.json();
+            console.log('Generate response:', data);
 
             setProcessingState(prev => ({
                 ...prev,
                 status: 'processing',
-                requestHash,
-                estimatedTime: estimatedWaitTime,
+                requestHash: data.requestHash,
+                estimatedTime: data.estimatedWaitTime,
                 progress: 50
             }));
 
-            // Start polling with error handling
             if (pollInterval.current) {
                 clearInterval(pollInterval.current);
             }
-            pollInterval.current = setInterval(() => pollStatus(requestHash), 3000);
+            pollInterval.current = setInterval(() => pollStatus(data.requestHash), 3000);
 
         } catch (error) {
-            console.error('Error processing image:', error);
+            console.error('Error in handleApplyStyle:', error);
             setError(error.message || 'Failed to process image');
             setProcessingState(prev => ({
                 ...prev,
@@ -410,6 +426,10 @@ const Models = () => {
             }));
         }
     };
+
+    useEffect(() => {
+        console.log('Processing state changed:', processingState);
+    }, [processingState]);
 
     const handleDownload = () => {
         if (processingState.resultImage) {
