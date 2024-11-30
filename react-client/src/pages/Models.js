@@ -289,13 +289,13 @@ const Models = () => {
                 throw new Error(`Failed to retrieve processed image: ${response.status}`);
             }
 
-            // Create a blob from the image data
+            // Get the blob directly
             const blob = await response.blob();
             if (!blob.type.startsWith('image/')) {
                 throw new Error('Received invalid image data');
             }
 
-            // Create an object URL for the blob
+            // Create an object URL immediately
             const imageUrl = URL.createObjectURL(blob);
             setProcessingState(prev => ({
                 ...prev,
@@ -305,7 +305,7 @@ const Models = () => {
             }));
         } catch (error) {
             console.error('Error fetching processed image:', error);
-            setError('Failed to retrieve the processed image');
+            setError(error.message || 'Failed to retrieve the processed image');
             setProcessingState(prev => ({
                 ...prev,
                 status: 'error',
@@ -313,7 +313,6 @@ const Models = () => {
             }));
         }
     };
-
     const pollStatus = async (requestHash) => {
         try {
             const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
@@ -330,14 +329,13 @@ const Models = () => {
 
             if (data.status === 'completed') {
                 clearInterval(pollInterval.current);
-                // Immediately fetch the processed image
                 await fetchProcessedImage(requestHash);
             } else if (data.status === 'failed') {
                 clearInterval(pollInterval.current);
                 setError('Processing failed. Please try again.');
                 setProcessingState(prev => ({ ...prev, status: 'error' }));
             } else {
-                // Calculate progress based on queue position
+                // Update progress based on queue position
                 const progress = data.queuePosition === 1 ? 75 :
                     Math.min(50, Math.max(25, 100 - (data.queuePosition * 10)));
 
@@ -396,13 +394,20 @@ const Models = () => {
                 progress: 50
             }));
 
-            // Start polling
+            // Start polling with error handling
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+            }
             pollInterval.current = setInterval(() => pollStatus(requestHash), 3000);
 
         } catch (error) {
             console.error('Error processing image:', error);
             setError(error.message || 'Failed to process image');
-            setProcessingState(prev => ({ ...prev, status: 'error' }));
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'error',
+                progress: 0
+            }));
         }
     };
 
