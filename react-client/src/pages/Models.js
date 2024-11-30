@@ -371,6 +371,12 @@ const Models = () => {
         if (!croppedImage) return;
         console.log('Starting style application');
 
+        // Clear any existing interval
+        if (pollInterval.current) {
+            clearInterval(pollInterval.current);
+            pollInterval.current = null;
+        }
+
         try {
             setProcessingState(prev => ({
                 ...prev,
@@ -411,13 +417,17 @@ const Models = () => {
                 progress: 50
             }));
 
-            if (pollInterval.current) {
-                clearInterval(pollInterval.current);
-            }
+            // Call poll immediately and then set up interval
+            await pollStatus(data.requestHash);
             pollInterval.current = setInterval(() => pollStatus(data.requestHash), 3000);
 
         } catch (error) {
             console.error('Error in handleApplyStyle:', error);
+            // Clear interval on error
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+                pollInterval.current = null;
+            }
             setError(error.message || 'Failed to process image');
             setProcessingState(prev => ({
                 ...prev,
@@ -426,7 +436,6 @@ const Models = () => {
             }));
         }
     };
-
     useEffect(() => {
         console.log('Processing state changed:', processingState);
     }, [processingState]);
