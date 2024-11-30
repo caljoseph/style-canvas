@@ -18,6 +18,7 @@ from InferenceImageProcessor import InferenceImageProcessor
 from enum import Enum, auto
 import AdobeFilterModelLib as afm
 import Diff_I2I_lib as Diff
+from scipy.ndimage import label
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 img_height=512
@@ -462,6 +463,7 @@ def Tenshi_Options():
     face_options.upper_lip_color = '#ec59a7'
     face_options.lower_lip_color = '#7a2c53'
     face_options.neck_shadow_color = '#dba173'
+    face_options.nose = "#dba173 "
     face_options.neck_color = '#fee3ce'
     face_options.background_color = '#FFFFFF'
     face_options.eyebrow_color = '#B2BFC8'
@@ -796,9 +798,9 @@ def apply_median_blur(tensor, ksize=7):
 def segmentation_map_postprocessing(generated_image_tensor,  normalize=False):
     generated_image = tensor2im(generated_image_tensor,  normalize)
     color_masks_tensor = create_color_masks(generated_image)
-    shapes_tensor = remove_small_objects(color_masks_tensor, 200, 5)
+    shapes_tensor = remove_small_objects(color_masks_tensor, 200, 30)
     shapes_tensor = apply_median_blur(shapes_tensor)
-    return shapes_tensor
+    return color_masks_tensor
 
 def visualize_image(image, title="Image"):
     plt.figure(figsize=(6,6))
@@ -894,15 +896,79 @@ def get_FaceParsing_image(img):
         generated_image_tensor = FaceParser.inference(input_image_tensor, inst_temp, image_temp)
     return generated_image_tensor
 
-def Generate_Face_Drawing(img, face_drawing_style, is_dotted=False, gap_width=12, segment_width=12, lineless=False, Faceless=False, crazy_neck = False):
+
+
+def enforce_single_blob_per_layer(tensor, layers_to_check, background_layer=0, excluded_layers=None):
+    """
+    Ensures that each specified layer in the tensor has only one blob.
+    Keeps the largest blob and removes the rest.
+
+    Parameters:
+        tensor (torch.Tensor): Input tensor with shape [C, H, W], where C is the number of layers.
+        layers_to_check (list): List of layer indices to process.
+        background_layer (int): Layer index for the background (excluded from processing).
+        excluded_layers (list): List of additional layer indices to exclude from processing.
+
+    Returns:
+        torch.Tensor: The processed tensor with only the largest blob retained in each specified layer.
+    """
+    if excluded_layers is None:
+        excluded_layers = []
+
+    # Convert tensor to numpy array for processing
+    tensor_np = tensor.cpu().numpy()
+
+    processed_tensor_np = np.zeros_like(tensor_np, dtype=np.uint8)
+
+    for layer_idx in range(tensor_np.shape[0]):
+        if layer_idx == background_layer or layer_idx in excluded_layers or layer_idx not in layers_to_check:
+            # Copy unprocessed layers directly
+            processed_tensor_np[layer_idx] = tensor_np[layer_idx]
+            continue
+
+        # Get the binary mask for the current layer
+        mask = tensor_np[layer_idx]
+        labeled_mask, num_features = label(mask)
+
+        if num_features <= 1:
+            # No processing needed if 0 or 1 blob
+            processed_tensor_np[layer_idx] = mask
+            continue
+
+        # Calculate the size of each blob
+        blob_sizes = [(labeled_mask == i).sum() for i in range(1, num_features + 1)]
+
+        # Find the largest blob
+        largest_blob_idx = np.argmax(blob_sizes) + 1
+
+        # Keep only the largest blob
+        largest_blob_mask = (labeled_mask == largest_blob_idx).astype(np.uint8) * 255
+        processed_tensor_np[layer_idx] = largest_blob_mask
+
+    # Convert the processed numpy array back to a PyTorch tensor
+    processed_tensor = torch.from_numpy(processed_tensor_np).type(torch.uint8)
+
+    return processed_tensor
+
+
+
+def Generate_Face_Drawing(img, face_drawing_style, is_dotted=False, gap_width=12, segment_width=12, lineless=False, Faceless=False, crazy_neck=False):
     digital_face_art = FA.FaceArt(set_FaceParser_style(face_drawing_style))
+
     save_debug_image(img, "input_to_generate_face_drawing")
-    with torch.no_grad():
-        generated_image_tensor = Diff.FaceParsing_T2(img)
+
+    generated_image_tensor = Diff.FaceParsing_T2(img)
 
     shapes_tensor = segmentation_map_postprocessing(generated_image_tensor)
+
+    # Apply blob enforcement
+    layers_to_check = list(range(19))  # All layers
+    excluded_layers = [0,4,5, 9, 16]  # Background, ear_r, and cloth layers
+    shapes_tensor = enforce_single_blob_per_layer(shapes_tensor, layers_to_check, excluded_layers=excluded_layers)
+
     segmented_face_tensor = shapes_tensor.cpu().numpy()
-    if(crazy_neck):
+
+    if crazy_neck:
         segmented_face_tensor[face_segment_indices['neck']] = fit_neck_shape(segmented_face_tensor[face_segment_indices['neck']])
 
     if Faceless:
@@ -911,8 +977,9 @@ def Generate_Face_Drawing(img, face_drawing_style, is_dotted=False, gap_width=12
         digital_face_art_tensor = digital_face_art.create_line_face_drawing(segmented_face_tensor, gap_width, segment_width)
     else:
         digital_face_art_tensor = digital_face_art.create_artistic_face_drawing(segmented_face_tensor, True, lineless)
-        
+
     return cv2.cvtColor(digital_face_art_tensor, cv2.COLOR_BGR2RGB)
+
 
 def Generate_Single_FaceArt_image(img, face_options, model_type,  which_epoch  = 'latest',  is_dotted = False, gap_width=12, segment_width=12, lineless = False, Faceless = False, crazy_neck = False):
     FaceParser = GetFaceParsingModel(model_type, which_epoch)

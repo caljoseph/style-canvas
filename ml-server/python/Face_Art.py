@@ -365,7 +365,7 @@ class FaceArt:
                         stroke_thickness = self.flatfaceoptions.stroke_thickness
 
                     if part == 'nose':
-                        stroke_thickness = 0
+                        stroke_thickness = 3
 
                     if is_lineless :
                         linecolor = fill_color

@@ -129,10 +129,10 @@ def Chalkboard(img):
 
 # All DiffI2I models:
 
-def OilPainting_SC3(img):
+def BaroqueBrush(img):
     return  Diff.OilPainting_SC3(img)
 
-def OilPainting_OP3(img):
+def Baroquebrush_2(img):
     return  Diff.OilPainting_OP3(img)
 
 def pencil_blur(img):
@@ -198,7 +198,7 @@ def apply_broken_glass_effect(img):
 # RealESRGANer model
 
 def Upsample(img, scale = 2):
-    return im.upsampler_image(img, scale)
+    return im.enhance_image_resolution(img, scale)
 
 # Map filter names to functions
 filter_functions = {
@@ -222,8 +222,8 @@ filter_functions = {
     'VanGogh': VanGogh,
     'BlueMist': BlueMist,
     'Chalkboard': Chalkboard,
-    'OilPainting_SC3': OilPainting_SC3,
-    'OilPainting_OP3': OilPainting_OP3,
+    'OilPainting_SC3': BaroqueBrush,
+    'OilPainting_OP3': Baroquebrush_2,
     'pencil_blur': pencil_blur,
     'Verdant_Flame': Verdant_Flame,
     'face2paint': face2paint,
