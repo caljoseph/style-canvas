@@ -18,13 +18,17 @@ const Models = () => {
     const [originalDimensions, setOriginalDimensions] = useState({ width: 0, height: 0 });
     const navigate = useNavigate();
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [isUpscaling, setIsUpscaling] = useState(false);
+    const [originalImage, setOriginalImage] = useState(null);
     const [processingState, setProcessingState] = useState({
         status: 'idle', // idle, uploading, processing, complete, error
         requestHash: null,
         estimatedTime: null,
         progress: 0,
-        resultImage: null
+        resultImage: null,
+        imageSize: null // track current image size
     });
+
     const [statusMessage, setStatusMessage] = useState({
         text: "Please upload an image of at least 1024x1024px",
         type: "info"
@@ -278,7 +282,6 @@ const Models = () => {
     };
 
     const fetchProcessedImage = async (requestHash) => {
-        console.log('Fetching processed image for hash:', requestHash);
         try {
             const response = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
                 headers: {
@@ -286,31 +289,34 @@ const Models = () => {
                 }
             });
 
-            console.log('Image retrieve response status:', response.status);
-
             if (!response.ok) {
                 throw new Error(`Failed to retrieve processed image: ${response.status}`);
             }
 
             const blob = await response.blob();
-            console.log('Retrieved blob:', blob.type, blob.size);
-
             if (!blob.type.startsWith('image/')) {
                 throw new Error('Received invalid image data');
             }
 
             const imageUrl = URL.createObjectURL(blob);
-            console.log('Created image URL:', imageUrl);
 
-            setProcessingState(prev => {
-                console.log('Updating processing state to complete');
-                return {
-                    ...prev,
-                    status: 'complete',
-                    resultImage: imageUrl,
-                    progress: 100
-                };
+            // Create an image element to get dimensions
+            const img = new Image();
+            img.src = imageUrl;
+            await new Promise((resolve) => {
+                img.onload = resolve;
             });
+
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'complete',
+                resultImage: imageUrl,
+                progress: 100,
+                imageSize: {
+                    width: img.width,
+                    height: img.height
+                }
+            }));
         } catch (error) {
             console.error('Error in fetchProcessedImage:', error);
             setError('Failed to retrieve the processed image');
@@ -321,7 +327,6 @@ const Models = () => {
             }));
         }
     };
-
 
     const pollStatus = async (requestHash) => {
         console.log('Polling status for hash:', requestHash);
@@ -439,6 +444,69 @@ const Models = () => {
     useEffect(() => {
         console.log('Processing state changed:', processingState);
     }, [processingState]);
+
+    const handleUpscale = async () => {
+        if (!processingState.resultImage) return;
+
+        try {
+            setIsUpscaling(true);
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'uploading',
+                progress: 25
+            }));
+
+            // Convert URL to blob
+            const response = await fetch(processingState.resultImage);
+            const blob = await response.blob();
+
+            const formData = new FormData();
+            formData.append('image', blob, 'image.png');
+            formData.append('modelName', 'Upsample');
+
+            const generateResponse = await fetch(`${Config.apiUrl}/image/generate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                },
+                body: formData
+            });
+
+            if (!generateResponse.ok) {
+                const errorData = await generateResponse.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Failed to start upscaling');
+            }
+
+            const data = await generateResponse.json();
+
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'processing',
+                requestHash: data.requestHash,
+                estimatedTime: data.estimatedWaitTime,
+                progress: 50
+            }));
+
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+            }
+
+            await pollStatus(data.requestHash);
+            pollInterval.current = setInterval(() => pollStatus(data.requestHash), 3000);
+
+        } catch (error) {
+            console.error('Error in handleUpscale:', error);
+            setError(error.message || 'Failed to upscale image');
+            setProcessingState(prev => ({
+                ...prev,
+                status: 'error',
+                progress: 0
+            }));
+        } finally {
+            setIsUpscaling(false);
+        }
+    };
+
 
     const handleDownload = () => {
         if (processingState.resultImage) {
@@ -621,13 +689,53 @@ const Models = () => {
                                     style={{ maxHeight: '500px' }}
                                 />
                             </div>
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleDownload}
-                            >
-                                <i className="bi bi-download me-2"></i>
-                                Download Image
-                            </button>
+                            <div className="card mb-4">
+                                <div className="card-body">
+                                    <h5 className="card-title mb-3">
+                                        Current Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
+                                    </h5>
+                                    <div className="d-flex justify-content-center gap-3">
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleDownload}
+                                        >
+                                            <i className="bi bi-download me-2"></i>
+                                            Download Current Resolution
+                                        </button>
+                                        {processingState.imageSize?.width < 2048 && (
+                                            <button
+                                                className="btn btn-success"
+                                                onClick={handleUpscale}
+                                                disabled={isUpscaling || user.tokens < 1}
+                                            >
+                                                <i className="bi bi-arrows-angle-expand me-2"></i>
+                                                {isUpscaling ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                        Upscaling...
+                                                    </>
+                                                ) : (
+                                                    <>Upscale for 1 Token</>
+                                                )}
+                                            </button>
+                                        )}
+                                    </div>
+                                    {processingState.imageSize?.width < 2048 && (
+                                        <div className="mt-3 text-muted">
+                                            <small>
+                                                <i className="bi bi-info-circle me-1"></i>
+                                                Double the resolution of your image for 1 additional token
+                                            </small>
+                                        </div>
+                                    )}
+                                    {user.tokens < 1 && (
+                                        <div className="alert alert-warning mt-3 mb-0">
+                                            <i className="bi bi-exclamation-triangle me-2"></i>
+                                            You need at least 1 token to upscale. Purchase more tokens to continue.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <>
