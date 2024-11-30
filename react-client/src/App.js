@@ -10,6 +10,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Registration from './pages/Registration';
 import Welcome from './pages/Welcome';
+import TestImage from './pages/TestImage'
 
 function App() {
   return (
@@ -24,6 +25,8 @@ function App() {
           <Route path="contact" element={<Contact />} />
           <Route path="registration" element={<Registration />} />
           <Route path="welcome" element={<Welcome />} />
+            <Route path="test_image" element={<TestImage />} />
+
         </Route>
       </Routes>
   );
