@@ -56,10 +56,10 @@ export class GenerateController {
         }
 
         if (!Object.values(ModelName).includes(generateImageDto.modelName)) {
-            throw new BadRequestException('Invalid model name');
+            throw new BadRequestException(`Invalid model name: ${generateImageDto.modelName}` );
         }
 
-        const projectRoot = '/Users/calebbradshaw/style-canvas/ml-server';
+        const projectRoot = '/home/ubuntu/style-canvas/ml-server';
         const pythonDir = path.join(projectRoot, 'python');
         const tempDir = path.join(projectRoot, 'temp');
         const inputFilePath = path.join(tempDir, 'input_image.png');

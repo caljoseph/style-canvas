@@ -39,15 +39,24 @@ export class MLServerService {
             const currentStatus = await this.getServerStatus();
             if (currentStatus === 'RUNNING') {
                 const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
-                this.logger.debug(`Inactive time: ${inactiveTime}ms`);
+                const inactiveMinutes = Math.floor(inactiveTime / (60 * 1000));
+                this.logger.debug(
+                    `Server status: ${currentStatus}, ` +
+                    `Last activity: ${this.lastActivityTimestamp.toISOString()}, ` +
+                    `Inactive time: ${inactiveMinutes} minutes`
+                );
                 if (inactiveTime > 30 * 60 * 1000) { // 30 minutes
-                    this.logger.warn('ML server inactive for over 30 minute. Initiating shutdown...');
+                    this.logger.warn(
+                        `ML server inactive for ${inactiveMinutes} minutes (threshold: 30). ` +
+                        `Last activity: ${this.lastActivityTimestamp.toISOString()}. ` +
+                        `Initiating shutdown...`
+                    );
                     await this.stopServer().catch((error) =>
                         this.logger.error('Error shutting down ML server in inactivity monitor', error)
                     );
                 }
             } else {
-                this.logger.debug('Server is not running; no action taken by inactivity monitor.');
+                this.logger.debug(`Server is ${currentStatus}; no action taken by inactivity monitor.`);
             }
         }, 5 * 60 * 1000); // Check every 5 minutes
     }
@@ -70,17 +79,27 @@ export class MLServerService {
             );
             const instanceStatus = stdout.trim();
             this.logger.log(`AWS CLI returned server status: ${instanceStatus}`);
-            switch (instanceStatus) {
-                case 'running':
-                    return 'RUNNING';
-                case 'stopping':
-                case 'stopped':
-                    return 'STOPPED';
-                default:
-                    return 'STARTING';
+
+            if (instanceStatus === 'running') {
+                // Get IP if instance is running
+                const { stdout: ipStdout } = await exec(
+                    `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
+                    `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
+                );
+                this.currentServerIP = ipStdout.trim();
+                this.logger.log(`Updated ML server IP: ${this.currentServerIP}`);
+                return 'RUNNING';
             }
+
+            if (instanceStatus === 'stopping' || instanceStatus === 'stopped') {
+                this.currentServerIP = null;
+                return 'STOPPED';
+            }
+
+            return 'STARTING';
         } catch (error) {
             this.logger.error('Failed to retrieve server status via AWS CLI', error);
+            this.currentServerIP = null;
             return 'STOPPED';
         }
     }
@@ -159,6 +178,7 @@ export class MLServerService {
                 const response = await fetch(`http://${this.currentServerIP}:${this.ML_PORT}/health`);
                 if (response.ok) {
                     this.logger.log('Health check passed.');
+                    this.updateLastActivity(); // Update activity timestamp on successful health check
                     return;
                 } else {
                     this.logger.warn(`Health check failed with status: ${response.status}`);
@@ -172,8 +192,11 @@ export class MLServerService {
     }
 
     updateLastActivity(): void {
+        const previousTimestamp = this.lastActivityTimestamp;
         this.lastActivityTimestamp = new Date();
-        this.logger.debug(`Last activity timestamp updated to: ${this.lastActivityTimestamp.toISOString()}`);
+        this.logger.debug(
+            `Last activity timestamp updated from ${previousTimestamp.toISOString()} to ${this.lastActivityTimestamp.toISOString()}`
+        );
     }
 
     onApplicationShutdown() {

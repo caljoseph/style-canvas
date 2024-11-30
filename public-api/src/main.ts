@@ -7,12 +7,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS
-  // app.enableCors({
-  //   origin: 'http://localhost:63342',  // Allow requests from frontend in dev mode
-  //   methods: 'GET,POST,PUT,DELETE',
-  //   credentials: true,  // Allows cookies to be sent with requests
-  //   allowedHeaders: 'Content-Type, Authorization',  // Specify allowed headers
-  // });
+  app.enableCors({
+    origin: ['http://localhost:3001', 'http://localhost:63343'],  // Allow requests from frontend in dev mode
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true,  // Allows cookies to be sent with requests
+    allowedHeaders: 'Content-Type, Authorization',  // Specify allowed headers
+  });
+
+
+
 
   // Middleware for stripe webhooks
   app.use('/payments/webhook', (req, res, next) => {
