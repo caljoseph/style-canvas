@@ -17,7 +17,10 @@ const Models = () => {
     const [imgLoaded, setImgLoaded] = useState(false);
     const [originalDimensions, setOriginalDimensions] = useState({ width: 0, height: 0 });
     const navigate = useNavigate();
+
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [showNoCreditModal, setShowNoCreditModal] = useState(false);
+
     const [isUpscaling, setIsUpscaling] = useState(false);
     const [originalImage, setOriginalImage] = useState(null);
     const [processingState, setProcessingState] = useState({
@@ -111,8 +114,8 @@ const Models = () => {
         }
 
         if (user.tokens < 1) {
-            setError("You don't have enough tokens to process an image. Please purchase more tokens to continue.");
-            setShowModal(true);
+            setSelectedModel(modelName);
+            setShowNoCreditModal(true);
             return;
         }
 
@@ -135,6 +138,16 @@ const Models = () => {
             type: "info"
         });
     };
+
+    const handleNoCreditModalClose = () => {
+        setShowNoCreditModal(false);
+        setSelectedModel('');
+    };
+
+    const redirectToPricing = () => {
+        navigate('/pricing');
+    };
+
     const handleAuthModalClose = () => {
         setShowAuthModal(false);
         setSelectedModel('');
@@ -307,6 +320,14 @@ const Models = () => {
                 img.onload = resolve;
             });
 
+            // Only set original dimensions if not already set
+            if (!originalDimensions) {
+                setOriginalDimensions({
+                    width: img.width,
+                    height: img.height
+                });
+            }
+
             setProcessingState(prev => ({
                 ...prev,
                 status: 'complete',
@@ -441,6 +462,7 @@ const Models = () => {
             }));
         }
     };
+
     useEffect(() => {
         console.log('Processing state changed:', processingState);
     }, [processingState]);
@@ -539,16 +561,16 @@ const Models = () => {
         setIsCropping(true);
         setCrop(null);
         setImgLoaded(false);
-        setOriginalDimensions({ width: 0, height: 0 });
+        setOriginalDimensions(null);  // Reset original dimensions
         setProcessingState({
             status: 'idle',
             requestHash: null,
             estimatedTime: null,
             progress: 0,
-            resultImage: null
+            resultImage: null,
+            imageSize: null
         });
     };
-
     const handleCropChange = (newCrop) => {
         setCrop(newCrop);
         if (newCrop.width && newCrop.height) {
@@ -610,6 +632,33 @@ const Models = () => {
                 </Modal.Body>
             </Modal>
 
+            {/* No Credits Modal */}
+            <Modal
+                show={showNoCreditModal}
+                onHide={handleNoCreditModalClose}
+                centered
+                size="md"
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Tokens Required</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <i className="bi bi-coin text-warning" style={{ fontSize: '3rem' }}></i>
+                        </div>
+                        <h5 className="mb-3">Want to try {selectedModel}?</h5>
+                        <p className="mb-4">You need at least 1 token to generate an image. Purchase tokens to continue.</p>
+                        <button
+                            className="btn btn-primary btn-lg w-100 mb-3"
+                            onClick={redirectToPricing}
+                        >
+                            View Pricing Plans
+                        </button>
+                    </div>
+                </Modal.Body>
+            </Modal>
+
             {/* Image Processing Modal */}
             <Modal
                 show={showModal}
@@ -638,6 +687,7 @@ const Models = () => {
                         )}
                         <Modal.Title>
                             Style: {selectedModel}
+                            {processingState.imageSize && processingState.imageSize.width > originalDimensions?.width ? ' (Upscaled)' : ''}
                         </Modal.Title>
                     </div>
                 </Modal.Header>
@@ -702,7 +752,7 @@ const Models = () => {
                                             <i className="bi bi-download me-2"></i>
                                             Download Current Resolution
                                         </button>
-                                        {processingState.imageSize?.width < 2048 && (
+                                        {processingState.imageSize?.width < 4096 && (
                                             <button
                                                 className="btn btn-success"
                                                 onClick={handleUpscale}
@@ -720,11 +770,19 @@ const Models = () => {
                                             </button>
                                         )}
                                     </div>
-                                    {processingState.imageSize?.width < 2048 && (
+                                    {processingState.imageSize?.width < 4096 && (
                                         <div className="mt-3 text-muted">
                                             <small>
                                                 <i className="bi bi-info-circle me-1"></i>
                                                 Double the resolution of your image for 1 additional token
+                                            </small>
+                                        </div>
+                                    )}
+                                    {processingState.imageSize?.width >= 4096 && (
+                                        <div className="mt-3 text-muted">
+                                            <small>
+                                                <i className="bi bi-info-circle me-1"></i>
+                                                Maximum resolution reached
                                             </small>
                                         </div>
                                     )}
