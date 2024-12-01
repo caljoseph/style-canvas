@@ -36,7 +36,12 @@ export class QueueService {
     async getQueue(): Promise<RequestInfo[]> {
         try {
             const data = await fs.readFile(this.queueFilePath, 'utf-8');
-            return JSON.parse(data);
+            const queue = JSON.parse(data);
+            // Convert timestamp strings back to Date objects
+            return queue.map(req => ({
+                ...req,
+                timestamp: new Date(req.timestamp)
+            }));
         } catch {
             return [];
         }
