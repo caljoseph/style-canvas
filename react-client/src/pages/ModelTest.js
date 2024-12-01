@@ -51,6 +51,7 @@ const ModelTest = () => {
     };
 
     const pollStatus = async (requestHash, modelName) => {
+        // Don't poll if we already have a complete result
         if (modelResults[modelName]?.status === 'complete') {
             if (pollIntervals.current[modelName]) {
                 clearInterval(pollIntervals.current[modelName]);
@@ -81,26 +82,24 @@ const ModelTest = () => {
                     if (!imageResponse.ok) throw new Error('Failed to retrieve image');
 
                     const blob = await imageResponse.blob();
+                    const imageUrl = URL.createObjectURL(blob);
 
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const imageUrl = reader.result;
-
-                        setModelResults(prev => ({
-                            ...prev,
-                            [modelName]: {
-                                status: 'complete',
-                                result: imageUrl
-                            }
-                        }));
-
-                        if (pollIntervals.current[modelName]) {
-                            clearInterval(pollIntervals.current[modelName]);
-                            delete pollIntervals.current[modelName];
+                    setModelResults(prev => ({
+                        ...prev,
+                        [modelName]: {
+                            status: 'complete',
+                            result: imageUrl,
+                            requestHash // Store the hash to prevent future retrievals
                         }
-                    };
-                    reader.readAsDataURL(blob);
+                    }));
+
+                    // Clear the polling interval immediately after successful retrieval
+                    if (pollIntervals.current[modelName]) {
+                        clearInterval(pollIntervals.current[modelName]);
+                        delete pollIntervals.current[modelName];
+                    }
                 } catch (error) {
+                    // Only set error if we haven't already completed
                     if (modelResults[modelName]?.status !== 'complete') {
                         setModelResults(prev => ({
                             ...prev,
@@ -125,6 +124,7 @@ const ModelTest = () => {
                 }));
             }
         } catch (error) {
+            // Only set error if we haven't already completed
             if (modelResults[modelName]?.status !== 'complete') {
                 if (pollIntervals.current[modelName]) {
                     clearInterval(pollIntervals.current[modelName]);
@@ -167,6 +167,7 @@ const ModelTest = () => {
 
             const data = await response.json();
 
+            // Only start polling if we don't already have a complete result
             if (modelResults[modelName]?.status !== 'complete') {
                 if (pollIntervals.current[modelName]) {
                     clearInterval(pollIntervals.current[modelName]);
@@ -206,6 +207,21 @@ const ModelTest = () => {
             default: return 'bg-secondary';
         }
     };
+
+    // Cleanup function to clear all intervals and object URLs on unmount
+    React.useEffect(() => {
+        return () => {
+            // Clear all polling intervals
+            Object.values(pollIntervals.current).forEach(interval => clearInterval(interval));
+
+            // Revoke all object URLs
+            Object.values(modelResults).forEach(result => {
+                if (result.status === 'complete' && result.result) {
+                    URL.revokeObjectURL(result.result);
+                }
+            });
+        };
+    }, []);
 
     return (
         <div className="container py-4">
