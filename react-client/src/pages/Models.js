@@ -15,7 +15,7 @@ const Models = () => {
     const [isCropping, setIsCropping] = useState(true);
     const [crop, setCrop] = useState(null);
     const [imgLoaded, setImgLoaded] = useState(false);
-    const [originalDimensions, setOriginalDimensions] = useState({ width: 0, height: 0 });
+    const [originalDimensions, setOriginalDimensions] = useState(null);
     const navigate = useNavigate();
 
     const [showAuthModal, setShowAuthModal] = useState(false);
@@ -716,7 +716,7 @@ const Models = () => {
                                 {processingState.status === 'uploading' ? 'Uploading image...' :
                                     `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
                             </p>
-                            <div className="alert alert-warning" role="alert">
+                            <div className="alert alert-warning mb-0" role="alert">
                                 <strong>Please don't close this window</strong><br/>
                                 Your image is being processed. Closing this window will cancel the process.
                             </div>
@@ -738,103 +738,70 @@ const Models = () => {
                                 )}
                             </div>
 
-                            {(processingState.status === 'processing' || processingState.status === 'uploading') && (
-                                <>
-                                    <div className="spinner-border text-primary mb-3" role="status">
-                                        <span className="visually-hidden">Loading...</span>
-                                    </div>
-                                    <div className="progress mb-3">
-                                        <div
-                                            className="progress-bar"
-                                            role="progressbar"
-                                            style={{width: `${processingState.progress}%`}}
-                                            aria-valuenow={processingState.progress}
-                                            aria-valuemin="0"
-                                            aria-valuemax="100"
+                            <div className="mb-4">
+                                <img
+                                    src={processingState.resultImage}
+                                    alt="Styled Result"
+                                    className="img-fluid rounded shadow-sm"
+                                    style={{
+                                        maxHeight: '500px',
+                                        maxWidth: '100%',
+                                        objectFit: 'contain'
+                                    }}
+                                />
+                            </div>
+
+                            <h6 className="text-muted mb-4">
+                                Current Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
+                            </h6>
+
+                            <div className="card shadow-sm">
+                                <div className="card-body p-4">
+                                    {processingState.imageSize?.width < 4096 && (
+                                        <div className="text-muted small mb-3">
+                                            <i className="bi bi-info-circle me-2"></i>
+                                            Double the resolution of your image for 1 additional token
+                                        </div>
+                                    )}
+
+                                    <div className="d-grid gap-3 d-sm-flex justify-content-center">
+                                        <button
+                                            className="btn btn-primary px-4 py-2"
+                                            onClick={handleDownload}
                                         >
-                                            {processingState.progress}%
-                                        </div>
-                                    </div>
-                                    <p className="mb-3">
-                                        {processingState.status === 'uploading' ? 'Uploading image...' :
-                                            `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
-                                    </p>
-                                    <div className="alert alert-warning mb-0" role="alert">
-                                        <strong>Please don't close this window</strong><br/>
-                                        Your image is being processed. Closing this window will cancel the process.
-                                    </div>
-                                </>
-                            )}
+                                            <i className="bi bi-download me-2"></i>
+                                            Download
+                                        </button>
 
-                            {processingState.status === 'complete' && (
-                                <>
-                                    <div className="mb-4">
-                                        <img
-                                            src={processingState.resultImage}
-                                            alt="Styled Result"
-                                            className="img-fluid rounded shadow-sm"
-                                            style={{
-                                                maxHeight: '500px',
-                                                maxWidth: '100%',
-                                                objectFit: 'contain'
-                                            }}
-                                        />
-                                    </div>
-
-                                    <h6 className="text-muted mb-4">
-                                        Current
-                                        Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
-                                    </h6>
-
-                                    <div className="card shadow-sm">
-                                        <div className="card-body p-4">
-                                            {processingState.imageSize?.width < 4096 && (
-                                                <div className="text-muted small mb-3">
-                                                    <i className="bi bi-info-circle me-2"></i>
-                                                    Double the resolution of your image for 1 additional token
-                                                </div>
-                                            )}
-
-                                            <div className="d-grid gap-3 d-sm-flex justify-content-center">
-                                                <button
-                                                    className="btn btn-primary px-4 py-2"
-                                                    onClick={handleDownload}
-                                                >
-                                                    <i className="bi bi-download me-2"></i>
-                                                    Download
-                                                </button>
-
-                                                {processingState.imageSize?.width < 4096 && (
-                                                    <button
-                                                        className="btn btn-primary px-4 py-2"
-                                                        onClick={handleUpscale}
-                                                        disabled={isUpscaling || user.tokens < 1}
-                                                    >
-                                                        {isUpscaling ? (
-                                                            <>
-                                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                                Upscaling...
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <i className="bi bi-arrows-angle-expand me-2"></i>
-                                                                Upscale (1 Token)
-                                                            </>
-                                                        )}
-                                                    </button>
+                                        {processingState.imageSize?.width < 4096 && (
+                                            <button
+                                                className="btn btn-primary px-4 py-2"
+                                                onClick={handleUpscale}
+                                                disabled={isUpscaling || user.tokens < 1}
+                                            >
+                                                {isUpscaling ? (
+                                                    <>
+                                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                        Upscaling...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <i className="bi bi-arrows-angle-expand me-2"></i>
+                                                        Upscale (1 Token)
+                                                    </>
                                                 )}
-                                            </div>
-
-                                            {processingState.imageSize?.width >= 4096 && (
-                                                <div className="text-muted small mt-3">
-                                                    <i className="bi bi-check-circle-fill me-2"></i>
-                                                    Maximum resolution reached
-                                                </div>
-                                            )}
-                                        </div>
+                                            </button>
+                                        )}
                                     </div>
-                                </>
-                            )}
+
+                                    {processingState.imageSize?.width >= 4096 && (
+                                        <div className="text-muted small mt-3">
+                                            <i className="bi bi-check-circle-fill me-2"></i>
+                                            Maximum resolution reached
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     ) : (
                         <>
