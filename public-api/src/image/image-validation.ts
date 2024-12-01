@@ -14,11 +14,11 @@ export const validateImage = (file: Express.Multer.File): boolean => {
         );
     }
 
-    // Check file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    // Check file size (20MB limit)
+    const maxSize = 20 * 1024 * 1024; // 20MB
     if (file.size > maxSize) {
         throw new HttpException(
-            'File too large. Maximum size is 10MB',
+            'File too large. Maximum size is 20MB',
             HttpStatus.BAD_REQUEST
         );
     }
