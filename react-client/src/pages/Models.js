@@ -825,7 +825,7 @@ const Models = () => {
                                             <button
                                                 className="btn btn-primary px-4 py-2"
                                                 onClick={handleUpscale}
-                                                disabled={isUpscaling || user.tokens < 1}
+                                                disabled={isUpscaling}
                                             >
                                                 {isUpscaling ? (
                                                     <>
