@@ -1,5 +1,4 @@
-// components/Header.js
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useMobileNav } from '../hooks/useMobileNav';
@@ -13,6 +12,30 @@ const Header = () => {
 
     // Use the mobile nav hook
     useMobileNav();
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // Check if click is outside both the profile button and dropdown
+            if (
+                profileRef.current &&
+                dropdownRef.current &&
+                !profileRef.current.contains(event.target) &&
+                !dropdownRef.current.contains(event.target)
+            ) {
+                setIsProfileDropdownVisible(false);
+            }
+        };
+
+        // Add event listener when dropdown is visible
+        if (isProfileDropdownVisible) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        // Cleanup function to remove event listener
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isProfileDropdownVisible]); // Only re-run effect when dropdown visibility changes
 
     const getSubscriptionText = (type) => {
         const types = {
