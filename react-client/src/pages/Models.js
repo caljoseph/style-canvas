@@ -39,7 +39,7 @@ const Models = () => {
 
     const imageRef = useRef(null);
     const pollInterval = useRef(null);
-    const { user } = useAuth();
+    const { user, refreshProfile } = useAuth();
 
     const MIN_DIMENSION = 1024;
     const DISPLAY_DIMENSION = 400;
@@ -313,20 +313,11 @@ const Models = () => {
 
             const imageUrl = URL.createObjectURL(blob);
 
-            // Create an image element to get dimensions
             const img = new Image();
             img.src = imageUrl;
             await new Promise((resolve) => {
                 img.onload = resolve;
             });
-
-            // Only set original dimensions if not already set
-            if (!originalDimensions) {
-                setOriginalDimensions({
-                    width: img.width,
-                    height: img.height
-                });
-            }
 
             setProcessingState(prev => ({
                 ...prev,
@@ -338,6 +329,10 @@ const Models = () => {
                     height: img.height
                 }
             }));
+
+            // Refresh the profile to update token count
+            await refreshProfile();
+
         } catch (error) {
             console.error('Error in fetchProcessedImage:', error);
             setError('Failed to retrieve the processed image');
@@ -348,7 +343,6 @@ const Models = () => {
             }));
         }
     };
-
     const pollStatus = async (requestHash) => {
         console.log('Polling status for hash:', requestHash);
         try {
@@ -516,6 +510,9 @@ const Models = () => {
             await pollStatus(data.requestHash);
             pollInterval.current = setInterval(() => pollStatus(data.requestHash), 3000);
 
+            // Refresh user profile after successful upscaling
+            await refreshProfile();
+
         } catch (error) {
             console.error('Error in handleUpscale:', error);
             setError(error.message || 'Failed to upscale image');
@@ -528,7 +525,6 @@ const Models = () => {
             setIsUpscaling(false);
         }
     };
-
 
     const handleDownload = () => {
         if (processingState.resultImage) {
@@ -640,7 +636,7 @@ const Models = () => {
                 size="md"
             >
                 <Modal.Header closeButton>
-                    <Modal.Title>Tokens Required</Modal.Title>
+                    <Modal.Title>Credits Required</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <div className="text-center">
@@ -648,7 +644,7 @@ const Models = () => {
                             <i className="bi bi-coin text-warning" style={{ fontSize: '3rem' }}></i>
                         </div>
                         <h5 className="mb-3">Want to try {selectedModel}?</h5>
-                        <p className="mb-4">You need at least 1 token to generate an image. Purchase tokens to continue.</p>
+                        <p className="mb-4">You need at least 1 credit to generate an image. Purchase credits to continue.</p>
                         <button
                             className="btn btn-primary btn-lg w-100 mb-3"
                             onClick={redirectToPricing}
@@ -875,14 +871,6 @@ const Models = () => {
                                 Apply Style
                             </button>
                         )
-                    )}
-                    {processingState.status === 'complete' && (
-                        <button
-                            className="btn btn-secondary"
-                            onClick={handleCloseModal}
-                        >
-                            Close
-                        </button>
                     )}
                 </Modal.Footer>
             </Modal>

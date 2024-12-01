@@ -69,7 +69,8 @@ export const AuthProvider = ({ children }) => {
         user,
         login,
         logout,
-        loading
+        loading,
+        refreshProfile: fetchUserProfile
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
