@@ -50,6 +50,15 @@ const ModelTest = () => {
     };
 
     const pollStatus = async (requestHash, modelName) => {
+        // If we already have a successful result, don't do anything
+        if (modelResults[modelName]?.status === 'complete') {
+            if (pollIntervals.current[modelName]) {
+                clearInterval(pollIntervals.current[modelName]);
+                delete pollIntervals.current[modelName];
+            }
+            return;
+        }
+
         try {
             const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
                 headers: {
@@ -62,11 +71,8 @@ const ModelTest = () => {
             const data = await response.json();
 
             if (data.status === 'completed') {
-                // Clear polling first
-                if (pollIntervals.current[modelName]) {
-                    clearInterval(pollIntervals.current[modelName]);
-                    delete pollIntervals.current[modelName];
-                }
+                clearInterval(pollIntervals.current[modelName]);
+                delete pollIntervals.current[modelName];
 
                 const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
                     headers: {
@@ -79,7 +85,6 @@ const ModelTest = () => {
                 const blob = await imageResponse.blob();
                 const imageUrl = URL.createObjectURL(blob);
 
-                // Set final success state
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -87,25 +92,28 @@ const ModelTest = () => {
                         result: imageUrl
                     }
                 }));
-
-                // Don't continue with any more polling
-                return;
             }
         } catch (error) {
-            if (pollIntervals.current[modelName]) {
+            // Only set error if we haven't already succeeded
+            if (modelResults[modelName]?.status !== 'complete') {
                 clearInterval(pollIntervals.current[modelName]);
                 delete pollIntervals.current[modelName];
+
+                setModelResults(prev => ({
+                    ...prev,
+                    [modelName]: {
+                        status: 'error',
+                        error: error.message
+                    }
+                }));
             }
-            setModelResults(prev => ({
-                ...prev,
-                [modelName]: {
-                    status: 'error',
-                    error: error.message
-                }
-            }));
         }
     };
+
     const processModel = async (modelName) => {
+        // Don't process if we already have a successful result
+        if (modelResults[modelName]?.status === 'complete') return;
+
         try {
             const formData = new FormData();
             formData.append('image', testImage);
@@ -127,15 +135,21 @@ const ModelTest = () => {
             if (!response.ok) throw new Error('Failed to start processing');
 
             const data = await response.json();
-            pollIntervals.current[modelName] = setInterval(() => pollStatus(data.requestHash, modelName), 3000);
+
+            // Only set up polling if we don't already have a success
+            if (modelResults[modelName]?.status !== 'complete') {
+                pollIntervals.current[modelName] = setInterval(() => pollStatus(data.requestHash, modelName), 3000);
+            }
         } catch (error) {
-            setModelResults(prev => ({
-                ...prev,
-                [modelName]: {
-                    status: 'error',
-                    error: error.message
-                }
-            }));
+            if (modelResults[modelName]?.status !== 'complete') {
+                setModelResults(prev => ({
+                    ...prev,
+                    [modelName]: {
+                        status: 'error',
+                        error: error.message
+                    }
+                }));
+            }
         }
     };
 
