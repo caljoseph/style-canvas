@@ -8,8 +8,7 @@ const ModelTest = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
     const { user } = useAuth();
-    const pollIntervals = useRef({});
-    const completedRequests = useRef(new Set());
+    const activePolls = useRef({});
 
     const models = [
         "Pencil Blur", "Verdant Flame", "Impasto", "Chalkboard", "Face-2-Paint",
@@ -49,7 +48,10 @@ const ModelTest = () => {
             await validateImage(file);
             setTestImage(file);
             setModelResults({});
-            completedRequests.current.clear(); // Clear completed requests when uploading new image
+            // Clean up any existing polls
+            Object.keys(activePolls.current).forEach(modelName => {
+                stopPolling(modelName);
+            });
             setStatusMessage('Image loaded successfully. Ready to start testing.');
         } catch (error) {
             setStatusMessage(error.message);
@@ -57,37 +59,55 @@ const ModelTest = () => {
         }
     };
 
-    const markRequestComplete = (modelName, requestHash, imageUrl) => {
-        log(modelName, 'Marking request as complete', { requestHash });
-
-        // Clear interval first
-        if (pollIntervals.current[modelName]) {
-            clearInterval(pollIntervals.current[modelName]);
-            delete pollIntervals.current[modelName];
+    const stopPolling = (modelName) => {
+        if (activePolls.current[modelName]) {
+            log(modelName, 'Stopping polling');
+            clearInterval(activePolls.current[modelName]);
+            delete activePolls.current[modelName];
         }
+    };
 
-        // Add to completed set
-        completedRequests.current.add(requestHash);
+    const retrieveImage = async (requestHash, modelName) => {
+        try {
+            log(modelName, 'Retrieving completed image', { requestHash });
+            const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                }
+            });
 
-        // Update state
-        setModelResults(prev => ({
-            ...prev,
-            [modelName]: {
-                status: 'complete',
-                result: imageUrl,
-                requestHash
-            }
-        }));
+            if (!imageResponse.ok) throw new Error('Failed to retrieve image');
+
+            const blob = await imageResponse.blob();
+            const imageUrl = URL.createObjectURL(blob);
+
+            setModelResults(prev => ({
+                ...prev,
+                [modelName]: {
+                    status: 'complete',
+                    result: imageUrl
+                }
+            }));
+
+            stopPolling(modelName);
+            log(modelName, 'Successfully retrieved and displayed image');
+
+        } catch (error) {
+            log(modelName, 'Error retrieving image', error);
+            setModelResults(prev => ({
+                ...prev,
+                [modelName]: {
+                    status: 'error',
+                    error: 'Failed to retrieve completed image'
+                }
+            }));
+            stopPolling(modelName);
+        }
     };
 
     const pollStatus = async (requestHash, modelName) => {
-        // Check if already completed
-        if (completedRequests.current.has(requestHash)) {
-            log(modelName, `Skipping poll - request ${requestHash} already completed`);
-            if (pollIntervals.current[modelName]) {
-                clearInterval(pollIntervals.current[modelName]);
-                delete pollIntervals.current[modelName];
-            }
+        if (modelResults[modelName]?.status === 'complete') {
+            stopPolling(modelName);
             return;
         }
 
@@ -101,50 +121,12 @@ const ModelTest = () => {
             if (!response.ok) throw new Error('Failed to check status');
 
             const data = await response.json();
-            log(modelName, 'Status response received', data);
+            log(modelName, 'Status check', data);
 
             if (data.status === 'completed') {
-                // Double check completion
-                if (completedRequests.current.has(requestHash)) {
-                    log(modelName, 'Request completed while checking status - skipping retrieval');
-                    return;
-                }
-
-                log(modelName, 'Status complete, retrieving image', { requestHash });
-
-                try {
-                    const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                        }
-                    });
-
-                    if (!imageResponse.ok) throw new Error('Failed to retrieve image');
-
-                    const blob = await imageResponse.blob();
-                    const imageUrl = URL.createObjectURL(blob);
-
-                    log(modelName, 'Image retrieved successfully', { requestHash });
-                    markRequestComplete(modelName, requestHash, imageUrl);
-
-                } catch (error) {
-                    if (!completedRequests.current.has(requestHash)) {
-                        log(modelName, 'Error retrieving image', error);
-                        setModelResults(prev => ({
-                            ...prev,
-                            [modelName]: {
-                                status: 'error',
-                                error: error.message
-                            }
-                        }));
-                    }
-                }
+                await retrieveImage(requestHash, modelName);
             } else if (data.status === 'failed') {
                 log(modelName, 'Processing failed');
-                if (pollIntervals.current[modelName]) {
-                    clearInterval(pollIntervals.current[modelName]);
-                    delete pollIntervals.current[modelName];
-                }
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -152,46 +134,31 @@ const ModelTest = () => {
                         error: 'Processing failed'
                     }
                 }));
+                stopPolling(modelName);
             }
         } catch (error) {
-            if (!completedRequests.current.has(requestHash)) {
-                log(modelName, 'Error polling status', error);
-                if (pollIntervals.current[modelName]) {
-                    clearInterval(pollIntervals.current[modelName]);
-                    delete pollIntervals.current[modelName];
-                }
-
-                setModelResults(prev => ({
-                    ...prev,
-                    [modelName]: {
-                        status: 'error',
-                        error: error.message
-                    }
-                }));
-            }
+            log(modelName, 'Error checking status', error);
         }
     };
 
     const processModel = async (modelName) => {
-        log(modelName, 'Starting processing');
-
+        // Skip if already complete
         if (modelResults[modelName]?.status === 'complete') {
             log(modelName, 'Skipping - already complete');
             return;
         }
 
-        try {
-            const formData = new FormData();
-            formData.append('image', testImage);
-            formData.append('modelName', modelName);
+        const formData = new FormData();
+        formData.append('image', testImage);
+        formData.append('modelName', modelName);
 
-            log(modelName, 'Setting processing status');
+        try {
+            log(modelName, 'Starting processing');
             setModelResults(prev => ({
                 ...prev,
                 [modelName]: { status: 'processing' }
             }));
 
-            log(modelName, 'Sending generate request');
             const response = await fetch(`${Config.apiUrl}/image/generate`, {
                 method: 'POST',
                 headers: {
@@ -205,30 +172,22 @@ const ModelTest = () => {
             const data = await response.json();
             log(modelName, 'Generate response received', data);
 
-            // Start polling if not already completed
-            if (!completedRequests.current.has(data.requestHash)) {
-                if (pollIntervals.current[modelName]) {
-                    log(modelName, 'Clearing existing poll interval');
-                    clearInterval(pollIntervals.current[modelName]);
-                    delete pollIntervals.current[modelName];
-                }
-
-                log(modelName, 'Starting polling interval');
-                pollIntervals.current[modelName] = setInterval(() => pollStatus(data.requestHash, modelName), 3000);
-            } else {
-                log(modelName, 'Request already completed - skipping polling');
+            // Start polling only if not already polling
+            if (!activePolls.current[modelName]) {
+                activePolls.current[modelName] = setInterval(
+                    () => pollStatus(data.requestHash, modelName),
+                    3000
+                );
             }
         } catch (error) {
-            log(modelName, 'Error in processModel', error);
-            if (!completedRequests.current.has(modelName)) {
-                setModelResults(prev => ({
-                    ...prev,
-                    [modelName]: {
-                        status: 'error',
-                        error: error.message
-                    }
-                }));
-            }
+            log(modelName, 'Error starting process', error);
+            setModelResults(prev => ({
+                ...prev,
+                [modelName]: {
+                    status: 'error',
+                    error: error.message
+                }
+            }));
         }
     };
 
@@ -253,27 +212,20 @@ const ModelTest = () => {
         }
     };
 
-    // Cleanup function
     React.useEffect(() => {
         return () => {
-            log('Cleanup', 'Component unmounting - cleaning up resources');
-
-            // Clear all polling intervals
-            Object.entries(pollIntervals.current).forEach(([modelName, interval]) => {
-                log('Cleanup', `Clearing interval for ${modelName}`);
-                clearInterval(interval);
+            // Clean up on unmount
+            Object.keys(activePolls.current).forEach(modelName => {
+                log('Cleanup', `Stopping poll for ${modelName}`);
+                stopPolling(modelName);
             });
 
-            // Revoke all object URLs
             Object.entries(modelResults).forEach(([modelName, result]) => {
                 if (result.status === 'complete' && result.result) {
                     log('Cleanup', `Revoking URL for ${modelName}`);
                     URL.revokeObjectURL(result.result);
                 }
             });
-
-            // Clear completed requests
-            completedRequests.current.clear();
         };
     }, []);
 
