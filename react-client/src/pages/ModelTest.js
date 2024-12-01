@@ -26,8 +26,9 @@ const ModelTest = () => {
                 URL.revokeObjectURL(img.src);
                 if (img.width < 1024 || img.height < 1024) {
                     reject(new Error(`Image too small: ${img.width}x${img.height}px. Minimum required: 1024x1024px`));
+                } else {
+                    resolve(true);
                 }
-                resolve(true);
             };
             img.onerror = () => reject(new Error('Invalid image file'));
             img.src = URL.createObjectURL(file);
@@ -50,7 +51,6 @@ const ModelTest = () => {
     };
 
     const pollStatus = async (requestHash, modelName) => {
-        // If we already have a successful result, don't do anything
         if (modelResults[modelName]?.status === 'complete') {
             if (pollIntervals.current[modelName]) {
                 clearInterval(pollIntervals.current[modelName]);
@@ -71,7 +71,6 @@ const ModelTest = () => {
             const data = await response.json();
 
             if (data.status === 'completed') {
-                // Fetch the image
                 try {
                     const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
                         headers: {
@@ -95,7 +94,6 @@ const ModelTest = () => {
                             }
                         }));
 
-                        // Now that we've successfully fetched and set the image, clear the interval
                         if (pollIntervals.current[modelName]) {
                             clearInterval(pollIntervals.current[modelName]);
                             delete pollIntervals.current[modelName];
@@ -103,7 +101,6 @@ const ModelTest = () => {
                     };
                     reader.readAsDataURL(blob);
                 } catch (error) {
-                    // Handle errors during image retrieval
                     if (modelResults[modelName]?.status !== 'complete') {
                         setModelResults(prev => ({
                             ...prev,
@@ -115,7 +112,6 @@ const ModelTest = () => {
                     }
                 }
             } else if (data.status === 'failed') {
-                // If the processing failed, stop polling and set status to error
                 if (pollIntervals.current[modelName]) {
                     clearInterval(pollIntervals.current[modelName]);
                     delete pollIntervals.current[modelName];
@@ -128,9 +124,7 @@ const ModelTest = () => {
                     }
                 }));
             }
-            // If status is 'processing', do nothing and wait for the next poll
         } catch (error) {
-            // Only set error if we haven't already succeeded
             if (modelResults[modelName]?.status !== 'complete') {
                 if (pollIntervals.current[modelName]) {
                     clearInterval(pollIntervals.current[modelName]);
@@ -149,7 +143,6 @@ const ModelTest = () => {
     };
 
     const processModel = async (modelName) => {
-        // Don't process if we already have a successful result
         if (modelResults[modelName]?.status === 'complete') return;
 
         try {
@@ -174,8 +167,11 @@ const ModelTest = () => {
 
             const data = await response.json();
 
-            // Only set up polling if we don't already have a success
             if (modelResults[modelName]?.status !== 'complete') {
+                if (pollIntervals.current[modelName]) {
+                    clearInterval(pollIntervals.current[modelName]);
+                    delete pollIntervals.current[modelName];
+                }
                 pollIntervals.current[modelName] = setInterval(() => pollStatus(data.requestHash, modelName), 3000);
             }
         } catch (error) {
