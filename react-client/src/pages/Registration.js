@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Registration = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, register } = useAuth();
     const [isLoginView, setIsLoginView] = useState(true);
     const [formData, setFormData] = useState({
         email: '',
@@ -89,22 +89,11 @@ const Registration = () => {
                     setErrors({ submit: result.message || 'Invalid email or password' });
                 }
             } else {
-                const response = await fetch('http://localhost:3000/auth/register', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: formData.email,
-                        password: formData.password,
-                    }),
-                });
-
-                const data = await response.json();
-                if (response.ok) {
+                const result = await register(formData.email, formData.password);
+                if (result.success) {
                     navigate('/welcome');
                 } else {
-                    setErrors({ submit: data.message || 'Registration failed' });
+                    setErrors({ submit: result.message || 'Registration failed' });
                 }
             }
         } catch (error) {

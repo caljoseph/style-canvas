@@ -59,6 +59,28 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const register = async (email, password) => {
+        const response = await fetch(`${Config.apiUrl}/auth/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Optionally auto-login after registration
+            localStorage.setItem('accessToken', data.accessToken);
+            localStorage.setItem('refreshToken', data.refreshToken);
+            await fetchUserProfile();
+            return { success: true };
+        } else {
+            return { success: false, message: data.message };
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -68,6 +90,7 @@ export const AuthProvider = ({ children }) => {
     const value = {
         user,
         login,
+        register,
         logout,
         loading,
         refreshProfile: fetchUserProfile
