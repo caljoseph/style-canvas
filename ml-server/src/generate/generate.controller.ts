@@ -1,4 +1,4 @@
-import { Controller, Logger, Post, Body, UploadedFile, UseInterceptors, BadRequestException, HttpStatus, Res } from '@nestjs/common';
+import { Controller, Logger, Post, Body, UploadedFile, UseInterceptors, BadRequestException, HttpStatus, Res, InternalServerErrorException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { spawn } from 'child_process';
@@ -51,16 +51,19 @@ export class GenerateController {
         @Body() generateImageDto: GenerateImageDto,
         @Res() res: Response
     ) {
+        // Input validation (400 Bad Request)
         if (!file) {
             throw new BadRequestException('No image file uploaded');
         }
 
-        if (!Object.keys(ModelName).includes(generateImageDto.modelName)) {
-            throw new BadRequestException(`Invalid model name: ${generateImageDto.modelName}`);
+        const modelName = generateImageDto.modelName;
+        // Check if the model name is a valid key in our ModelName mapping
+        if (!(modelName in ModelName)) {
+            throw new BadRequestException(`Invalid model name: ${modelName}`);
         }
 
         // Map to the filter name
-        const filterName = ModelName[generateImageDto.modelName];
+        const filterName = ModelName[modelName];
 
         const projectRoot = '/home/ubuntu/style-canvas/ml-server';
         const pythonDir = path.join(projectRoot, 'python');
@@ -113,7 +116,7 @@ export class GenerateController {
 
         } catch (error) {
             this.logger.error(`Error generating image: ${error.message}`);
-            throw new BadRequestException('Image generation failed');
+            throw new InternalServerErrorException('Image generation failed');
         } finally {
             // Clean up the temp directory
             this.logger.log(`Cleaning up temporary directory: ${tempDir}`);
