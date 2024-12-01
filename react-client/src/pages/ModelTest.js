@@ -71,33 +71,71 @@ const ModelTest = () => {
             const data = await response.json();
 
             if (data.status === 'completed') {
-                clearInterval(pollIntervals.current[modelName]);
-                delete pollIntervals.current[modelName];
+                // Fetch the image
+                try {
+                    const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                        }
+                    });
 
-                const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                    if (!imageResponse.ok) throw new Error('Failed to retrieve image');
+
+                    const blob = await imageResponse.blob();
+
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const imageUrl = reader.result;
+
+                        setModelResults(prev => ({
+                            ...prev,
+                            [modelName]: {
+                                status: 'complete',
+                                result: imageUrl
+                            }
+                        }));
+
+                        // Now that we've successfully fetched and set the image, clear the interval
+                        if (pollIntervals.current[modelName]) {
+                            clearInterval(pollIntervals.current[modelName]);
+                            delete pollIntervals.current[modelName];
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                } catch (error) {
+                    // Handle errors during image retrieval
+                    if (modelResults[modelName]?.status !== 'complete') {
+                        setModelResults(prev => ({
+                            ...prev,
+                            [modelName]: {
+                                status: 'error',
+                                error: error.message
+                            }
+                        }));
                     }
-                });
-
-                if (!imageResponse.ok) throw new Error('Failed to retrieve image');
-
-                const blob = await imageResponse.blob();
-                const imageUrl = URL.createObjectURL(blob);
-
+                }
+            } else if (data.status === 'failed') {
+                // If the processing failed, stop polling and set status to error
+                if (pollIntervals.current[modelName]) {
+                    clearInterval(pollIntervals.current[modelName]);
+                    delete pollIntervals.current[modelName];
+                }
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
-                        status: 'complete',
-                        result: imageUrl
+                        status: 'error',
+                        error: 'Processing failed'
                     }
                 }));
             }
+            // If status is 'processing', do nothing and wait for the next poll
         } catch (error) {
             // Only set error if we haven't already succeeded
             if (modelResults[modelName]?.status !== 'complete') {
-                clearInterval(pollIntervals.current[modelName]);
-                delete pollIntervals.current[modelName];
+                if (pollIntervals.current[modelName]) {
+                    clearInterval(pollIntervals.current[modelName]);
+                    delete pollIntervals.current[modelName];
+                }
 
                 setModelResults(prev => ({
                     ...prev,
