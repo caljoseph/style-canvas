@@ -8,7 +8,6 @@ const ModelTest = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
     const { user } = useAuth();
-    const pollIntervals = useRef({});
 
     const models = [
         "Pencil Blur", "Verdant Flame", "Impasto", "Chalkboard", "Face-2-Paint",
@@ -55,13 +54,6 @@ const ModelTest = () => {
     };
 
     const pollStatus = async (requestHash, modelName) => {
-        // If we already have an image for this model, stop polling and exit
-        if (modelResults[modelName]?.result) {
-            log(modelName, 'Found existing image, stopping poll');
-            clearInterval(pollIntervals.current[modelName]);
-            return;
-        }
-
         try {
             const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
                 headers: {
@@ -93,11 +85,9 @@ const ModelTest = () => {
                     }
                 }));
 
-                clearInterval(pollIntervals.current[modelName]);
                 log(modelName, 'Image retrieved and displayed');
 
             } else if (data.status === 'failed') {
-                clearInterval(pollIntervals.current[modelName]);
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -106,18 +96,19 @@ const ModelTest = () => {
                     }
                 }));
                 log(modelName, 'Processing failed');
+            } else {
+                // Schedule the next poll after 3 seconds
+                setTimeout(() => pollStatus(requestHash, modelName), 3000);
             }
         } catch (error) {
             log(modelName, `Error: ${error.message}`);
-            if (!modelResults[modelName]?.result) {
-                setModelResults(prev => ({
-                    ...prev,
-                    [modelName]: {
-                        status: 'error',
-                        error: error.message
-                    }
-                }));
-            }
+            setModelResults(prev => ({
+                ...prev,
+                [modelName]: {
+                    status: 'error',
+                    error: error.message
+                }
+            }));
         }
     };
 
@@ -148,9 +139,9 @@ const ModelTest = () => {
 
             const data = await response.json();
 
-            if (!pollIntervals.current[modelName]) {
-                pollIntervals.current[modelName] = setInterval(() => pollStatus(data.requestHash, modelName), 3000);
-            }
+            // Start polling
+            pollStatus(data.requestHash, modelName);
+
         } catch (error) {
             log(modelName, `Error: ${error.message}`);
             setModelResults(prev => ({
@@ -186,12 +177,11 @@ const ModelTest = () => {
 
     React.useEffect(() => {
         return () => {
-            Object.values(pollIntervals.current).forEach(interval => clearInterval(interval));
             Object.values(modelResults).forEach(result => {
                 if (result.result) URL.revokeObjectURL(result.result);
             });
         };
-    }, []);
+    }, [modelResults]);
 
     return (
         <div className="container py-4">
