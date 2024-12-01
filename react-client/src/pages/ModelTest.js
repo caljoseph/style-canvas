@@ -19,6 +19,10 @@ const ModelTest = () => {
         "Triad Shade", "Triadic Vision"
     ];
 
+    const log = (modelName, message) => {
+        console.log(`[${new Date().toISOString()}] [${modelName}] ${message}`);
+    };
+
     const validateImage = (file) => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -51,6 +55,13 @@ const ModelTest = () => {
     };
 
     const pollStatus = async (requestHash, modelName) => {
+        // If we already have an image for this model, stop polling and exit
+        if (modelResults[modelName]?.result) {
+            log(modelName, 'Found existing image, stopping poll');
+            clearInterval(pollIntervals.current[modelName]);
+            return;
+        }
+
         try {
             const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
                 headers: {
@@ -74,10 +85,6 @@ const ModelTest = () => {
                 const blob = await imageResponse.blob();
                 const imageUrl = URL.createObjectURL(blob);
 
-                // Stop polling BEFORE updating state
-                clearInterval(pollIntervals.current[modelName]);
-                delete pollIntervals.current[modelName];
-
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -86,10 +93,11 @@ const ModelTest = () => {
                     }
                 }));
 
+                clearInterval(pollIntervals.current[modelName]);
+                log(modelName, 'Image retrieved and displayed');
+
             } else if (data.status === 'failed') {
                 clearInterval(pollIntervals.current[modelName]);
-                delete pollIntervals.current[modelName];
-
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -97,9 +105,11 @@ const ModelTest = () => {
                         error: 'Processing failed'
                     }
                 }));
+                log(modelName, 'Processing failed');
             }
         } catch (error) {
-            if (modelResults[modelName]?.status !== 'complete') {
+            log(modelName, `Error: ${error.message}`);
+            if (!modelResults[modelName]?.result) {
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -112,13 +122,15 @@ const ModelTest = () => {
     };
 
     const processModel = async (modelName) => {
-        if (modelResults[modelName]?.status === 'complete') return;
+        // Skip if we already have an image
+        if (modelResults[modelName]?.result) return;
 
         try {
             const formData = new FormData();
             formData.append('image', testImage);
             formData.append('modelName', modelName);
 
+            log(modelName, 'Starting process');
             setModelResults(prev => ({
                 ...prev,
                 [modelName]: { status: 'processing' }
@@ -136,11 +148,11 @@ const ModelTest = () => {
 
             const data = await response.json();
 
-            // Start polling only if we haven't already
             if (!pollIntervals.current[modelName]) {
                 pollIntervals.current[modelName] = setInterval(() => pollStatus(data.requestHash, modelName), 3000);
             }
         } catch (error) {
+            log(modelName, `Error: ${error.message}`);
             setModelResults(prev => ({
                 ...prev,
                 [modelName]: {
@@ -156,6 +168,7 @@ const ModelTest = () => {
 
         setIsProcessing(true);
         setStatusMessage('Starting batch processing...');
+        log('Batch', 'Starting batch processing');
 
         for (const modelName of models) {
             await processModel(modelName);
@@ -171,16 +184,11 @@ const ModelTest = () => {
         }
     };
 
-    // Cleanup intervals and URLs on unmount
     React.useEffect(() => {
         return () => {
-            // Clear all intervals
             Object.values(pollIntervals.current).forEach(interval => clearInterval(interval));
-            // Clear all object URLs
             Object.values(modelResults).forEach(result => {
-                if (result.status === 'complete' && result.result) {
-                    URL.revokeObjectURL(result.result);
-                }
+                if (result.result) URL.revokeObjectURL(result.result);
             });
         };
     }, []);
