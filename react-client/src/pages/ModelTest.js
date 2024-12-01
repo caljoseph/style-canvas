@@ -62,7 +62,12 @@ const ModelTest = () => {
             const data = await response.json();
 
             if (data.status === 'completed') {
-                clearInterval(pollIntervals.current[modelName]);
+                // Clear polling first
+                if (pollIntervals.current[modelName]) {
+                    clearInterval(pollIntervals.current[modelName]);
+                    delete pollIntervals.current[modelName];
+                }
+
                 const imageResponse = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -74,6 +79,7 @@ const ModelTest = () => {
                 const blob = await imageResponse.blob();
                 const imageUrl = URL.createObjectURL(blob);
 
+                // Set final success state
                 setModelResults(prev => ({
                     ...prev,
                     [modelName]: {
@@ -81,18 +87,15 @@ const ModelTest = () => {
                         result: imageUrl
                     }
                 }));
-            } else if (data.status === 'failed') {
-                clearInterval(pollIntervals.current[modelName]);
-                setModelResults(prev => ({
-                    ...prev,
-                    [modelName]: {
-                        status: 'error',
-                        error: 'Processing failed'
-                    }
-                }));
+
+                // Don't continue with any more polling
+                return;
             }
         } catch (error) {
-            clearInterval(pollIntervals.current[modelName]);
+            if (pollIntervals.current[modelName]) {
+                clearInterval(pollIntervals.current[modelName]);
+                delete pollIntervals.current[modelName];
+            }
             setModelResults(prev => ({
                 ...prev,
                 [modelName]: {
@@ -102,7 +105,6 @@ const ModelTest = () => {
             }));
         }
     };
-
     const processModel = async (modelName) => {
         try {
             const formData = new FormData();
