@@ -595,346 +595,354 @@ const Models = () => {
     };
 
     return (
-        <section id="models" className="features section">
-            <div className="container section-title" data-aos="fade-up">
-                <h2>Our AI Models</h2>
-                <p>Explore our range of AI models, each designed to create a unique artistic style:</p>
-            </div>
-
-            <div className="container">
-                <div className="row gy-4">
-                    {models.map((model, index) => (
-                        <div
-                            key={index}
-                            className="col-lg-3 col-md-4"
-                            data-aos="fade-up"
-                            data-aos-delay="100"
-                        >
-                            <div className="features-item" onClick={() => handleModelClick(model.name)}>
-                                <img src={model.image} alt={model.name} />
-                                <h3>
-                                    <a href="#" className="stretched-link">{model.name}</a>
-                                </h3>
-                            </div>
-                        </div>
-                    ))}
+        <>
+            <style>
+                {`
+          .btn-close {
+            opacity: 1 !important;
+            filter: invert(27%) sepia(99%) saturate(7404%) hue-rotate(353deg) brightness(87%) contrast(135%);
+            transform: scale(1.2);
+          }
+        `}
+            </style>
+            <section id="models" className="features section">
+                <div className="container section-title" data-aos="fade-up">
+                    <h2>Our AI Models</h2>
+                    <p>Explore our range of AI models, each designed to create a unique artistic style:</p>
                 </div>
-            </div>
 
-            {/* Authentication Required Modal */}
-            <Modal
-                show={showAuthModal}
-                onHide={handleAuthModalClose}
-                centered
-                size="md"
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>Authentication Required</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <div className="text-center">
-                        <div className="mb-4">
-                            <i className="bi bi-lock text-primary" style={{ fontSize: '3rem' }}></i>
-                        </div>
-                        <h5 className="mb-3">Want to try {selectedModel}?</h5>
-                        <p className="mb-4">Please sign in or create an account to use our AI models.</p>
-                        <button
-                            className="btn btn-primary btn-lg w-100 mb-3"
-                            onClick={redirectToRegistration}
-                        >
-                            Sign In / Sign Up
-                        </button>
+                <div className="container">
+                    <div className="row gy-4">
+                        {models.map((model, index) => (
+                            <div
+                                key={index}
+                                className="col-lg-3 col-md-4"
+                                data-aos="fade-up"
+                                data-aos-delay="100"
+                            >
+                                <div className="features-item" onClick={() => handleModelClick(model.name)}>
+                                    <img src={model.image} alt={model.name}/>
+                                    <h3>
+                                        <a href="#" className="stretched-link">{model.name}</a>
+                                    </h3>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                </Modal.Body>
-            </Modal>
+                </div>
 
-            {/* No Credits Modal */}
-            <Modal
-                show={showNoCreditModal}
-                onHide={handleNoCreditModalClose}
-                centered
-                size="md"
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>Credits Required</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <div className="text-center">
-                        <div className="mb-4">
-                            <i className="bi bi-coin text-warning" style={{ fontSize: '3rem' }}></i>
-                        </div>
-                        <h5 className="mb-3">Want to try {selectedModel}?</h5>
-                        <p className="mb-4">You need at least 1 credit to generate an image. Purchase credits to continue.</p>
-                        <button
-                            className="btn btn-primary btn-lg w-100 mb-3"
-                            onClick={redirectToPricing}
-                        >
-                            View Pricing Plans
-                        </button>
-                    </div>
-                </Modal.Body>
-            </Modal>
-
-
-            {/* No Tokens for Upscale Modal */}
-            <Modal
-                show={showNoTokenForUpscaleModal}
-                onHide={handleNoTokenForUpscaleModalClose}
-                centered
-                size="md"
-            >
-                <Modal.Header closeButton>
-                    <Modal.Title>Tokens Required</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <div className="text-center">
-                        <div className="mb-4">
-                            <i className="bi bi-coin text-warning" style={{ fontSize: '3rem' }}></i>
-                        </div>
-                        <h5 className="mb-3">Want to upscale this image?</h5>
-                        <p className="mb-4">You need 1 token to double the resolution of your image.</p>
-                        <div className="d-grid gap-3">
+                {/* Authentication Required Modal */}
+                <Modal
+                    show={showAuthModal}
+                    onHide={handleAuthModalClose}
+                    centered
+                    size="md"
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Authentication Required</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className="text-center">
+                            <div className="mb-4">
+                                <i className="bi bi-lock text-primary" style={{fontSize: '3rem'}}></i>
+                            </div>
+                            <h5 className="mb-3">Want to try {selectedModel}?</h5>
+                            <p className="mb-4">Please sign in or create an account to use our AI models.</p>
                             <button
-                                className="btn btn-primary btn-lg"
+                                className="btn btn-primary btn-lg w-100 mb-3"
+                                onClick={redirectToRegistration}
+                            >
+                                Sign In / Sign Up
+                            </button>
+                        </div>
+                    </Modal.Body>
+                </Modal>
+
+                {/* No Credits Modal */}
+                <Modal
+                    show={showNoCreditModal}
+                    onHide={handleNoCreditModalClose}
+                    centered
+                    size="md"
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Credits Required</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                        <div className="text-center">
+                            <div className="mb-4">
+                                <i className="bi bi-coin text-warning" style={{fontSize: '3rem'}}></i>
+                            </div>
+                            <h5 className="mb-3">Want to try {selectedModel}?</h5>
+                            <p className="mb-4">You need at least 1 credit to generate an image. Purchase credits to
+                                continue.</p>
+                            <button
+                                className="btn btn-primary btn-lg w-100 mb-3"
                                 onClick={redirectToPricing}
                             >
-                                Purchase Tokens
-                            </button>
-                            <button
-                                className="btn btn-outline-secondary"
-                                onClick={handleNoTokenForUpscaleModalClose}
-                            >
-                                Return to Image
+                                View Pricing Plans
                             </button>
                         </div>
-                    </div>
-                </Modal.Body>
-            </Modal>
+                    </Modal.Body>
+                </Modal>
 
-            {/* Image Processing Modal */}
-            <Modal
-                show={showModal}
-                onHide={handleCloseModal}
-                centered
-                size="lg"
-                backdrop="static"
-                keyboard={false}
-            >
-                <Modal.Header closeButton>
-                    <div className="w-100 position-relative d-flex align-items-center">
-                        {!isCropping && processingState.status === 'idle' && (
-                            <button
-                                className="btn btn-secondary me-3"
-                                onClick={() => {
-                                    setIsCropping(true);
-                                    setCroppedImage(null);
-                                    setStatusMessage({
-                                        text: "Please upload an image of at least 1024x1024px",
-                                        type: "info"
-                                    });
-                                }}
-                            >
-                                ← Back to Crop
-                            </button>
-                        )}
-                        <Modal.Title>
-                            Style: {selectedModel}
-                            {processingState.imageSize && processingState.imageSize.width > originalDimensions?.width ? ' (Upscaled)' : ''}
-                        </Modal.Title>
-                    </div>
-                </Modal.Header>
 
-                <Modal.Body>
-                    {error && (
-                        <div className="alert alert-danger mb-3" role="alert">
-                            {error}
-                        </div>
-                    )}
-
-                    {processingState.status === 'processing' || processingState.status === 'uploading' ? (
-                        <div className="text-center p-4">
-                            <div className="spinner-border text-primary mb-3" role="status">
-                                <span className="visually-hidden">Loading...</span>
-                            </div>
-                            <div className="progress mb-3">
-                                <div
-                                    className="progress-bar"
-                                    role="progressbar"
-                                    style={{ width: `${processingState.progress}%` }}
-                                    aria-valuenow={processingState.progress}
-                                    aria-valuemin="0"
-                                    aria-valuemax="100"
-                                >
-                                    {processingState.progress}%
-                                </div>
-                            </div>
-                            <p className="mb-3">
-                                {processingState.status === 'uploading' ? 'Uploading image...' :
-                                    `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
-                            </p>
-                            <div className="alert alert-warning mb-0" role="alert">
-                                <strong>Please don't close this window</strong><br/>
-                                Your image is being processed. Closing this window will cancel the process.
-                            </div>
-                        </div>
-                    ) : processingState.status === 'complete' ? (
+                {/* No Tokens for Upscale Modal */}
+                <Modal
+                    show={showNoTokenForUpscaleModal}
+                    onHide={handleNoTokenForUpscaleModalClose}
+                    centered
+                    size="md"
+                >
+                    <Modal.Header closeButton>
+                        <Modal.Title>Tokens Required</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
                         <div className="text-center">
-                            <div className="d-flex gap-2 mb-4">
-                                <div className="alert alert-success py-2 flex-grow-1 mb-0" role="alert">
-                                    <i className="bi bi-check-circle me-2"></i>
-                                    Processing Complete!
-                                </div>
-                            </div>
-
                             <div className="mb-4">
-                                <img
-                                    src={processingState.resultImage}
-                                    alt="Styled Result"
-                                    className="img-fluid rounded shadow-sm"
-                                    style={{
-                                        maxHeight: '500px',
-                                        maxWidth: '100%',
-                                        objectFit: 'contain'
-                                    }}
-                                />
+                                <i className="bi bi-coin text-warning" style={{fontSize: '3rem'}}></i>
                             </div>
-
-                            <h6 className="text-muted mb-4">
-                                Current Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
-                            </h6>
-
-                            <div className="card shadow-sm">
-                                <div className="card-body p-4">
-                                    {processingState.imageSize?.width < 4096 && (
-                                        <div className="text-muted small mb-3">
-                                            <i className="bi bi-info-circle me-2"></i>
-                                            Double the resolution of your image for 1 additional token
-                                        </div>
-                                    )}
-
-                                    <div className="d-grid gap-3 d-sm-flex justify-content-center">
-                                        <button
-                                            className="btn btn-primary px-4 py-2"
-                                            onClick={handleDownload}
-                                        >
-                                            <i className="bi bi-download me-2"></i>
-                                            Download
-                                        </button>
-
-                                        {processingState.imageSize?.width < 4096 && (
-                                            <button
-                                                className="btn btn-primary px-4 py-2"
-                                                onClick={handleUpscale}
-                                                disabled={isUpscaling}
-                                            >
-                                                {isUpscaling ? (
-                                                    <>
-                                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                        Upscaling...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <i className="bi bi-arrows-angle-expand me-2"></i>
-                                                        Upscale (1 Token)
-                                                    </>
-                                                )}
-                                            </button>
-                                        )}
-                                    </div>
-
-                                    {processingState.imageSize?.width >= 4096 && (
-                                        <div className="text-muted small mt-3">
-                                            <i className="bi bi-check-circle-fill me-2"></i>
-                                            Maximum resolution reached
-                                        </div>
-                                    )}
-                                </div>
+                            <h5 className="mb-3">Want to upscale this image?</h5>
+                            <p className="mb-4">You need 1 token to double the resolution of your image.</p>
+                            <div className="d-grid gap-3">
+                                <button
+                                    className="btn btn-primary btn-lg"
+                                    onClick={redirectToPricing}
+                                >
+                                    Purchase Tokens
+                                </button>
                             </div>
                         </div>
-                    ) : (
-                        <>
-                            {isCropping && (
-                                <div className="mb-3">
-                                    {statusMessage.text && (
-                                        <div className={`alert alert-${statusMessage.type === 'error' ? 'danger' :
-                                            statusMessage.type === 'success' ? 'success' : 'info'} text-center`}>
-                                            {statusMessage.text}
-                                        </div>
-                                    )}
-                                    <input
-                                        className="form-control"
-                                        type="file"
-                                        id="imageInput"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        onChange={handleImageUpload}
-                                        required
+                    </Modal.Body>
+                </Modal>
+
+                {/* Image Processing Modal */}
+                <Modal
+                    show={showModal}
+                    onHide={handleCloseModal}
+                    centered
+                    size="lg"
+                    backdrop="static"
+                    keyboard={false}
+                >
+                    <Modal.Header closeButton>
+                        <div className="w-100 position-relative d-flex align-items-center">
+                            {!isCropping && processingState.status === 'idle' && (
+                                <button
+                                    className="btn btn-secondary me-3"
+                                    onClick={() => {
+                                        setIsCropping(true);
+                                        setCroppedImage(null);
+                                        setStatusMessage({
+                                            text: "Please upload an image of at least 1024x1024px",
+                                            type: "info"
+                                        });
+                                    }}
+                                >
+                                    ← Back to Crop
+                                </button>
+                            )}
+                            <Modal.Title>
+                                Style: {selectedModel}
+                                {processingState.imageSize && processingState.imageSize.width > originalDimensions?.width ? ' (Upscaled)' : ''}
+                            </Modal.Title>
+                        </div>
+                    </Modal.Header>
+
+                    <Modal.Body>
+                        {error && (
+                            <div className="alert alert-danger mb-3" role="alert">
+                                {error}
+                            </div>
+                        )}
+
+                        {processingState.status === 'processing' || processingState.status === 'uploading' ? (
+                            <div className="text-center p-4">
+                                <div className="spinner-border text-primary mb-3" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                                <div className="progress mb-3">
+                                    <div
+                                        className="progress-bar"
+                                        role="progressbar"
+                                        style={{width: `${processingState.progress}%`}}
+                                        aria-valuenow={processingState.progress}
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                    >
+                                        {processingState.progress}%
+                                    </div>
+                                </div>
+                                <p className="mb-3">
+                                    {processingState.status === 'uploading' ? 'Uploading image...' :
+                                        `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
+                                </p>
+                                <div className="alert alert-warning mb-0" role="alert">
+                                    <strong>Please don't close this window</strong><br/>
+                                    Your image is being processed. Closing this window will cancel the process.
+                                </div>
+                            </div>
+                        ) : processingState.status === 'complete' ? (
+                            <div className="text-center">
+                                <div className="d-flex gap-2 mb-4">
+                                    <div className="alert alert-success py-2 flex-grow-1 mb-0" role="alert">
+                                        <i className="bi bi-check-circle me-2"></i>
+                                        Processing Complete!
+                                    </div>
+                                </div>
+
+                                <div className="mb-4">
+                                    <img
+                                        src={processingState.resultImage}
+                                        alt="Styled Result"
+                                        className="img-fluid rounded shadow-sm"
+                                        style={{
+                                            maxHeight: '500px',
+                                            maxWidth: '100%',
+                                            objectFit: 'contain'
+                                        }}
                                     />
                                 </div>
-                            )}
 
-                            {isCropping && previewImage && (
-                                <div className="d-flex justify-content-center">
-                                    <ReactCrop
-                                        crop={crop}
-                                        onChange={handleCropChange}
-                                        aspect={1}
-                                    >
+                                <h6 className="text-muted mb-4">
+                                    Current
+                                    Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
+                                </h6>
+
+                                <div className="card shadow-sm">
+                                    <div className="card-body p-4">
+                                        {processingState.imageSize?.width < 4096 && (
+                                            <div className="text-muted small mb-3">
+                                                <i className="bi bi-info-circle me-2"></i>
+                                                Double the resolution of your image for 1 additional token
+                                            </div>
+                                        )}
+
+                                        <div className="d-grid gap-3 d-sm-flex justify-content-center">
+                                            <button
+                                                className="btn btn-primary px-4 py-2"
+                                                onClick={handleDownload}
+                                            >
+                                                <i className="bi bi-download me-2"></i>
+                                                Download
+                                            </button>
+
+                                            {processingState.imageSize?.width < 4096 && (
+                                                <button
+                                                    className="btn btn-primary px-4 py-2"
+                                                    onClick={handleUpscale}
+                                                    disabled={isUpscaling}
+                                                >
+                                                    {isUpscaling ? (
+                                                        <>
+                                                            <span className="spinner-border spinner-border-sm me-2"
+                                                                  role="status" aria-hidden="true"></span>
+                                                            Upscaling...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <i className="bi bi-arrows-angle-expand me-2"></i>
+                                                            Upscale (1 Token)
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {processingState.imageSize?.width >= 4096 && (
+                                            <div className="text-muted small mt-3">
+                                                <i className="bi bi-check-circle-fill me-2"></i>
+                                                Maximum resolution reached
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {isCropping && (
+                                    <div className="mb-3">
+                                        {statusMessage.text && (
+                                            <div className={`alert alert-${statusMessage.type === 'error' ? 'danger' :
+                                                statusMessage.type === 'success' ? 'success' : 'info'} text-center`}>
+                                                {statusMessage.text}
+                                            </div>
+                                        )}
+                                        <input
+                                            className="form-control"
+                                            type="file"
+                                            id="imageInput"
+                                            accept="image/jpeg,image/png,image/webp"
+                                            onChange={handleImageUpload}
+                                            required
+                                        />
+                                    </div>
+                                )}
+
+                                {isCropping && previewImage && (
+                                    <div className="d-flex justify-content-center">
+                                        <ReactCrop
+                                            crop={crop}
+                                            onChange={handleCropChange}
+                                            aspect={1}
+                                        >
+                                            <img
+                                                ref={imageRef}
+                                                src={previewImage}
+                                                alt="Upload"
+                                                style={{
+                                                    maxWidth: `${DISPLAY_DIMENSION}px`,
+                                                    maxHeight: `${DISPLAY_DIMENSION}px`,
+                                                    width: 'auto',
+                                                    height: 'auto'
+                                                }}
+                                                onLoad={onImageLoad}
+                                            />
+                                        </ReactCrop>
+                                    </div>
+                                )}
+
+                                {!isCropping && croppedImage && (
+                                    <div className="d-flex justify-content-center">
                                         <img
-                                            ref={imageRef}
-                                            src={previewImage}
-                                            alt="Upload"
+                                            src={croppedImage}
+                                            alt="Cropped Preview"
                                             style={{
                                                 maxWidth: `${DISPLAY_DIMENSION}px`,
                                                 maxHeight: `${DISPLAY_DIMENSION}px`,
                                                 width: 'auto',
                                                 height: 'auto'
                                             }}
-                                            onLoad={onImageLoad}
                                         />
-                                    </ReactCrop>
-                                </div>
-                            )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </Modal.Body>
 
-                            {!isCropping && croppedImage && (
-                                <div className="d-flex justify-content-center">
-                                    <img
-                                        src={croppedImage}
-                                        alt="Cropped Preview"
-                                        style={{
-                                            maxWidth: `${DISPLAY_DIMENSION}px`,
-                                            maxHeight: `${DISPLAY_DIMENSION}px`,
-                                            width: 'auto',
-                                            height: 'auto'
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </>
-                    )}
-                </Modal.Body>
-
-                <Modal.Footer>
-                    {processingState.status === 'idle' && (
-                        isCropping ? (
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleCropImage}
-                                disabled={!previewImage || !imgLoaded}
-                            >
-                                Crop Image
-                            </button>
-                        ) : (
-                            <button
-                                className="btn btn-primary"
-                                onClick={handleApplyStyle}
-                            >
-                                Apply Style
-                            </button>
-                        )
-                    )}
-                </Modal.Footer>
-            </Modal>
-        </section>
+                    <Modal.Footer>
+                        {processingState.status === 'idle' && (
+                            isCropping ? (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleCropImage}
+                                    disabled={!previewImage || !imgLoaded}
+                                >
+                                    Crop Image
+                                </button>
+                            ) : (
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handleApplyStyle}
+                                >
+                                    Apply Style
+                                </button>
+                            )
+                        )}
+                    </Modal.Footer>
+                </Modal>
+            </section>
+        </>
     );
 };
 
