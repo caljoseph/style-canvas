@@ -723,69 +723,82 @@ const Models = () => {
                         </div>
                     ) : processingState.status === 'complete' ? (
                         <div className="text-center">
-                            <div className="alert alert-success mb-3" role="alert">
+                            <div className="alert alert-success py-2 mb-4" role="alert">
                                 <i className="bi bi-check-circle me-2"></i>
                                 Processing Complete!
                             </div>
-                            <div className="position-relative mb-3">
+
+                            <div className="mb-4">
                                 <img
                                     src={processingState.resultImage}
                                     alt="Styled Result"
-                                    className="img-fluid rounded"
-                                    style={{ maxHeight: '500px' }}
+                                    className="img-fluid rounded shadow-sm"
+                                    style={{
+                                        maxHeight: '500px',
+                                        maxWidth: '100%',
+                                        objectFit: 'contain'
+                                    }}
                                 />
                             </div>
-                            <div className="card mb-4">
-                                <div className="card-body">
-                                    <h5 className="card-title mb-3">
-                                        Current Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
-                                    </h5>
-                                    <div className="d-flex justify-content-center gap-3">
-                                        <button
-                                            className="btn btn-primary"
-                                            onClick={handleDownload}
-                                        >
-                                            <i className="bi bi-download me-2"></i>
-                                            Download Current Resolution
-                                        </button>
-                                        {processingState.imageSize?.width < 4096 && (
+
+                            <div className="card shadow-sm">
+                                <div className="card-body p-4">
+                                    <div className="mb-4">
+                                        <h6 className="card-subtitle text-muted mb-3">
+                                            Current
+                                            Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
+                                        </h6>
+
+                                        <div className="d-grid gap-3 d-sm-flex justify-content-center">
                                             <button
-                                                className="btn btn-success"
-                                                onClick={handleUpscale}
-                                                disabled={isUpscaling || user.tokens < 1}
+                                                className="btn btn-primary px-4 py-2"
+                                                onClick={handleDownload}
                                             >
-                                                <i className="bi bi-arrows-angle-expand me-2"></i>
-                                                {isUpscaling ? (
-                                                    <>
-                                                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                        Upscaling...
-                                                    </>
-                                                ) : (
-                                                    <>Upscale for 1 Token</>
-                                                )}
+                                                <i className="bi bi-download me-2"></i>
+                                                Download
                                             </button>
-                                        )}
+
+                                            {processingState.imageSize?.width < 4096 && (
+                                                <button
+                                                    className="btn btn-primary px-4 py-2"
+                                                    onClick={handleUpscale}
+                                                    disabled={isUpscaling || user.tokens < 1}
+                                                >
+                                                    {isUpscaling ? (
+                                                        <>
+                                                            <span className="spinner-border spinner-border-sm me-2"
+                                                                  role="status" aria-hidden="true"></span>
+                                                            Upscaling...
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <i className="bi bi-arrows-angle-expand me-2"></i>
+                                                            Upscale (1 Token)
+                                                        </>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                    {processingState.imageSize?.width < 4096 && (
-                                        <div className="mt-3 text-muted">
-                                            <small>
-                                                <i className="bi bi-info-circle me-1"></i>
-                                                Double the resolution of your image for 1 additional token
-                                            </small>
+
+                                    {processingState.imageSize?.width < 4096 ? (
+                                        <div className="text-muted small">
+                                            <i className="bi bi-info-circle me-2"></i>
+                                            Double the resolution of your image for 1 additional token
+                                        </div>
+                                    ) : (
+                                        <div className="text-muted small">
+                                            <i className="bi bi-check-circle-fill me-2"></i>
+                                            Maximum resolution reached
                                         </div>
                                     )}
-                                    {processingState.imageSize?.width >= 4096 && (
-                                        <div className="mt-3 text-muted">
+
+                                    {user.tokens < 1 && processingState.imageSize?.width < 4096 && (
+                                        <div className="alert alert-warning mt-3 mb-0 py-2">
                                             <small>
-                                                <i className="bi bi-info-circle me-1"></i>
-                                                Maximum resolution reached
+                                                <i className="bi bi-exclamation-triangle me-2"></i>
+                                                You need at least 1 token to upscale. Purchase more tokens to continue.
                                             </small>
-                                        </div>
-                                    )}
-                                    {user.tokens < 1 && (
-                                        <div className="alert alert-warning mt-3 mb-0">
-                                            <i className="bi bi-exclamation-triangle me-2"></i>
-                                            You need at least 1 token to upscale. Purchase more tokens to continue.
                                         </div>
                                     )}
                                 </div>
