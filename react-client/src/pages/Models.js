@@ -20,6 +20,8 @@ const Models = () => {
 
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showNoCreditModal, setShowNoCreditModal] = useState(false);
+    const [showNoTokenForUpscaleModal, setShowNoTokenForUpscaleModal] = useState(false);
+
 
     const [isUpscaling, setIsUpscaling] = useState(false);
     const [originalImage, setOriginalImage] = useState(null);
@@ -319,6 +321,14 @@ const Models = () => {
                 img.onload = resolve;
             });
 
+            // If originalDimensions is null, this is the first generated image
+            if (!originalDimensions) {
+                setOriginalDimensions({
+                    width: img.width,
+                    height: img.height
+                });
+            }
+
             setProcessingState(prev => ({
                 ...prev,
                 status: 'complete',
@@ -343,6 +353,7 @@ const Models = () => {
             }));
         }
     };
+
     const pollStatus = async (requestHash) => {
         console.log('Polling status for hash:', requestHash);
         try {
@@ -462,6 +473,11 @@ const Models = () => {
     }, [processingState]);
 
     const handleUpscale = async () => {
+        if (user.tokens < 1) {
+            setShowNoTokenForUpscaleModal(true);
+            return;
+        }
+
         if (!processingState.resultImage) return;
 
         try {
@@ -524,6 +540,10 @@ const Models = () => {
         } finally {
             setIsUpscaling(false);
         }
+    };
+
+    const handleNoTokenForUpscaleModalClose = () => {
+        setShowNoTokenForUpscaleModal(false);
     };
 
     const handleDownload = () => {
@@ -655,6 +675,42 @@ const Models = () => {
                 </Modal.Body>
             </Modal>
 
+
+            {/* No Tokens for Upscale Modal */}
+            <Modal
+                show={showNoTokenForUpscaleModal}
+                onHide={handleNoTokenForUpscaleModalClose}
+                centered
+                size="md"
+            >
+                <Modal.Header closeButton>
+                    <Modal.Title>Tokens Required</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="text-center">
+                        <div className="mb-4">
+                            <i className="bi bi-coin text-warning" style={{ fontSize: '3rem' }}></i>
+                        </div>
+                        <h5 className="mb-3">Want to upscale this image?</h5>
+                        <p className="mb-4">You need 1 token to double the resolution of your image.</p>
+                        <div className="d-grid gap-3">
+                            <button
+                                className="btn btn-primary btn-lg"
+                                onClick={redirectToPricing}
+                            >
+                                Purchase Tokens
+                            </button>
+                            <button
+                                className="btn btn-outline-secondary"
+                                onClick={handleNoTokenForUpscaleModalClose}
+                            >
+                                Return to Image
+                            </button>
+                        </div>
+                    </div>
+                </Modal.Body>
+            </Modal>
+
             {/* Image Processing Modal */}
             <Modal
                 show={showModal}
@@ -728,14 +784,6 @@ const Models = () => {
                                     <i className="bi bi-check-circle me-2"></i>
                                     Processing Complete!
                                 </div>
-                                {user.tokens < 1 && processingState.imageSize?.width < 4096 && (
-                                    <div className="alert alert-warning py-2 flex-grow-1 mb-0">
-                                        <small>
-                                            <i className="bi bi-exclamation-triangle me-2"></i>
-                                            You need at least 1 token to upscale. Purchase more tokens to continue.
-                                        </small>
-                                    </div>
-                                )}
                             </div>
 
                             <div className="mb-4">
