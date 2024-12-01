@@ -5,39 +5,39 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
-enum ModelName {
-    ShadowSplit_Abstract = 'ShadowSplit_Abstract',
-    ShadowSplit = 'ShadowSplit',
-    Kai_Face = 'Kai_Face',
-    TriadShade = 'TriadShade',
-    HarmonyHue = 'HarmonyHue',
-    TriadicVision = 'TriadicVision',
-    BlueShadeFace = 'BlueShadeFace',
-    CrimsonCanvas = 'CrimsonCanvas',
-    CrimsonContour = 'CrimsonContour',
-    DarkColorBlend = 'DarkColorBlend',
-    DotLineFace = 'DotLineFace',
-    Tenshi = 'Tenshi',
-    TenshiAbstract = 'TenshiAbstract',
-    ScarletFrame = 'ScarletFrame',
-    RedMist = 'RedMist',
-    Impasto_L1 = 'Impasto_L1',
-    Impasto = 'Impasto',
-    VanGogh = 'VanGogh',
-    BlueMist = 'BlueMist',
-    Chalkboard = 'Chalkboard',
-    OilPainting_SC3 = 'OilPainting_SC3',
-    OilPainting_OP3 = 'OilPainting_OP3',
-    pencil_blur = 'pencil_blur',
-    Verdant_Flame = 'Verdant_Flame',
-    face2paint = 'face2paint',
-    crop_and_resize_face_image = 'crop_and_resize_face_image',
-    apply_broken_glass_effect = 'apply_broken_glass_effect',
-    Upsample = 'Upsample'
-}
+// Mapping object to replace the enum
+const ModelName = {
+    "Baroque Brush": "BaroqueBrush",
+    "Blue Mist": "BlueMist",
+    "Blue Shade": "BlueShadeFace",
+    "Broken Glass": "apply_broken_glass_effect",
+    "Chalkboard": "Chalkboard",
+    "Crimson Canvas": "CrimsonCanvas",
+    "Crimson Contour": "CrimsonContour",
+    "Dark Color Blend": "DarkColorBlend",
+    "Dot Line": "DotLineFace",
+    "Face-2-Paint": "face2paint",
+    "Harmony Hue": "HarmonyHue",
+    "Impasto": "Impasto_L1",
+    "Kai": "Kai_Face",
+    "Pencil Blur": "pencil_blur",
+    "Red Mist": "RedMist",
+    "Scarlet Frame": "ScarletFrame",
+    "Shadow Split": "ShadowSplit",
+    "Shadow Split Abstract": "ShadowSplit_Abstract",
+    "Tenshi": "Tenshi",
+    "Tenshi Abstract": "TenshiAbstract",
+    "Triad Shade": "TriadShade",
+    "Triadic Vision": "TriadicVision",
+    "Upsample": "Upsample",
+    "Van Gogh": "VanGogh",
+    "Verdant Flame": "Verdant_Flame"
+} as const;
+
+type ModelNameKey = keyof typeof ModelName;
 
 class GenerateImageDto {
-    modelName: ModelName;
+    modelName: ModelNameKey;
 }
 
 @Controller('generate')
@@ -55,9 +55,12 @@ export class GenerateController {
             throw new BadRequestException('No image file uploaded');
         }
 
-        if (!Object.values(ModelName).includes(generateImageDto.modelName)) {
-            throw new BadRequestException(`Invalid model name: ${generateImageDto.modelName}` );
+        if (!Object.keys(ModelName).includes(generateImageDto.modelName)) {
+            throw new BadRequestException(`Invalid model name: ${generateImageDto.modelName}`);
         }
+
+        // Map to the filter name
+        const filterName = ModelName[generateImageDto.modelName];
 
         const projectRoot = '/home/ubuntu/style-canvas/ml-server';
         const pythonDir = path.join(projectRoot, 'python');
@@ -79,13 +82,13 @@ export class GenerateController {
             const pythonScriptPath = 'StyleCanvasAI.py';
 
             // Construct and log the shell command
-            const shellCommand = `cd ${pythonDir} && conda run -n Pix2PixTester python ${pythonScriptPath} --input_file ${inputFilePath} --output_file ${outputFilePath} --filter_name ${generateImageDto.modelName}`;
+            const shellCommand = `cd ${pythonDir} && conda run -n Pix2PixTester python ${pythonScriptPath} --input_file ${inputFilePath} --output_file ${outputFilePath} --filter_name ${filterName}`;
             this.logger.log(`Executing shell command: ${shellCommand}`);
 
             const { stdout, stderr } = await this.executePythonScript(pythonDir, pythonScriptPath, [
                 '--input_file', inputFilePath,
                 '--output_file', outputFilePath,
-                '--filter_name', generateImageDto.modelName,
+                '--filter_name', filterName,
             ]);
 
             if (stderr) {

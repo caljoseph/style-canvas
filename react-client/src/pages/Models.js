@@ -20,7 +20,7 @@ const Models = () => {
 
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [showNoCreditModal, setShowNoCreditModal] = useState(false);
-    const [showNoTokenForUpscaleModal, setShowNoTokenForUpscaleModal] = useState(false);
+    const [showNoCreditForUpscaleModal, setShowNoCreditForUpscaleModal] = useState(false);
 
 
     const [isUpscaling, setIsUpscaling] = useState(false);
@@ -66,17 +66,34 @@ const Models = () => {
     }, [processingState.status]);
 
     const models = [
-        { name: "Abstract Face Line", image: "/assets/Face Sample/Abstract Face Line/BrennanMcCleary.png" },
-        { name: "BlueShadeFace", image: "/assets/Face Sample/Blue Shade Face/BrennanMcCleary.png" },
-        { name: "Chalk Drawing", image: "/assets/Face Sample/Chalk Drawing/BrennanMcCleary.png" },
-        { name: "Crimson Canvas", image: "/assets/Face Sample/Crimson Canvas/Faces_Dataset_401.png" },
-        { name: "Crimson Contour", image: "/assets/Face Sample/Crimson Contour/BrennanMcCleary.png" },
-        { name: "Dark Color Blend", image: "/assets/Face Sample/Dark Color Blend/BrennanMcCleary.png" },
-        { name: "Dot Line Face", image: "/assets/Face Sample/DotLineFace/BrennanMcCleary.png" },
-        { name: "Harmony Hue", image: "/assets/Face Sample/HarmonyHue/BrennanMcCleary.png" },
-        { name: "Kai Face", image: "/assets/Face Sample/Kai Face/image_117_image.png" },
-        { name: "Line Sketch", image: "/assets/Face Sample/LineSketch/BrennanMcCleary.png" },
+        { name: "Pencil Blur", image: "/assets/model_thumbnails/Pencil Blur/pencil_blur.png" },
+        { name: "Verdant Flame", image: "/assets/model_thumbnails/Verdant Flame/verdant_flame.png" },
+        { name: "Impasto", image: "/assets/model_thumbnails/Impasto/impasto.png" },
+        { name: "Chalkboard", image: "/assets/model_thumbnails/Chalkboard/chalkboard.png" },
+        { name: "Face-2-Paint", image: "/assets/model_thumbnails/Face-2-Paint/face-2-paint.png" },
+        { name: "Baroque Brush", image: "/assets/model_thumbnails/Baroque Brush/baroque_brush.png" },
+        { name: "Upsample", image: "/assets/model_thumbnails/Upsample/upsample.png" },
+        { name: "Van Gogh", image: "/assets/model_thumbnails/Van Gogh/van_gogh.png" },
+        { name: "Red Mist", image: "/assets/model_thumbnails/Red Mist/red_mist.png" },
+        { name: "Blue Mist", image: "/assets/model_thumbnails/Blue Mist/blue_mist.png" },
+        { name: "Broken Glass", image: "/assets/model_thumbnails/Broken Glass/broken_glass.png" },
+        { name: "Blue Shade", image: "/assets/model_thumbnails/Blue Shade/blue_shade.png" },
+        { name: "Crimson Canvas", image: "/assets/model_thumbnails/Crimson Canvas/crimson_canvas.png" },
+        { name: "Crimson Contour", image: "/assets/model_thumbnails/Crimson Contour/crimson_contour.png" },
+        { name: "Dark Color Blend", image: "/assets/model_thumbnails/Dark Color Blend/dark_color_blend.png" },
+        { name: "Dot Line", image: "/assets/model_thumbnails/Dot Line/dot_line.png" },
+        { name: "Harmony Hue", image: "/assets/model_thumbnails/Harmony Hue/harmony_hue.png" },
+        { name: "Kai", image: "/assets/model_thumbnails/Kai/kai.png" },
+        { name: "Scarlet Frame", image: "/assets/model_thumbnails/Scarlet Frame/scarlet_frame.png" },
+        { name: "Shadow Split", image: "/assets/model_thumbnails/Shadow Split/shadow_split.png" },
+        { name: "Shadow Split Abstract", image: "/assets/model_thumbnails/Shadow Split Abstract/shadow_split_abstract.png" },
+        { name: "Tenshi", image: "/assets/model_thumbnails/Tenshi/tenshi.png" },
+        { name: "Tenshi Abstract", image: "/assets/model_thumbnails/Tenshi Abstract/tenshi_abstract.png" },
+        { name: "Triad Shade", image: "/assets/model_thumbnails/Triad Shade/triad_shade.png" },
+        { name: "Triadic Vision", image: "/assets/model_thumbnails/Triadic Vision/triadic_vision.png" },
     ];
+
+
 
     const validateImageDimensions = (width, height) => {
         if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
@@ -474,7 +491,7 @@ const Models = () => {
 
     const handleUpscale = async () => {
         if (user.tokens < 1) {
-            setShowNoTokenForUpscaleModal(true);
+            setShowNoCreditForUpscaleModal(true);
             return;
         }
 
@@ -543,7 +560,7 @@ const Models = () => {
     };
 
     const handleNoTokenForUpscaleModalClose = () => {
-        setShowNoTokenForUpscaleModal(false);
+        setShowNoCreditForUpscaleModal(false);
     };
 
     const handleDownload = () => {
@@ -689,13 +706,13 @@ const Models = () => {
 
                 {/* No Tokens for Upscale Modal */}
                 <Modal
-                    show={showNoTokenForUpscaleModal}
+                    show={showNoCreditForUpscaleModal}
                     onHide={handleNoTokenForUpscaleModalClose}
                     centered
                     size="md"
                 >
                     <Modal.Header closeButton>
-                        <Modal.Title>Tokens Required</Modal.Title>
+                        <Modal.Title>Credits Required</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         <div className="text-center">
@@ -703,13 +720,13 @@ const Models = () => {
                                 <i className="bi bi-coin text-warning" style={{fontSize: '3rem'}}></i>
                             </div>
                             <h5 className="mb-3">Want to upscale this image?</h5>
-                            <p className="mb-4">You need 1 token to double the resolution of your image.</p>
+                            <p className="mb-4">You need 1 credit to double the resolution of your image.</p>
                             <div className="d-grid gap-3">
                                 <button
                                     className="btn btn-primary btn-lg"
                                     onClick={redirectToPricing}
                                 >
-                                    Purchase Tokens
+                                    Purchase Credits
                                 </button>
                             </div>
                         </div>
@@ -814,7 +831,7 @@ const Models = () => {
                                         {processingState.imageSize?.width < 4096 && (
                                             <div className="text-muted small mb-3">
                                                 <i className="bi bi-info-circle me-2"></i>
-                                                Double the resolution of your image for 1 additional token
+                                                Double the resolution of your image for 1 additional credit
                                             </div>
                                         )}
 
@@ -842,7 +859,7 @@ const Models = () => {
                                                     ) : (
                                                         <>
                                                             <i className="bi bi-arrows-angle-expand me-2"></i>
-                                                            Upscale (1 Token)
+                                                            Upscale (1 Credit)
                                                         </>
                                                     )}
                                                 </button>
