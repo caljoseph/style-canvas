@@ -141,6 +141,7 @@ const Pricing = () => {
     const renderPlanButton = (plan) => {
         const isCurrentPlan = plan.lookupKey === subscriptionType;
         const isSubscription = plan.type === "subscription";
+        const hasNoSubscription = subscriptionType === "none";
 
         if (!user) {
             return <button className="buy-btn" disabled>Log in to Purchase</button>;
@@ -163,7 +164,7 @@ const Pricing = () => {
                     className="buy-btn"
                     onClick={() => handleAction('change', plan)}
                 >
-                    Change Subscription
+                    {hasNoSubscription ? 'Add Subscription' : 'Change Subscription'}
                 </button>
             );
         }
@@ -221,12 +222,18 @@ const Pricing = () => {
 
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
                 <Modal.Header closeButton>
-                    <Modal.Title>{confirmAction.type === 'cancel' ? 'Cancel Subscription' : 'Change Subscription'}</Modal.Title>
+                    <Modal.Title>
+                        {confirmAction.type === 'cancel'
+                            ? 'Cancel Subscription'
+                            : (subscriptionType === "none" ? 'Add Subscription' : 'Change Subscription')}
+                    </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     {confirmAction.type === 'cancel'
                         ? `Are you sure you want to cancel your subscription for the ${confirmAction.plan}?`
-                        : `Are you sure you want to change your subscription to the ${confirmAction.plan}? This will go into effect on your next billing cycle.`}
+                        : (subscriptionType === "none"
+                            ? `Are you sure you want to add the ${confirmAction.plan}?`
+                            : `Are you sure you want to change your subscription to the ${confirmAction.plan}? This will go into effect on your next billing cycle.`)}
                 </Modal.Body>
                 <Modal.Footer>
                     <button
