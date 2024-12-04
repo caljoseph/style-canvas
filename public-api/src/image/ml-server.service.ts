@@ -6,8 +6,9 @@ import fetch from 'node-fetch';
 const exec = promisify(execCallback);
 
 export class MLServerStartupException extends Error {
-    constructor() {
-        super('Failed to start ML server');
+    constructor(message: string) {
+        super(message);
+        this.name = 'MLServerStartupException';
     }
 }
 
@@ -18,58 +19,22 @@ export class MLServerService {
     private readonly logger = new Logger(MLServerService.name);
     private readonly ML_INSTANCE_ID = 'i-00dacca11c59a3374';
     private readonly ML_PORT = 3000;
+    private readonly STATE_CHECK_INTERVAL = 5000; // 5 seconds
+    private readonly MAX_TRANSITION_ATTEMPTS = 60; // 5 minutes with 5-second intervals
+    private readonly INACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    private readonly MAX_INACTIVITY_TIME = 30 * 60 * 1000; // 30 minutes
+
     private lastActivityTimestamp: Date = new Date();
     private inactivityCheckInterval: NodeJS.Timeout | null = null;
     private currentServerIP: string | null = null;
-    private isStarting = false; // Prevent concurrent start attempts
+    private isStarting = false;
 
     constructor() {
-        this.logger.log('Initializing MLServerService...');
+        this.logger.log('[Init] Initializing MLServerService');
         this.startInactivityMonitor();
     }
 
-    private startInactivityMonitor() {
-        this.logger.log('Starting inactivity monitor...');
-        if (this.inactivityCheckInterval) {
-            clearInterval(this.inactivityCheckInterval);
-            this.logger.warn('Existing inactivity monitor cleared.');
-        }
-
-        this.inactivityCheckInterval = setInterval(async () => {
-            this.logger.debug('Inactivity monitor triggered.');
-            const currentStatus = await this.getServerStatus();
-
-            if (currentStatus === 'RUNNING') {
-                const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
-                const inactiveMinutes = Math.floor(inactiveTime / (60 * 1000));
-                this.logger.debug(
-                    `Server status: ${currentStatus}, ` +
-                    `Last activity: ${this.lastActivityTimestamp.toISOString()}, ` +
-                    `Inactive time: ${inactiveMinutes} minutes`
-                );
-
-                if (inactiveTime > 30 * 60 * 1000) { // 30 minutes
-                    this.logger.warn(
-                        `ML server inactive for ${inactiveMinutes} minutes (threshold: 30). ` +
-                        `Last activity: ${this.lastActivityTimestamp.toISOString()}. ` +
-                        `Initiating shutdown...`
-                    );
-                    try {
-                        await this.stopServer();
-                    } catch (error) {
-                        this.logger.error('Error shutting down ML server in inactivity monitor', error);
-                    }
-                }
-            } else if (currentStatus === 'STARTING') {
-                this.logger.debug('Server is STARTING; skipping inactivity check.');
-            } else if (currentStatus === 'STOPPED') {
-                this.logger.debug('Server is STOPPED; no action taken by inactivity monitor.');
-            }
-        }, 5 * 60 * 1000); // Check every 5 minutes
-    }
-
     async getServerConfig(): Promise<{ instanceId: string; port: number; ipAddress: string | null }> {
-        this.logger.debug('Fetching server configuration...');
         return {
             instanceId: this.ML_INSTANCE_ID,
             port: this.ML_PORT,
@@ -78,180 +43,253 @@ export class MLServerService {
     }
 
     async getServerStatus(): Promise<ServerStatus> {
-        this.logger.debug('Checking server status via AWS CLI...');
         try {
             const { stdout } = await exec(
                 `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
                 `--query 'Reservations[0].Instances[0].State.Name' --output text`
             );
             const instanceStatus = stdout.trim();
-            this.logger.log(`AWS CLI returned server status: ${instanceStatus}`);
 
             if (instanceStatus === 'running') {
-                // Get IP if instance is running
-                const { stdout: ipStdout } = await exec(
-                    `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
-                    `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
-                );
-                this.currentServerIP = ipStdout.trim();
-                this.logger.log(`Updated ML server IP: ${this.currentServerIP}`);
+                if (!this.currentServerIP) {
+                    const ip = await this.fetchServerIP();
+                    if (ip) this.currentServerIP = ip;
+                }
                 return 'RUNNING';
             }
 
-            if (instanceStatus === 'stopping' || instanceStatus === 'stopped') {
+            if (instanceStatus === 'stopping') return 'STOPPING';
+            if (instanceStatus === 'stopped') {
                 this.currentServerIP = null;
                 return 'STOPPED';
             }
+            if (instanceStatus === 'pending') return 'STARTING';
 
-            return 'STARTING';
+            this.logger.warn(`[Status] Unexpected AWS status: ${instanceStatus}`);
+            return 'STOPPED';
         } catch (error) {
-            this.logger.error('Failed to retrieve server status via AWS CLI', error);
+            this.logger.error('[Status] Failed to retrieve server status', error);
             this.currentServerIP = null;
             return 'STOPPED';
         }
     }
 
     async getServerIP(): Promise<string | null> {
-        this.logger.debug(`Returning current server IP: ${this.currentServerIP}`);
         return this.currentServerIP;
     }
 
-
-
     async startServer(): Promise<void> {
         if (this.isStarting) {
-            this.logger.log('Server start already in progress; waiting for completion.');
-            await this.waitForHealthCheck(); // Ensure the ongoing start completes
+            this.logger.warn('[StartServer] Start operation already in progress');
+            await this.waitForHealthCheck();
             return;
         }
 
-        const currentStatus = await this.getServerStatus();
+        try {
+            this.isStarting = true;
+            const initialStatus = await this.getServerStatus();
+            this.logger.log(`[StartServer] Initial server status: ${initialStatus}`);
 
-        if (currentStatus === 'RUNNING') {
-            this.logger.log('Server is already running; no need to start.');
-            return;
-        }
+            switch (initialStatus) {
+                case 'RUNNING':
+                    this.logger.log('[StartServer] Server already running');
+                    return;
 
-        if (currentStatus === 'STARTING') {
-            this.logger.log('Server is already starting; waiting for it to become ready.');
-            await this.waitForHealthCheck(); // Ensure it transitions to running
-            return;
-        }
+                case 'STARTING':
+                    this.logger.log('[StartServer] Server in starting state, waiting for health check');
+                    await this.waitForHealthCheck();
+                    return;
 
-        if (currentStatus === 'STOPPING') {
-            this.logger.log('Server is stopping; waiting for it to fully stop before starting.');
-            await this.waitForStoppedState(); // Wait for the server to transition to stopped
-        }
+                case 'STOPPING':
+                    this.logger.log('[StartServer] Server is stopping, waiting for stopped state');
+                    await this.waitForStateTransition('STOPPED');
+                    break;
 
-        if (currentStatus === 'STOPPED') {
-            this.isStarting = true; // Prevent duplicate start attempts
-            try {
-                this.logger.log('Starting ML server...');
-                this.updateLastActivity(); // Reset inactivity timer
+                case 'STOPPED':
+                    break;
 
-                this.logger.log(`Sending start request for EC2 instance: ${this.ML_INSTANCE_ID}`);
-                await exec(`aws ec2 start-instances --instance-ids ${this.ML_INSTANCE_ID}`);
-                this.logger.debug('Waiting for EC2 instance to reach "running" state...');
-                await exec(`aws ec2 wait instance-running --instance-ids ${this.ML_INSTANCE_ID}`);
-
-                // Get the server IP
-                const { stdout } = await exec(
-                    `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
-                    `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
-                );
-                this.currentServerIP = stdout.trim();
-                this.logger.log(`ML server IP obtained: ${this.currentServerIP}`);
-
-                // Wait for ML service to be ready
-                await this.waitForHealthCheck();
-
-                this.updateLastActivity(); // Update activity timestamp after successful startup
-                this.logger.log('ML server is now running and ready.');
-            } catch (error) {
-                this.logger.error('Failed to start ML server', error);
-                this.currentServerIP = null;
-                throw new MLServerStartupException();
-            } finally {
-                this.isStarting = false; // Reset the flag
+                default:
+                    throw new MLServerStartupException(`Invalid initial state: ${initialStatus}`);
             }
+
+            this.logger.log('[StartServer] Initiating server start sequence');
+            await this.initiateStartSequence();
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`[StartServer] Failed to start server: ${errorMessage}`, error);
+            throw new MLServerStartupException(`Start sequence failed: ${errorMessage}`);
+        } finally {
+            this.isStarting = false;
         }
     }
-
-    private async waitForStoppedState(): Promise<void> {
-        this.logger.log('Waiting for server to fully stop...');
-        while (true) {
-            const status = await this.getServerStatus();
-            if (status === 'STOPPED') {
-                this.logger.log('Server has fully stopped.');
-                return;
-            }
-            if (status !== 'STOPPING') {
-                this.logger.error(`Unexpected status while waiting for stop: ${status}`);
-                throw new Error(`Unexpected status: ${status}`);
-            }
-            await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
-        }
-    }
-
-
 
     async stopServer(): Promise<void> {
         const currentStatus = await this.getServerStatus();
         if (currentStatus !== 'RUNNING') {
-            this.logger.warn('Server is not running; skipping stop operation.');
+            this.logger.warn('[StopServer] Server is not running, current status:', currentStatus);
             return;
         }
 
-        this.logger.log('Stopping ML server...');
         try {
+            this.logger.log('[StopServer] Initiating server shutdown');
             await exec(`aws ec2 stop-instances --instance-ids ${this.ML_INSTANCE_ID}`);
-            this.logger.debug('Waiting for EC2 instance to reach "stopped" state...');
-            await exec(`aws ec2 wait instance-stopped --instance-ids ${this.ML_INSTANCE_ID}`);
+            await this.waitForStateTransition('STOPPED');
             this.currentServerIP = null;
-            this.logger.log('ML server stopped successfully.');
+            this.logger.log('[StopServer] Server stopped successfully');
         } catch (error) {
-            this.logger.error('Failed to stop ML server', error);
+            this.logger.error('[StopServer] Failed to stop server', error);
             throw error;
+        }
+    }
+
+    private async initiateStartSequence(): Promise<void> {
+        try {
+            this.logger.log(`[StartSequence] Starting EC2 instance ${this.ML_INSTANCE_ID}`);
+            await exec(`aws ec2 start-instances --instance-ids ${this.ML_INSTANCE_ID}`);
+
+            await this.waitForStateTransition('RUNNING');
+
+            const ip = await this.fetchServerIP();
+            if (!ip) {
+                throw new MLServerStartupException('Failed to obtain server IP');
+            }
+            this.currentServerIP = ip;
+            this.logger.log(`[StartSequence] Server IP obtained: ${ip}`);
+
+            this.logger.log('[StartSequence] Waiting for service health check');
+            await this.waitForHealthCheck();
+
+            this.updateLastActivity();
+            this.logger.log('[StartSequence] Server start sequence completed successfully');
+        } catch (error) {
+            this.currentServerIP = null;
+            throw error;
+        }
+    }
+
+    private async waitForStateTransition(targetState: ServerStatus): Promise<void> {
+        this.logger.log(`[StateTransition] Waiting for transition to ${targetState}`);
+        let attempts = 0;
+
+        while (attempts < this.MAX_TRANSITION_ATTEMPTS) {
+            const currentStatus = await this.getServerStatus();
+
+            if (currentStatus === targetState) {
+                this.logger.log(`[StateTransition] Successfully reached ${targetState} state`);
+                return;
+            }
+
+            const isValidTransition = this.isValidStateTransition(currentStatus, targetState);
+            if (!isValidTransition) {
+                throw new MLServerStartupException(
+                    `Invalid state transition: ${currentStatus} → ${targetState}`
+                );
+            }
+
+            attempts++;
+            if (attempts % 6 === 0) { // Log every 30 seconds
+                this.logger.log(
+                    `[StateTransition] Still waiting for ${targetState} state. ` +
+                    `Current: ${currentStatus}, Attempt: ${attempts}/${this.MAX_TRANSITION_ATTEMPTS}`
+                );
+            }
+
+            await new Promise(resolve => setTimeout(resolve, this.STATE_CHECK_INTERVAL));
+        }
+
+        throw new MLServerStartupException(
+            `Timeout waiting for ${targetState} state after ${this.MAX_TRANSITION_ATTEMPTS} attempts`
+        );
+    }
+
+    private isValidStateTransition(currentState: ServerStatus, targetState: ServerStatus): boolean {
+        const validTransitions = {
+            'STOPPING': ['STOPPED'],
+            'STOPPED': ['STARTING', 'RUNNING'],
+            'STARTING': ['RUNNING'],
+            'RUNNING': ['STOPPING', 'STOPPED']
+        };
+
+        return validTransitions[currentState]?.includes(targetState) ?? false;
+    }
+
+    private async fetchServerIP(): Promise<string | null> {
+        try {
+            const { stdout } = await exec(
+                `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
+                `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
+            );
+            return stdout.trim() || null;
+        } catch (error) {
+            this.logger.error('[FetchIP] Failed to fetch server IP', error);
+            return null;
         }
     }
 
     private async waitForHealthCheck(maxRetries = 30): Promise<void> {
         if (!this.currentServerIP) {
-            throw new Error('No server IP available for health check.');
+            throw new MLServerStartupException('No server IP available for health check');
         }
 
-        this.logger.log('Waiting for ML server health check...');
+        this.logger.log('[HealthCheck] Starting health check sequence');
         for (let i = 0; i < maxRetries; i++) {
             try {
-                this.logger.debug(`Health check attempt ${i + 1}/${maxRetries} for IP: ${this.currentServerIP}`);
                 const response = await fetch(`http://${this.currentServerIP}:${this.ML_PORT}/health`);
                 if (response.ok) {
-                    this.logger.log('Health check passed.');
-                    this.updateLastActivity(); // Update activity timestamp on successful health check
+                    this.logger.log('[HealthCheck] Service is healthy');
+                    this.updateLastActivity();
                     return;
-                } else {
-                    this.logger.warn(`Health check failed with status: ${response.status}`);
+                }
+                this.logger.warn(`[HealthCheck] Attempt ${i + 1}/${maxRetries} failed: ${response.status}`);
+            } catch (error) {
+                if ((i + 1) % 6 === 0) { // Log every minute
+                    this.logger.warn(
+                        `[HealthCheck] Attempt ${i + 1}/${maxRetries} failed: ${error.message}`
+                    );
+                }
+            }
+            await new Promise(resolve => setTimeout(resolve, 10000));
+        }
+        throw new MLServerStartupException('Health check failed after maximum retries');
+    }
+
+    private startInactivityMonitor(): void {
+        if (this.inactivityCheckInterval) {
+            clearInterval(this.inactivityCheckInterval);
+        }
+
+        this.inactivityCheckInterval = setInterval(async () => {
+            try {
+                const currentStatus = await this.getServerStatus();
+                if (currentStatus !== 'RUNNING') return;
+
+                const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
+                if (inactiveTime > this.MAX_INACTIVITY_TIME) {
+                    this.logger.warn(
+                        `[InactivityMonitor] Server inactive for ${Math.floor(inactiveTime / 60000)} minutes. ` +
+                        `Last activity: ${this.lastActivityTimestamp.toISOString()}. Initiating shutdown.`
+                    );
+                    await this.stopServer();
                 }
             } catch (error) {
-                this.logger.debug(`Health check attempt ${i + 1} failed, error: ${error.message}`);
+                this.logger.error('[InactivityMonitor] Error during inactivity check', error);
             }
-            await new Promise((resolve) => setTimeout(resolve, 10000)); // Wait 10 seconds
-        }
-        throw new Error('ML server health check failed after maximum retries.');
+        }, this.INACTIVITY_CHECK_INTERVAL);
     }
 
     updateLastActivity(): void {
         const previousTimestamp = this.lastActivityTimestamp;
         this.lastActivityTimestamp = new Date();
         this.logger.debug(
-            `Last activity timestamp updated from ${previousTimestamp.toISOString()} to ${this.lastActivityTimestamp.toISOString()}`
+            `[Activity] Updated from ${previousTimestamp.toISOString()} to ${this.lastActivityTimestamp.toISOString()}`
         );
     }
 
-    onApplicationShutdown() {
+    onApplicationShutdown(): void {
         if (this.inactivityCheckInterval) {
             clearInterval(this.inactivityCheckInterval);
-            this.logger.log('Inactivity monitor cleared on application shutdown.');
+            this.logger.log('[Shutdown] Cleared inactivity monitor');
         }
     }
 }
