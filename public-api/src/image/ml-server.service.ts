@@ -21,6 +21,7 @@ export class MLServerService {
     private lastActivityTimestamp: Date = new Date();
     private inactivityCheckInterval: NodeJS.Timeout | null = null;
     private currentServerIP: string | null = null;
+    private isStarting = false; // Prevent concurrent start attempts
 
     constructor() {
         this.logger.log('Initializing MLServerService...');
@@ -116,7 +117,14 @@ export class MLServerService {
     }
 
 
+
     async startServer(): Promise<void> {
+        if (this.isStarting) {
+            this.logger.log('Server start already in progress; waiting for completion.');
+            await this.waitForHealthCheck(); // Ensure the ongoing start completes
+            return;
+        }
+
         const currentStatus = await this.getServerStatus();
 
         if (currentStatus === 'RUNNING') {
@@ -132,14 +140,15 @@ export class MLServerService {
 
         if (currentStatus === 'STOPPING') {
             this.logger.log('Server is stopping; waiting for it to fully stop before starting.');
-            await this.waitForStoppedState(); // New method to wait for `stopped` state
+            await this.waitForStoppedState(); // Wait for the server to transition to stopped
         }
 
         if (currentStatus === 'STOPPED') {
-            this.logger.log('Starting ML server...');
-            this.updateLastActivity(); // Reset inactivity timer
-
+            this.isStarting = true; // Prevent duplicate start attempts
             try {
+                this.logger.log('Starting ML server...');
+                this.updateLastActivity(); // Reset inactivity timer
+
                 this.logger.log(`Sending start request for EC2 instance: ${this.ML_INSTANCE_ID}`);
                 await exec(`aws ec2 start-instances --instance-ids ${this.ML_INSTANCE_ID}`);
                 this.logger.debug('Waiting for EC2 instance to reach "running" state...');
@@ -162,6 +171,8 @@ export class MLServerService {
                 this.logger.error('Failed to start ML server', error);
                 this.currentServerIP = null;
                 throw new MLServerStartupException();
+            } finally {
+                this.isStarting = false; // Reset the flag
             }
         }
     }
@@ -181,6 +192,7 @@ export class MLServerService {
             await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
         }
     }
+
 
 
     async stopServer(): Promise<void> {
