@@ -17,9 +17,11 @@ export class ImageService {
     private readonly logger = new Logger(ImageService.name);
     private readonly queuedDir = path.join(__dirname, '../queued_images');
     private readonly completedDir = path.join(__dirname, '../completed_images');
-    private isProcessing = false;
     private readonly ML_PORT = 3000;
     private readonly CLEAN_QUEUE_INTERVAL = 60 * 60 * 1000; // 1 hour
+    private readonly SERVER_START_TIMEOUT = 300000; // 5 minutes
+    private readonly SERVER_START_RETRY_INTERVAL = 5000; // 5 seconds
+    private isProcessing = false;
 
     constructor(
         private readonly tokensService: TokensService,
@@ -33,7 +35,7 @@ export class ImageService {
     private startQueueCleaner() {
         setInterval(() => {
             this.queueService.cleanOldRequests(24).catch(error => {
-                this.logger.error('Failed to clean old requests', error);
+                this.logger.error('[QueueCleaner] Failed to clean old requests', error);
             });
         }, this.CLEAN_QUEUE_INTERVAL);
     }
@@ -43,8 +45,8 @@ export class ImageService {
             await fs.mkdir(this.queuedDir, { recursive: true });
             await fs.mkdir(this.completedDir, { recursive: true });
         } catch (error) {
-            this.logger.error('Error creating necessary directories', error);
-            throw new HttpException("Failed to set up image directories", HttpStatus.INTERNAL_SERVER_ERROR);
+            this.logger.error('[Init] Error creating directories', error);
+            throw new HttpException("Failed to initialize image directories", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -57,42 +59,22 @@ export class ImageService {
             await this.queueService.addRequestToQueue(requestHash, userID, modelName, filePath);
 
             const queuePosition = await this.queueService.getQueuePosition(requestHash);
-            this.logger.log(`Added request ${requestHash} to queue at position ${queuePosition}`);
+            this.logger.log(`[Queue] Added request ${requestHash} at position ${queuePosition}`);
 
             if (!this.isProcessing) {
                 this.processQueue().catch(error => {
-                    this.logger.error('Error processing queue', error);
+                    this.logger.error('[Queue] Error initiating queue processing', error);
                 });
             }
 
             return requestHash;
         } catch (error) {
-            // Cleanup if queue addition fails
             try {
                 await fs.unlink(filePath);
             } catch (cleanupError) {
-                this.logger.error('Failed to cleanup file after queue addition error', cleanupError);
+                this.logger.error('[Queue] Failed to cleanup file after error', cleanupError);
             }
             throw error;
-        }
-    }
-
-    async getRequestStatus(requestHash: string, userID: string) {
-        return this.queueService.getRequestStatus(requestHash, userID);
-    }
-
-    async retrieveCompletedImage(requestHash: string, userID: string): Promise<Buffer> {
-        const completedFilePath = path.join(this.completedDir, `${requestHash}.png`);
-
-        try {
-            const imageBuffer = await fs.readFile(completedFilePath);
-            await this.tokensService.adjustTokens(userID, -1);
-            await fs.unlink(completedFilePath);
-            this.logger.log(`Successfully retrieved and cleaned up image for request ${requestHash}`);
-            return imageBuffer;
-        } catch (error) {
-            this.logger.error(`Failed to retrieve image for request hash: ${requestHash}`, error.stack);
-            throw new HttpException('Image not found or already retrieved', HttpStatus.NOT_FOUND);
         }
     }
 
@@ -103,26 +85,13 @@ export class ImageService {
         let currentRequest: any = null;
 
         try {
-            // Process queue items one by one
             while ((currentRequest = await this.queueService.getNextPendingRequest())) {
                 const { requestHash, userID, modelName, filePath } = currentRequest;
-                const queuePosition = await this.queueService.getQueuePosition(requestHash);
-                this.logger.log(`Processing request ${requestHash} (position ${queuePosition} in queue)`);
+                this.logger.log(`[Queue] Processing request ${requestHash}`);
 
                 try {
-                    // Ensure server is running
-                    while (true) {
-                        const serverStatus = await this.mlServerService.getServerStatus();
-                        if (serverStatus === 'RUNNING') {
-                            this.mlServerService.updateLastActivity(); // Update activity when server is found running
-                            break;
-                        }
-                        if (serverStatus === 'STOPPED') {
-                            this.logger.log('Starting ML server for request processing...');
-                            await this.mlServerService.startServer();
-                        }
-                        await new Promise(resolve => setTimeout(resolve, 5000));
-                    }
+                    // Wait for server to be ready
+                    await this.ensureServerRunning(requestHash);
 
                     // Verify tokens
                     const numTokens = await this.tokensService.getTokenBalance(userID);
@@ -139,7 +108,7 @@ export class ImageService {
                     const serverIP = await this.mlServerService.getServerIP();
                     if (!serverIP) throw new MLServerOfflineException();
 
-                    this.logger.debug(`Sending request to ML server at http://${serverIP}:${this.ML_PORT}/generate/image`);
+                    this.logger.debug(`[Process] Sending request to ML server at http://${serverIP}:${this.ML_PORT}/generate/image`);
                     const response = await fetch(`http://${serverIP}:${this.ML_PORT}/generate/image`, {
                         method: 'POST',
                         body: formData,
@@ -149,7 +118,6 @@ export class ImageService {
                     });
 
                     this.mlServerService.updateLastActivity();
-                    this.logger.log(`ML server response status: ${response.status} for request ${requestHash}`);
 
                     switch (response.status) {
                         case HttpStatus.CREATED:
@@ -158,9 +126,7 @@ export class ImageService {
                             await fs.writeFile(completedFilePath, styledImage);
                             await this.queueService.markRequestCompleted(requestHash);
                             await fs.unlink(filePath);
-                            this.logger.log(`Successfully completed request ${requestHash}`);
-                            // Update activity after successful processing
-                            this.mlServerService.updateLastActivity();
+                            this.logger.log(`[Process] Successfully completed request ${requestHash}`);
                             break;
 
                         case HttpStatus.BAD_REQUEST:
@@ -171,14 +137,13 @@ export class ImageService {
 
                         default:
                             throw new HttpException(
-                                "An unknown error was received from the ML server",
+                                "Unexpected response from ML server",
                                 HttpStatus.INTERNAL_SERVER_ERROR
                             );
                     }
                 } catch (error) {
-                    this.logger.error(`Error processing request ${requestHash}:`, error);
+                    this.logger.error(`[Process] Error processing request ${requestHash}:`, error);
                     await this.queueService.markRequestFailed(requestHash);
-
                     if (error instanceof HttpException) {
                         throw error;
                     }
@@ -186,19 +151,72 @@ export class ImageService {
                 }
             }
         } catch (error) {
-            this.logger.error("Queue processing encountered an error", error);
+            this.logger.error("[Queue] Processing encountered an error", error);
         } finally {
             this.isProcessing = false;
-
-            // Check if there are any remaining items in queue
             const queueLength = await this.queueService.getQueueLength();
+
             if (queueLength > 0) {
-                this.logger.log(`Queue processing ended with ${queueLength} items remaining`);
-                // Restart processing if items remain
+                this.logger.log(`[Queue] Processing ended with ${queueLength} items remaining`);
                 setImmediate(() => this.processQueue());
             } else {
-                this.logger.log('Queue processing completed - no items remaining');
+                this.logger.log('[Queue] Processing completed - no items remaining');
             }
+        }
+    }
+
+    private async ensureServerRunning(requestHash: string): Promise<void> {
+        const startTime = Date.now();
+        let lastStatus = '';
+
+        while (Date.now() - startTime < this.SERVER_START_TIMEOUT) {
+            try {
+                const status = await this.mlServerService.getServerStatus();
+
+                if (status !== lastStatus) {
+                    this.logger.log(`[ServerStatus] Request ${requestHash}: Server status changed to ${status}`);
+                    lastStatus = status;
+                }
+
+                if (status === 'RUNNING') {
+                    this.mlServerService.updateLastActivity();
+                    return;
+                }
+
+                if (status === 'STOPPED') {
+                    this.logger.log(`[ServerStatus] Request ${requestHash}: Starting stopped server`);
+                    await this.mlServerService.startServer();
+                    continue;
+                }
+
+                // For STARTING or STOPPING states, wait and check again
+                await new Promise(resolve => setTimeout(resolve, this.SERVER_START_RETRY_INTERVAL));
+
+            } catch (error) {
+                this.logger.error(`[ServerStatus] Request ${requestHash}: Error checking server status`, error);
+                throw new MLServerOfflineException();
+            }
+        }
+
+        throw new MLServerOfflineException('Server failed to start within timeout period');
+    }
+
+    async getRequestStatus(requestHash: string, userID: string) {
+        return this.queueService.getRequestStatus(requestHash, userID);
+    }
+
+    async retrieveCompletedImage(requestHash: string, userID: string): Promise<Buffer> {
+        const completedFilePath = path.join(this.completedDir, `${requestHash}.png`);
+
+        try {
+            const imageBuffer = await fs.readFile(completedFilePath);
+            await this.tokensService.adjustTokens(userID, -1);
+            await fs.unlink(completedFilePath);
+            this.logger.log(`[Retrieve] Successfully retrieved image for request ${requestHash}`);
+            return imageBuffer;
+        } catch (error) {
+            this.logger.error(`[Retrieve] Failed to retrieve image for request ${requestHash}`, error);
+            throw new HttpException('Image not found or already retrieved', HttpStatus.NOT_FOUND);
         }
     }
 }

@@ -80,9 +80,22 @@ export class MLServerService {
 
     async startServer(): Promise<void> {
         if (this.isStarting) {
-            this.logger.warn('[StartServer] Start operation already in progress');
-            await this.waitForHealthCheck();
-            return;
+            this.logger.log('[StartServer] Start operation in progress, waiting for completion');
+            try {
+                // Wait for server to become running with a reasonable timeout
+                for (let i = 0; i < 60; i++) { // 5 minutes total wait
+                    const status = await this.getServerStatus();
+                    if (status === 'RUNNING') {
+                        await this.waitForHealthCheck();
+                        return;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+                throw new MLServerStartupException('Timeout waiting for concurrent server start');
+            } catch (error) {
+                this.logger.error('[StartServer] Error waiting for concurrent start:', error);
+                throw error;
+            }
         }
 
         try {
@@ -96,7 +109,8 @@ export class MLServerService {
                     return;
 
                 case 'STARTING':
-                    this.logger.log('[StartServer] Server in starting state, waiting for health check');
+                    this.logger.log('[StartServer] Server in starting state, waiting for completion');
+                    await this.waitForStateTransition('RUNNING');
                     await this.waitForHealthCheck();
                     return;
 
@@ -123,7 +137,6 @@ export class MLServerService {
             this.isStarting = false;
         }
     }
-
     async stopServer(): Promise<void> {
         const currentStatus = await this.getServerStatus();
         if (currentStatus !== 'RUNNING') {
