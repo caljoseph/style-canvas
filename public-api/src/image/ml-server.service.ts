@@ -11,7 +11,7 @@ export class MLServerStartupException extends Error {
     }
 }
 
-export type ServerStatus = 'STOPPED' | 'STARTING' | 'RUNNING';
+export type ServerStatus = 'STOPPING' | 'STOPPED' | 'STARTING' | 'RUNNING';
 
 @Injectable()
 export class MLServerService {
@@ -119,37 +119,66 @@ export class MLServerService {
     async startServer(): Promise<void> {
         const currentStatus = await this.getServerStatus();
 
-        if (currentStatus !== 'STOPPED') {
-            this.logger.log(`Server already ${currentStatus.toLowerCase()}; skipping start.`);
+        if (currentStatus === 'RUNNING') {
+            this.logger.log('Server is already running; no need to start.');
             return;
         }
 
-        this.logger.log('Starting ML server...');
-        this.updateLastActivity(); // Reset inactivity timer when starting the server
+        if (currentStatus === 'STARTING') {
+            this.logger.log('Server is already starting; waiting for it to become ready.');
+            await this.waitForHealthCheck(); // Ensure it transitions to running
+            return;
+        }
 
-        try {
-            this.logger.log(`Sending start request for EC2 instance: ${this.ML_INSTANCE_ID}`);
-            await exec(`aws ec2 start-instances --instance-ids ${this.ML_INSTANCE_ID}`);
-            this.logger.debug('Waiting for EC2 instance to reach "running" state...');
-            await exec(`aws ec2 wait instance-running --instance-ids ${this.ML_INSTANCE_ID}`);
+        if (currentStatus === 'STOPPING') {
+            this.logger.log('Server is stopping; waiting for it to fully stop before starting.');
+            await this.waitForStoppedState(); // New method to wait for `stopped` state
+        }
 
-            // Get the server IP
-            const { stdout } = await exec(
-                `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
-                `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
-            );
-            this.currentServerIP = stdout.trim();
-            this.logger.log(`ML server IP obtained: ${this.currentServerIP}`);
+        if (currentStatus === 'STOPPED') {
+            this.logger.log('Starting ML server...');
+            this.updateLastActivity(); // Reset inactivity timer
 
-            // Wait for ML service to be ready
-            await this.waitForHealthCheck();
+            try {
+                this.logger.log(`Sending start request for EC2 instance: ${this.ML_INSTANCE_ID}`);
+                await exec(`aws ec2 start-instances --instance-ids ${this.ML_INSTANCE_ID}`);
+                this.logger.debug('Waiting for EC2 instance to reach "running" state...');
+                await exec(`aws ec2 wait instance-running --instance-ids ${this.ML_INSTANCE_ID}`);
 
-            this.updateLastActivity(); // Update activity timestamp after successful startup
-            this.logger.log('ML server is now running and ready.');
-        } catch (error) {
-            this.logger.error('Failed to start ML server', error);
-            this.currentServerIP = null;
-            throw new MLServerStartupException();
+                // Get the server IP
+                const { stdout } = await exec(
+                    `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
+                    `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
+                );
+                this.currentServerIP = stdout.trim();
+                this.logger.log(`ML server IP obtained: ${this.currentServerIP}`);
+
+                // Wait for ML service to be ready
+                await this.waitForHealthCheck();
+
+                this.updateLastActivity(); // Update activity timestamp after successful startup
+                this.logger.log('ML server is now running and ready.');
+            } catch (error) {
+                this.logger.error('Failed to start ML server', error);
+                this.currentServerIP = null;
+                throw new MLServerStartupException();
+            }
+        }
+    }
+
+    private async waitForStoppedState(): Promise<void> {
+        this.logger.log('Waiting for server to fully stop...');
+        while (true) {
+            const status = await this.getServerStatus();
+            if (status === 'STOPPED') {
+                this.logger.log('Server has fully stopped.');
+                return;
+            }
+            if (status !== 'STOPPING') {
+                this.logger.error(`Unexpected status while waiting for stop: ${status}`);
+                throw new Error(`Unexpected status: ${status}`);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
         }
     }
 
