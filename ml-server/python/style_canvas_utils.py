@@ -10,7 +10,6 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 gpu_id = torch.cuda.device_count()
 
 
-
 def load_image(input_image):
     if isinstance(input_image, str):
         input_image = Image.open(input_image)

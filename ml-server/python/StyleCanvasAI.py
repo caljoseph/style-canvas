@@ -128,6 +128,8 @@ def Chalkboard(img):
     return chalk_board
 
 # All DiffI2I models:
+def ComicCrafterAI(img):
+    return Diff.ComicCrafterAI(img)
 
 def BaroqueBrush(img):
     return  Diff.OilPainting_SC3(img)
@@ -202,6 +204,7 @@ def Upsample(img, scale = 2):
 
 # Map filter names to functions
 filter_functions = {
+    'ComicCrafterAI' : ComicCrafterAI,
     'ShadowSplit_Abstract': ShadowSplit_Abstract,
     'ShadowSplit': ShadowSplit,
     'Kai_Face': Kai_Face,
