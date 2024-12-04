@@ -37,6 +37,7 @@ export class MLServerService {
         this.inactivityCheckInterval = setInterval(async () => {
             this.logger.debug('Inactivity monitor triggered.');
             const currentStatus = await this.getServerStatus();
+
             if (currentStatus === 'RUNNING') {
                 const inactiveTime = Date.now() - this.lastActivityTimestamp.getTime();
                 const inactiveMinutes = Math.floor(inactiveTime / (60 * 1000));
@@ -45,18 +46,23 @@ export class MLServerService {
                     `Last activity: ${this.lastActivityTimestamp.toISOString()}, ` +
                     `Inactive time: ${inactiveMinutes} minutes`
                 );
+
                 if (inactiveTime > 30 * 60 * 1000) { // 30 minutes
                     this.logger.warn(
                         `ML server inactive for ${inactiveMinutes} minutes (threshold: 30). ` +
                         `Last activity: ${this.lastActivityTimestamp.toISOString()}. ` +
                         `Initiating shutdown...`
                     );
-                    await this.stopServer().catch((error) =>
-                        this.logger.error('Error shutting down ML server in inactivity monitor', error)
-                    );
+                    try {
+                        await this.stopServer();
+                    } catch (error) {
+                        this.logger.error('Error shutting down ML server in inactivity monitor', error);
+                    }
                 }
-            } else {
-                this.logger.debug(`Server is ${currentStatus}; no action taken by inactivity monitor.`);
+            } else if (currentStatus === 'STARTING') {
+                this.logger.debug('Server is STARTING; skipping inactivity check.');
+            } else if (currentStatus === 'STOPPED') {
+                this.logger.debug('Server is STOPPED; no action taken by inactivity monitor.');
             }
         }, 5 * 60 * 1000); // Check every 5 minutes
     }
@@ -109,17 +115,19 @@ export class MLServerService {
         return this.currentServerIP;
     }
 
+
     async startServer(): Promise<void> {
         const currentStatus = await this.getServerStatus();
+
         if (currentStatus !== 'STOPPED') {
             this.logger.log(`Server already ${currentStatus.toLowerCase()}; skipping start.`);
             return;
         }
 
         this.logger.log('Starting ML server...');
+        this.updateLastActivity(); // Reset inactivity timer when starting the server
 
         try {
-            // Start the EC2 instance
             this.logger.log(`Sending start request for EC2 instance: ${this.ML_INSTANCE_ID}`);
             await exec(`aws ec2 start-instances --instance-ids ${this.ML_INSTANCE_ID}`);
             this.logger.debug('Waiting for EC2 instance to reach "running" state...');
@@ -130,14 +138,13 @@ export class MLServerService {
                 `aws ec2 describe-instances --instance-ids ${this.ML_INSTANCE_ID} ` +
                 `--query 'Reservations[0].Instances[0].PrivateIpAddress' --output text`
             );
-
             this.currentServerIP = stdout.trim();
             this.logger.log(`ML server IP obtained: ${this.currentServerIP}`);
 
             // Wait for ML service to be ready
             await this.waitForHealthCheck();
 
-            this.updateLastActivity();
+            this.updateLastActivity(); // Update activity timestamp after successful startup
             this.logger.log('ML server is now running and ready.');
         } catch (error) {
             this.logger.error('Failed to start ML server', error);
@@ -145,6 +152,7 @@ export class MLServerService {
             throw new MLServerStartupException();
         }
     }
+
 
     async stopServer(): Promise<void> {
         const currentStatus = await this.getServerStatus();
