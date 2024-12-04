@@ -186,20 +186,20 @@ const Models = () => {
                 unit: 'px',
                 width: minDimension,
                 height: minDimension,
-                x: (width - minDimension) / 2,
-                y: (height - minDimension) / 2,
+                x: Math.floor((width - minDimension) / 2),
+                y: Math.floor((height - minDimension) / 2),
                 aspect: 1
             });
             return;
         }
 
-        const minDimension = Math.min(width, height);
+        const minDimension = Math.floor(Math.min(width, height));
         setCrop({
             unit: 'px',
             width: minDimension,
             height: minDimension,
-            x: (width - minDimension) / 2,
-            y: (height - minDimension) / 2,
+            x: Math.floor((width - minDimension) / 2),
+            y: Math.floor((height - minDimension) / 2),
             aspect: 1
         });
     };
@@ -235,18 +235,22 @@ const Models = () => {
         const scaleX = originalDimensions.width / imageRef.current.width;
         const scaleY = originalDimensions.height / imageRef.current.height;
 
-        const cropWidth = Math.round(crop.width * scaleX);
-        const cropHeight = Math.round(crop.height * scaleY);
+        // Use floor to ensure we don't round up and get odd dimensions
+        const cropWidth = Math.floor(crop.width * scaleX);
+        const cropHeight = Math.floor(crop.height * scaleY);
 
-        if (cropWidth < MIN_DIMENSION || cropHeight < MIN_DIMENSION) {
+        // Force dimensions to be equal
+        const finalSize = Math.max(cropWidth, cropHeight);
+
+        if (finalSize < MIN_DIMENSION) {
             setStatusMessage({
-                text: `Selected area: ${cropWidth}x${cropHeight}px. Please select at least ${MIN_DIMENSION}x${MIN_DIMENSION}px`,
+                text: `Selected area: ${finalSize}x${finalSize}px. Please select at least ${MIN_DIMENSION}x${MIN_DIMENSION}px`,
                 type: "error"
             });
             return false;
         }
         setStatusMessage({
-            text: `Current selection: ${cropWidth}x${cropHeight}px`,
+            text: `Current selection: ${finalSize}x${finalSize}px`,
             type: "success"
         });
         return true;
@@ -260,20 +264,28 @@ const Models = () => {
         const canvas = document.createElement('canvas');
         const scaleX = image.naturalWidth / image.width;
         const scaleY = image.naturalHeight / image.height;
-        canvas.width = crop.width;
-        canvas.height = crop.height;
+
+        // Calculate the final size and ensure it's a perfect square of at least 1024x1024
+        const size = Math.max(
+            MIN_DIMENSION,
+            Math.floor(Math.min(crop.width * scaleX, crop.height * scaleY))
+        );
+
+        canvas.width = size;
+        canvas.height = size;
+
         const ctx = canvas.getContext('2d');
 
         ctx.drawImage(
             image,
             crop.x * scaleX,
             crop.y * scaleY,
-            crop.width * scaleX,
-            crop.height * scaleY,
+            size,  // Use the same size for both width and height
+            size,
             0,
             0,
-            crop.width,
-            crop.height
+            size,
+            size
         );
 
         return new Promise((resolve, reject) => {
@@ -605,6 +617,15 @@ const Models = () => {
         });
     };
     const handleCropChange = (newCrop) => {
+        // Force the crop to be perfectly square using the smaller dimension
+        if (newCrop.width !== newCrop.height) {
+            const size = Math.min(newCrop.width, newCrop.height);
+            newCrop = {
+                ...newCrop,
+                width: size,
+                height: size
+            };
+        }
         setCrop(newCrop);
         if (newCrop.width && newCrop.height) {
             validateCropDimensions(newCrop);
