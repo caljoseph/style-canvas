@@ -2,11 +2,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { Eye, EyeOff } from 'lucide-react';
+
 
 const Registration = () => {
     const navigate = useNavigate();
     const { login, register } = useAuth();
     const [isLoginView, setIsLoginView] = useState(true);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -32,7 +36,6 @@ const Registration = () => {
             [name]: type === 'checkbox' ? checked : value
         }));
 
-        // Clear errors when user starts typing
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -167,17 +170,27 @@ const Registration = () => {
 
                             <div className="form-group">
                                 <label htmlFor="password">Password</label>
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    className={`form-control ${errors.password && !isLoginView ? 'is-invalid' : ''}`}
-                                    value={formData.password}
-                                    onChange={handleInputChange}
-                                    autoComplete={isLoginView ? "current-password" : "new-password"}
-                                    placeholder={isLoginView ? "Enter your password" : "Create a password"}
-                                    required
-                                />
+                                <div className="position-relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        id="password"
+                                        name="password"
+                                        className={`form-control ${errors.password && !isLoginView ? 'is-invalid' : ''}`}
+                                        value={formData.password}
+                                        onChange={handleInputChange}
+                                        autoComplete={isLoginView ? "current-password" : "new-password"}
+                                        placeholder={isLoginView ? "Enter your password" : "Create a password"}
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        className="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-3"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{ border: 'none', background: 'none' }}
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
                                 {errors.password && !isLoginView &&
                                     <div className="invalid-feedback">{errors.password}</div>
                                 }
@@ -188,17 +201,27 @@ const Registration = () => {
                                 <>
                                     <div className="form-group">
                                         <label htmlFor="passwordConfirm">Confirm Password</label>
-                                        <input
-                                            type="password"
-                                            id="passwordConfirm"
-                                            name="passwordConfirm"
-                                            className={`form-control ${errors.passwordConfirm ? 'is-invalid' : ''}`}
-                                            value={formData.passwordConfirm}
-                                            onChange={handleInputChange}
-                                            autoComplete="new-password"
-                                            placeholder="Confirm your password"
-                                            required
-                                        />
+                                        <div className="position-relative">
+                                            <input
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                id="passwordConfirm"
+                                                name="passwordConfirm"
+                                                className={`form-control ${errors.passwordConfirm ? 'is-invalid' : ''}`}
+                                                value={formData.passwordConfirm}
+                                                onChange={handleInputChange}
+                                                autoComplete="new-password"
+                                                placeholder="Confirm your password"
+                                                required
+                                            />
+                                            <button
+                                                type="button"
+                                                className="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-3"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                style={{ border: 'none', background: 'none' }}
+                                            >
+                                                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                            </button>
+                                        </div>
                                         {errors.passwordConfirm &&
                                             <div className="invalid-feedback">{errors.passwordConfirm}</div>
                                         }
