@@ -131,6 +131,9 @@ def Chalkboard(img):
 def ComicCrafterAI(img):
     return Diff.ComicCrafterAI(img)
 
+def ComicCrafterAI_T1(img):
+    return Diff.ComicCrafterAI_T1(img)
+
 def BlockFilter(img):
     return Diff.BlockFilter(img)
 
@@ -208,6 +211,7 @@ def Upsample(img, scale = 2):
 # Map filter names to functions
 filter_functions = {
     'ComicCrafterAI' : ComicCrafterAI,
+    'ComicCrafterAI_T1' : ComicCrafterAI_T1,
     'BlockFilter' : BlockFilter,
     'ShadowSplit_Abstract': ShadowSplit_Abstract,
     'ShadowSplit': ShadowSplit,

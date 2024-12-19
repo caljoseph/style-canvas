@@ -14,6 +14,7 @@ is_FaceParsing_T2_loaded = False
 is_pencil_blur_loaded = False
 is_verdant_flame_loaded = False
 is_ComicCrafterAI_loaded = False
+is_ComicCrafterAI_T1_loaded = False
 is_BlockFilter_loaded = False
 
 
@@ -61,7 +62,7 @@ def reset_flags_and_set_active(active_flag):
     """
     global is_OP3_loaded, is_SC3_loaded, is_Sketches_T5_loaded, is_FaceParsing_T1_loaded
     global is_FaceParsing_T2_loaded, is_pencil_blur_loaded, is_verdant_flame_loaded
-    global is_ComicCrafterAI_loaded
+    global is_ComicCrafterAI_loaded, is_ComicCrafterAI_T1_loaded , is_BlockFilter_loaded
 
     # Reset all flags to False
     is_OP3_loaded = False
@@ -72,6 +73,8 @@ def reset_flags_and_set_active(active_flag):
     is_pencil_blur_loaded = False
     is_verdant_flame_loaded = False
     is_ComicCrafterAI_loaded = False
+    is_ComicCrafterAI_T1_loaded = False
+    is_BlockFilter_loaded = False
 
     # Set the specified flag to True
     if active_flag == "is_OP3_loaded":
@@ -90,6 +93,10 @@ def reset_flags_and_set_active(active_flag):
         is_verdant_flame_loaded = True
     elif active_flag == "is_ComicCrafterAI_loaded":
         is_ComicCrafterAI_loaded = True
+    elif active_flag == "is_ComicCrafterAI_T1_loaded":
+        is_ComicCrafterAI_T1_loaded = True
+    elif active_flag == "is_BlockFilter_loaded":
+        is_BlockFilter_loaded = True
 
 def BlockFilter(img):
     global manager
@@ -110,6 +117,16 @@ def ComicCrafterAI(img):
         manager = DiffI2IManager(S2ModelConfigurations.Comic_CrafterAI_Parameters)
     
     return generate_stylized_face_image(img, S2ModelConfigurations.Comic_CrafterAI_Parameters)
+
+def ComicCrafterAI_T1(img):
+    global manager
+
+    if not is_ComicCrafterAI_T1_loaded:
+        reset_flags_and_set_active("is_ComicCrafterAI_T1_loaded")
+        manager = None
+        manager = DiffI2IManager(S2ModelConfigurations.Comic_CrafterAI_Parameters_T1)
+    
+    return generate_stylized_face_image(img, S2ModelConfigurations.Comic_CrafterAI_Parameters_T1)
 
 def OilPainting_OP3(img):
    global is_OP3_loaded, is_SC3_loaded, manager

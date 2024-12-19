@@ -46,6 +46,18 @@ class S2ModelConfigurations:
         img_width=512, 
     )
 
+    Comic_CrafterAI_Parameters_T1 = S2_Parameters(
+        Checkpoint_Name="T1_Fine_Tuning_ComicBook", 
+        n_feats=64, 
+        dim=48, 
+        n_encoder_res=6, 
+        n_denoise_res=6, 
+        timesteps=80, 
+        bias = True,
+        img_height=512, 
+        img_width=512, 
+    )
+
     FaceParsing_T2_Parameters = S2_Parameters(
         Checkpoint_Name="Face_Parsing_Test_2", 
         n_feats=64, 

@@ -138,6 +138,9 @@ def BlockFilter(img):
 def ComicCrafterAI(img):
     return Diff.ComicCrafterAI(img)
 
+def ComicCrafterAI_T1(img):
+    return Diff.ComicCrafterAI_T1(img)
+
 def BaroqueBrush(img):
     return  Diff.OilPainting_OP3(img)
 
@@ -286,7 +289,7 @@ def process_images_with_functions(processing_functions):
                 print(f"Failed to process {image_name} with {function_name}: {e}")
 
 if __name__ == "__main__":
-    process_images_with_function(BlockFilter)
+    process_images_with_function(ComicCrafterAI_T1)
 
 
 
