@@ -157,7 +157,7 @@ class FaceImageProcessor:
                 right = min(img_width, right + extra_width // 2)
             return left, right
 
-    def process_image(self, input_image):
+    def prepare_image_rgb_normalized(self, input_image):
             input_image = scu.rotate_image_based_on_exif(input_image)
             input_image = self.crop_and_resize_image(input_image)
 
@@ -168,24 +168,24 @@ class FaceImageProcessor:
 
             return input_image
     
-    def process_image2(self, input_image):
+    def prepare_face_tensor_imagenet(self, input_image):
             input_image = scu.rotate_image_based_on_exif(input_image)
             resized_img = self.crop_and_resize_image(input_image)
 
             if resized_img.mode != 'RGB':
                 resized_img = resized_img.convert('RGB')
 
-            face_tensor = scu.process_face_image(resized_img)
+            face_tensor = scu.imagenet_normalize_face_image(resized_img)
             face_tensor = face_tensor.unsqueeze(0)
             return face_tensor
     
     def process_image_for_diffI2I_models(self, input_image):
-        processed_image =  self.process_image(input_image)
+        processed_image =  self.prepare_image_rgb_normalized(input_image)
         face_tensor = self.transforms(processed_image)
         face_tensor = face_tensor.unsqueeze(0)
         return face_tensor
     
-    def process_image3(self, input_image):
+    def rotate_and_resize_image(self, input_image):
         input_image = scu.rotate_image_based_on_exif(input_image) 
         resized_img = self.crop_and_resize_image(input_image)
         return resized_img

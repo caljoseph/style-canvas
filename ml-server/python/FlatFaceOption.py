@@ -15,6 +15,7 @@ class FlatFaceOption:
         self.mouth_color = None
         self.eye_color = None
         self.nose = None
+        self.ear_r = '#FFD700'
         self.necklace_color = None
         self.stroke_thickness = 10
         self.epsilon_factor = 0.00001

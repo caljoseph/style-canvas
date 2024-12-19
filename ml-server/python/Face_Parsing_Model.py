@@ -18,6 +18,8 @@ from InferenceImageProcessor import InferenceImageProcessor
 from enum import Enum, auto
 import AdobeFilterModelLib as afm
 import Diff_I2I_lib as Diff
+import FaceDetectorLib as fdl
+
 from scipy.ndimage import label
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -238,13 +240,13 @@ def merge_nearby_shapes(tensor, distance_threshold=10):
 
 def remove_small_objects(tensor, min_size=64, connectivity=2):
     """
-    Remove small white objects from binary masks in a tensor.
-    
+    Remove small white objects from binary masks in a tensor, except for specific channels.
+
     Parameters:
         tensor (torch.Tensor): The input tensor with shape [C, H, W] where each channel is a binary mask.
         min_size (int): The minimum size of objects to keep.
         connectivity (int): Connectivity used for defining neighbors (1, 2, or 3).
-    
+
     Returns:
         torch.Tensor: The processed tensor with small objects removed.
     """
@@ -255,12 +257,25 @@ def remove_small_objects(tensor, min_size=64, connectivity=2):
     tensor_np = tensor.cpu().numpy()
     processed_tensor_np = np.zeros_like(tensor_np, dtype=np.uint8)
 
+    # Get indices for left and right eye
+    left_eye_index = face_segment_indices["l_eye"]
+    right_eye_index = face_segment_indices["r_eye"]
+
     for i in range(tensor_np.shape[0]):
+        if i in [left_eye_index, right_eye_index]:
+            # Skip processing for the left and right eye
+            processed_tensor_np[i] = tensor_np[i]
+            continue
+
         # Apply morphological opening to remove small objects
         mask = tensor_np[i]
-        # Since the input is expected to be binary (0 or 255), we need to convert it to boolean first
+
+        # Convert mask to boolean
         bool_mask = mask.astype(np.bool_)
+
+        # Remove small objects
         cleaned_mask = morphology.remove_small_objects(bool_mask, min_size=min_size, connectivity=connectivity)
+
         # Convert boolean mask back to uint8
         processed_tensor_np[i] = cleaned_mask.astype(np.uint8) * 255
 
@@ -268,6 +283,7 @@ def remove_small_objects(tensor, min_size=64, connectivity=2):
     processed_tensor = torch.from_numpy(processed_tensor_np).type(torch.uint8)
 
     return processed_tensor
+
 
 def tensor2im(image_tensor, normalize=False, imtype=np.uint8):
     if isinstance(image_tensor, list):
@@ -324,34 +340,70 @@ def distance_equation(target_colors, pixel_colors):
     dist = np.sum(diff**2, axis=3)
     return dist
 
-def create_color_masks(input_array):
-    # Ensure the input is a numpy array of type np.uint8
+
+def create_color_masks(input_array, img):
+    """
+    Refine color-based segmentation using facial landmark masks and ensure both left and right features are represented.
+
+    Parameters:
+        input_array (np.ndarray): The input segmentation map as a numpy array.
+        img (np.ndarray): Original image for landmark-based refinement.
+
+    Returns:
+        torch.Tensor: Refined segmentation tensor with 19 channels.
+    """
     if not isinstance(input_array, np.ndarray) or input_array.dtype != np.uint8:
         raise ValueError("Input array must be a numpy array with dtype np.uint8")
 
-    # Define the target colors
-    target_colors_data = [
-        [255, 255, 255], [128, 0, 128], [255, 0, 0],
-        [0, 255, 0], [0, 0, 255], [255, 165, 0],
-        [0, 255, 255], [128, 128, 0], [127, 127, 127],
-        [0, 128, 128], [255, 20, 147], [255, 215, 0],
-        [75, 0, 130], [255, 105, 180], [173, 216, 230],
-        [0, 128, 0], [139, 69, 19], [0, 0, 0], [192, 192, 192]
-    ]
-    target_colors = np.array(target_colors_data, dtype=np.int32)  # Use int32 to handle larger values without overflow
+    # Generate landmark-based masks
+    feature_masks = fdl.generate_feature_masks(img)
 
-    # Calculate distances and find the closest target color for each pixel
+    # Define target colors and calculate distances
+    target_colors = np.array(list(colors.values()), dtype=np.int32)
     distances = distance_equation(target_colors, input_array)
     indices = np.argmin(distances, axis=0)
 
-    # Create an output tensor with 19 channels, each being a mask for one target color
     H, W = indices.shape
     output_tensor = torch.zeros((19, H, W), dtype=torch.uint8)
 
+    # Assign pixels using feature masks
+    for feature, mask in feature_masks.items():
+        feature_index = face_segment_indices[feature]
+        torch_mask = torch.from_numpy(mask).byte()  # Convert mask to torch.ByteTensor
+        output_tensor[feature_index][torch_mask == 255] = 1
+
+    # Ensure both left and right features are represented
+    # Left/Right Eyes
+    l_eye_index, r_eye_index = face_segment_indices["l_eye"], face_segment_indices["r_eye"]
+    if torch.sum(output_tensor[l_eye_index]) == 0:  # Left eye missing
+        output_tensor[l_eye_index] = torch.from_numpy(feature_masks["l_eye"]).byte()
+    if torch.sum(output_tensor[r_eye_index]) == 0:  # Right eye missing
+        output_tensor[r_eye_index] = torch.from_numpy(feature_masks["r_eye"]).byte()
+
+    # Left/Right Eyebrows
+    l_brow_index, r_brow_index = face_segment_indices["l_brow"], face_segment_indices["r_brow"]
+    if torch.sum(output_tensor[l_brow_index]) == 0:  # Left brow missing
+        output_tensor[l_brow_index] = torch.from_numpy(feature_masks["l_brow"]).byte()
+    if torch.sum(output_tensor[r_brow_index]) == 0:  # Right brow missing
+        output_tensor[r_brow_index] = torch.from_numpy(feature_masks["r_brow"]).byte()
+
+    # Debugging: Visualize masks to ensure correctness
+    print("Debug: Visualizing feature masks...")
+    for feature, mask in feature_masks.items():
+        cv2.imwrite(f"mask_{feature}.png", mask)  # Save masks for visual inspection
+
+    # Ensure no feature is missing in the tensor
     for i in range(19):
-        output_tensor[i] = torch.tensor(indices == i, dtype=torch.uint8)
+            mask = torch.tensor(indices == i, dtype=torch.uint8)  # Convert to torch.uint8 tensor
+            output_tensor[i][output_tensor[i] == 0] = mask[output_tensor[i] == 0]
+
+    # Explicitly handle the mouth channel separately to avoid eyebrow interference
+    mouth_index = face_segment_indices["mouth"]
+    mouth_mask = torch.tensor(indices == mouth_index, dtype=torch.uint8)
+    output_tensor[mouth_index][output_tensor[mouth_index] == 0] = mouth_mask[output_tensor[mouth_index] == 0]
 
     return output_tensor
+
 
 def assign_class_colors(input_array):
     # Make sure the input array is a numpy array of type np.uint8
@@ -383,7 +435,7 @@ def assign_class_colors(input_array):
     return output_tensor
 
 def GetFaceParsingModel(model_type: FaceParsingModelType = FaceParsingModelType.F256_FACE_PARSING, which_epoch='latest'):
-    print("Model type received:", model_type)
+ 
     print("Initializing Face Parsing model")
     
     if model_type == FaceParsingModelType.F256_FACE_PARSING:
@@ -795,12 +847,12 @@ def apply_median_blur(tensor, ksize=7):
     processed_tensor = torch.from_numpy(processed_tensor_np).type(torch.uint8)
     return processed_tensor
 
-def segmentation_map_postprocessing(generated_image_tensor,  normalize=False):
-    generated_image = tensor2im(generated_image_tensor,  normalize)
-    color_masks_tensor = create_color_masks(generated_image)
-    shapes_tensor = remove_small_objects(color_masks_tensor, 200, 30)
+def segmentation_map_postprocessing(segmentation_map_tensor, img, normalize=False):
+    generated_image = tensor2im(segmentation_map_tensor, normalize)
+    color_masks_tensor = create_color_masks(generated_image, img)
+    shapes_tensor = remove_small_objects(color_masks_tensor, 300, 30)
     shapes_tensor = apply_median_blur(shapes_tensor)
-    return color_masks_tensor
+    return shapes_tensor
 
 def visualize_image(image, title="Image"):
     plt.figure(figsize=(6,6))
@@ -896,8 +948,6 @@ def get_FaceParsing_image(img):
         generated_image_tensor = FaceParser.inference(input_image_tensor, inst_temp, image_temp)
     return generated_image_tensor
 
-
-
 def enforce_single_blob_per_layer(tensor, layers_to_check, background_layer=0, excluded_layers=None):
     """
     Ensures that each specified layer in the tensor has only one blob.
@@ -950,21 +1000,11 @@ def enforce_single_blob_per_layer(tensor, layers_to_check, background_layer=0, e
 
     return processed_tensor
 
-
-
 def Generate_Face_Drawing(img, face_drawing_style, is_dotted=False, gap_width=12, segment_width=12, lineless=False, Faceless=False, crazy_neck=False):
     digital_face_art = FA.FaceArt(set_FaceParser_style(face_drawing_style))
+    generated_image_tensor, cropped_image = Diff.FaceParsing_T2(img)  # Ensure cropped_image is the actual image data
 
-    save_debug_image(img, "input_to_generate_face_drawing")
-
-    generated_image_tensor = Diff.FaceParsing_T2(img)
-
-    shapes_tensor = segmentation_map_postprocessing(generated_image_tensor)
-
-    # Apply blob enforcement
-    layers_to_check = list(range(19))  # All layers
-    excluded_layers = [0,4,5, 9, 16]  # Background, ear_r, and cloth layers
-    shapes_tensor = enforce_single_blob_per_layer(shapes_tensor, layers_to_check, excluded_layers=excluded_layers)
+    shapes_tensor = segmentation_map_postprocessing(generated_image_tensor, cropped_image)  # Pass cropped image
 
     segmented_face_tensor = shapes_tensor.cpu().numpy()
 
@@ -1005,7 +1045,7 @@ def Make_Faces_Drawing(face_options, model_type,  source_folder, destination_fol
     FaceParser = GetFaceParsingModel(model_type, which_epoch)
     digital_face_art =  FA.FaceArt(face_options)
     image_saver = ImageSaver(destination_folder)
-    print("Creating a list of images to process")
+
     image_paths = os.listdir(source_folder)
     loop = tqdm(image_paths, leave=True)
     for image_name in loop:

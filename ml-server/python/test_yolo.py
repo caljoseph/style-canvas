@@ -12,5 +12,5 @@ face_processor.model = yolo_model
 image = Image.open('Test_Image_WrongSizes/43001_2016110165902_jSsT.jpg').convert('RGB')
 
 # Process image
-processed_tensor = face_processor.process_image(image)
+processed_tensor = face_processor.prepare_image_rgb_normalized(image)
 print(f"Processed tensor shape: {processed_tensor.shape}")

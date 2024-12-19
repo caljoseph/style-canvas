@@ -23,6 +23,18 @@ class S2ModelConfigurations:
         img_width=512, 
     )
 
+    BlockFilter_Parameters = S2_Parameters(
+        Checkpoint_Name="BlockFilter_T2", 
+        n_feats=64, 
+        dim=48, 
+        n_encoder_res=6, 
+        n_denoise_res=6, 
+        timesteps=80, 
+        bias = True,
+        img_height=512, 
+        img_width=512, 
+    )
+
     Comic_CrafterAI_Parameters = S2_Parameters(
         Checkpoint_Name="T2_Fine_Tuning_ComicBook", 
         n_feats=64, 
