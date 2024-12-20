@@ -1,4 +1,64 @@
+/* Add to your main.css */
+#preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  overflow: hidden;
+  background: var(--background-color);
+  transition: all 0.6s ease-out;
+}
 
+#preloader:before {
+  content: "";
+  position: fixed;
+  top: calc(50% - 30px);
+  left: calc(50% - 30px);
+  border: 6px solid #ffffff;
+  border-color: var(--accent-color) transparent var(--accent-color) transparent;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: animate-preloader 1.5s linear infinite;
+}
+
+.main {
+  transition: opacity 0.3s ease-in;
+}
+
+/* Ensure content visibility once loaded */
+.index-page[data-loaded="true"] .main {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+/* Ensure content visibility */
+.index-page {
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+.main {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+}
+
+.hero {
+  min-height: 70vh;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+#hero {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+[data-aos] {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
+}
 
 :root {
   --default-font: "Roboto", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";

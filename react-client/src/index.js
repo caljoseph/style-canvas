@@ -9,13 +9,27 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import 'aos/dist/aos.css';
 import './assets/css/main.css';
 
+console.log('Starting app initialization...');
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-    <React.StrictMode>
-        <AuthProvider>
-            <BrowserRouter>
-                <App />
-            </BrowserRouter>
-        </AuthProvider>
-    </React.StrictMode>
-);
+console.log('Root element found:', !!document.getElementById('root'));
+
+const renderApp = () => {
+    console.log('Rendering app...');
+    root.render(
+        <React.StrictMode>
+            <AuthProvider>
+                <BrowserRouter>
+                    <App />
+                </BrowserRouter>
+            </AuthProvider>
+        </React.StrictMode>
+    );
+    console.log('App rendered');
+};
+
+try {
+    renderApp();
+} catch (error) {
+    console.error('Error rendering app:', error);
+}

@@ -5,10 +5,25 @@ import Footer from './Footer';
 import ScrollTop from './ScrollTop';
 import Preloader from './Preloader';
 import { usePlugins } from '../hooks/usePlugins';
+import AOS from 'aos';
 
 const Layout = () => {
     const location = useLocation();
     usePlugins();
+
+    // Initialize AOS on mount
+    useEffect(() => {
+        try {
+            AOS.init({
+                once: true,
+                disable: 'mobile',
+                duration: 1000,
+            });
+            console.log('AOS initialized successfully');
+        } catch (error) {
+            console.error('Error initializing AOS:', error);
+        }
+    }, []);
 
     // Refresh AOS on route change
     useEffect(() => {
