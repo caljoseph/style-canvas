@@ -87,14 +87,67 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
     };
 
+    const forgotPassword = async (email) => {
+        try {
+            const response = await fetch('/auth/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({email}),
+            });
+
+            const data = await response.json();
+            return {
+                success: response.ok,
+                message: data.message,
+                data: data
+            };
+        } catch (error) {
+            console.error('Error initiating password reset:', error);
+            return {
+                success: false,
+                message: 'An error occurred while initiating password reset'
+            };
+        }
+    };
+
+    const resetPassword = async (email, code, newPassword) => {
+        try {
+            const response = await fetch('/auth/confirm-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, code, newPassword }),
+            });
+
+            const data = await response.json();
+            return {
+                success: response.ok,
+                message: data.message
+            };
+        } catch (error) {
+            console.error('Error resetting password:', error);
+            return {
+                success: false,
+                message: 'An error occurred while resetting password'
+            };
+        }
+    };
+
+
     const value = {
         user,
         login,
         register,
         logout,
         loading,
-        refreshProfile: fetchUserProfile
+        refreshProfile: fetchUserProfile,
+        forgotPassword,
+        resetPassword
     };
+
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

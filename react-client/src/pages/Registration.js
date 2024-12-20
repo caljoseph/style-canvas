@@ -1,7 +1,6 @@
-// src/pages/Registration.js
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
 
@@ -246,7 +245,7 @@ const Registration = () => {
 
                             {isLoginView && (
                                 <div className="form-group text-end">
-                                    <a href="./forgot-password.html">Forgot Password?</a>
+                                    <Link to="/forgot-password">Forgot Password?</Link>
                                 </div>
                             )}
 

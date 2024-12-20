@@ -12,6 +12,8 @@ import Registration from './pages/Registration';
 import Welcome from './pages/Welcome';
 import TestImage from './pages/TestImage'
 import ModelTest from './pages/ModelTest'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   return (
@@ -26,8 +28,10 @@ function App() {
           <Route path="contact" element={<Contact />} />
           <Route path="registration" element={<Registration />} />
           <Route path="welcome" element={<Welcome />} />
-            <Route path="test_image" element={<TestImage />} />
-            <Route path="model-test" element={<ModelTest />} />
+          <Route path="model-test" element={<ModelTest />} />
+          <Route path="forgot-password" element={<ForgotPassword />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+          <Route path="test_image" element={<TestImage />} />
 
         </Route>
       </Routes>
