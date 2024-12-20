@@ -56,22 +56,13 @@ const Pricing = () => {
         const payment = params.get('payment');
         const sessionId = params.get('session_id');
 
-        console.log('Current URL:', window.location.href); // Debug log
-        console.log('Payment:', payment, 'Session ID:', sessionId); // Debug log
-
         if (payment === 'success' && sessionId) {
             toast.success('Payment successful! Verifying...');
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
             toast.info('Payment cancelled.');
-        }
-
-        // Delay clearing query parameters to allow toasts to show
-        const timer = setTimeout(() => {
             navigate(location.pathname, { replace: true });
-        }, 3000);
-
-        return () => clearTimeout(timer);
+        }
     }, [location, navigate]);
 
     const verifyPaymentSession = async (sessionId) => {
@@ -89,7 +80,8 @@ const Pricing = () => {
                 } else {
                     toast.success('Payment successful! Credits have been added to your account.');
                 }
-                window.location.reload();
+                // Navigate to clear query parameters
+                navigate(location.pathname, { replace: true });
             } else {
                 throw new Error('Payment verification failed.');
             }
