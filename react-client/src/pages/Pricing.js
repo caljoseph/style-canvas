@@ -12,7 +12,6 @@ const Pricing = () => {
     const navigate = useNavigate();
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ type: '', plan: '', callback: null });
-    // Use the user's subscriptionType if available, else "none"
     const subscriptionType = user?.subscriptionType || "none";
     const [toast, setToast] = useState(null);
 
@@ -200,7 +199,7 @@ const Pricing = () => {
                         if (response.ok) {
                             console.log("[handleAction/cancel callback] Subscription cancelled successfully. Setting justPurchased...");
                             localStorage.setItem('justPurchased', JSON.stringify({
-                                message: 'Subscription cancelled successfully.',
+                                message: 'Subscription cancelled successfully. You will no longer be billed.',
                                 type: 'success'
                             }));
                             console.log("[handleAction/cancel callback] Navigating to /pricing...");
@@ -234,7 +233,7 @@ const Pricing = () => {
                         if (response.ok) {
                             console.log("[handleAction/change callback] Subscription updated successfully. Setting justPurchased...");
                             localStorage.setItem('justPurchased', JSON.stringify({
-                                message: 'Subscription updated successfully.',
+                                message: 'Subscription updated successfully. Changes will take effect on your next billing cycle.',
                                 type: 'success'
                             }));
                             console.log("[handleAction/change callback] Navigating to /pricing...");
@@ -274,8 +273,8 @@ const Pricing = () => {
             );
         }
 
-        // If this plan is the user's current subscription plan
         if (isCurrentPlan) {
+            // Current subscription plan: show Cancel Subscription
             return (
                 <button
                     className="buy-btn"
@@ -286,8 +285,8 @@ const Pricing = () => {
             );
         }
 
-        // If this is a subscription plan but not the current one
         if (isSubscription) {
+            // Different subscription plan: show Add or Change Subscription depending on if user has one
             return (
                 <button
                     className="buy-btn"
@@ -298,7 +297,7 @@ const Pricing = () => {
             );
         }
 
-        // Otherwise, it's a one-time purchase
+        // For one-time purchase plans
         return (
             <button
                 className="buy-btn"
@@ -377,7 +376,7 @@ const Pricing = () => {
                 </Modal.Header>
                 <Modal.Body>
                     {confirmAction.type === 'cancel'
-                        ? `Are you sure you want to cancel your subscription for the ${confirmAction.plan}?`
+                        ? `Are you sure you want to cancel your subscription for the ${confirmAction.plan}? You will no longer be billed.`
                         : (subscriptionType === "none"
                             ? `Are you sure you want to add the ${confirmAction.plan}?`
                             : `Are you sure you want to change your subscription to the ${confirmAction.plan}? This will go into effect on your next billing cycle.`)}
