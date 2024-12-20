@@ -31,6 +31,9 @@ export class PaymentsService {
     }
 
     async createOneTimeCheckoutSession(lookup_key: string, userId: string): Promise<string> {
+        console.log("computed redirect success url:", `${this.appUrl}/pricing?payment=success&session_id={CHECKOUT_SESSION_ID}`)
+        console.log("computed redirect cancel url:", `${this.appUrl}/pricing?payment=cancelled`)
+
         // Get the prices from the lookup key
         const prices = await this.stripe.prices.list({
             lookup_keys: [lookup_key],
