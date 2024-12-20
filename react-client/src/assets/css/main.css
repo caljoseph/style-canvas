@@ -2249,7 +2249,23 @@ section,
 --------------------------------------------------------------*/
 
 /* Add any checkout page styles here if needed */
+
 /* Toast Styles */
+.my-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999999;
+  background: red;
+  padding: 20px;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: Arial, sans-serif;
+}
+
+/* Keeping original toast styles here if you need them in the future,
+   but we won't use .toast-container in Pricing.js now. */
 .toast {
   background-color: var(--accent-color, #0d6efd);
   color: var(--background-color, #fff);
@@ -2306,4 +2322,4 @@ section,
   .toast-container.show {
     right: 5%;
   }
-}
+}}

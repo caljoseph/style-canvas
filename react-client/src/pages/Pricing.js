@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
@@ -323,9 +322,9 @@ const Pricing = () => {
             </div>
 
             {toast && (
-                <div className={`toast-container show`}>
+                <div className="my-toast-container">
                     {console.log("[Pricing.js] Rendering toast:", toast)}
-                    <div className={`toast toast-${toast.type}`}>{toast.message}</div>
+                    {toast.message}
                 </div>
             )}
 
