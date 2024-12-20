@@ -61,7 +61,10 @@ const Pricing = () => {
 
         if (payment === 'success' && sessionId) {
             toast.success('Payment successful! Verifying...');
-            verifyPaymentSession(sessionId);
+            verifyPaymentSession(sessionId).finally(() => {
+                // Clear the query parameters AFTER verification completes
+                navigate(location.pathname, { replace: true });
+            });
         } else if (payment === 'cancelled') {
             toast.info('Payment cancelled.');
             const timer = setTimeout(() => {
@@ -87,7 +90,6 @@ const Pricing = () => {
                 } else {
                     toast.success('Payment successful! Credits have been added to your account.');
                 }
-                navigate(location.pathname, { replace: true }); // Clear URL
             } else {
                 throw new Error('Payment verification failed.');
             }
