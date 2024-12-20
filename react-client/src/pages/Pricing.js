@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
@@ -52,32 +53,30 @@ const Pricing = () => {
     ];
 
     useEffect(() => {
-        // Check if we have a toast message from location state
-        if (location.state && location.state.toastMessage && location.state.toastType) {
-            showToast(location.state.toastMessage, location.state.toastType);
-            // Clear out the state so it doesn't show again if user navigates away and back
-            navigate(location.pathname, { replace: true });
+        // Check localStorage for a justPurchased message
+        const justPurchased = localStorage.getItem('justPurchased');
+        if (justPurchased) {
+            const parsed = JSON.parse(justPurchased);
+            showToast(parsed.message, parsed.type);
+            localStorage.removeItem('justPurchased');
         }
-    }, [location, navigate]);
+    }, []);
 
     useEffect(() => {
-        // Check for URL parameters for payment verification
         const params = new URLSearchParams(location.search);
         const payment = params.get('payment');
         const sessionId = params.get('session_id');
 
         if (payment === 'success' && sessionId) {
+            // Verify the payment before showing the toast
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            // Payment cancelled logic
-            // Instead of waiting on this page with params, navigate immediately with state
-            navigate('/pricing', {
-                replace: true,
-                state: {
-                    toastMessage: 'Payment cancelled.',
-                    toastType: 'info'
-                }
-            });
+            // Payment cancelled, set justPurchased in localStorage and navigate
+            localStorage.setItem('justPurchased', JSON.stringify({
+                message: 'Payment cancelled.',
+                type: 'info'
+            }));
+            navigate('/pricing', { replace: true });
         }
     }, [location, navigate]);
 
@@ -98,26 +97,21 @@ const Pricing = () => {
                     message = 'Thank you for your purchase! Credits have been added to your account.';
                 }
 
-                // Navigate immediately to /pricing with toast state
-                navigate('/pricing', {
-                    replace: true,
-                    state: {
-                        toastMessage: message,
-                        toastType: 'success'
-                    }
-                });
+                // Store the message in localStorage and redirect
+                localStorage.setItem('justPurchased', JSON.stringify({
+                    message: message,
+                    type: 'success'
+                }));
+                navigate('/pricing', { replace: true });
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
-            // If verification fails, navigate with error toast
-            navigate('/pricing', {
-                replace: true,
-                state: {
-                    toastMessage: 'Could not verify payment. Please contact support if credits are missing.',
-                    toastType: 'error'
-                }
-            });
+            localStorage.setItem('justPurchased', JSON.stringify({
+                message: 'Could not verify payment. Please contact support if credits are missing.',
+                type: 'error'
+            }));
+            navigate('/pricing', { replace: true });
         }
     };
 
@@ -171,13 +165,11 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            navigate('/pricing', {
-                                replace: true,
-                                state: {
-                                    toastMessage: 'Subscription cancelled successfully.',
-                                    toastType: 'success'
-                                }
-                            });
+                            localStorage.setItem('justPurchased', JSON.stringify({
+                                message: 'Subscription cancelled successfully.',
+                                type: 'success'
+                            }));
+                            navigate('/pricing', { replace: true });
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
@@ -200,13 +192,11 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            navigate('/pricing', {
-                                replace: true,
-                                state: {
-                                    toastMessage: 'Subscription updated successfully.',
-                                    toastType: 'success'
-                                }
-                            });
+                            localStorage.setItem('justPurchased', JSON.stringify({
+                                message: 'Subscription updated successfully.',
+                                type: 'success'
+                            }));
+                            navigate('/pricing', { replace: true });
                         } else {
                             throw new Error('Failed to change subscription');
                         }
