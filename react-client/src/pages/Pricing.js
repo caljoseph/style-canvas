@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-toastify';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Config from "../config";
 
@@ -12,6 +11,7 @@ const Pricing = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ type: '', plan: '', callback: null });
     const [subscriptionType, setSubscriptionType] = useState(null);
+    const [notification, setNotification] = useState(null);
 
     const plans = [
         {
@@ -62,12 +62,11 @@ const Pricing = () => {
         if (payment === 'success' && sessionId) {
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            toast.info('Payment cancelled.', { autoClose: 5000 });
-            const timer = setTimeout(() => {
+            setNotification('Payment cancelled.');
+            setTimeout(() => {
+                setNotification(null);
                 navigate(location.pathname, { replace: true });
-            }, 3000);
-
-            return () => clearTimeout(timer);
+            }, 5000);
         }
     }, [location, navigate]);
 
@@ -82,19 +81,19 @@ const Pricing = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.type === 'subscription') {
-                    toast.success('Thank you for your purchase! Your subscription is now active.', { autoClose: 5000 });
+                    setNotification('Thank you for your purchase! Your subscription is now active.');
                 } else {
-                    toast.success('Thank you for your purchase! Credits have been added to your account.', { autoClose: 5000 });
+                    setNotification('Thank you for your purchase! Credits have been added to your account.');
                 }
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
-            toast.error('Could not verify payment. Please contact support if credits are missing.', { autoClose: 5000 });
+            setNotification('Could not verify payment. Please contact support if credits are missing.');
             console.error('Verification error:', error);
         } finally {
-            // Clear the URL after the toast displays
             setTimeout(() => {
+                setNotification(null);
                 navigate(location.pathname, { replace: true });
             }, 5000);
         }
@@ -122,7 +121,7 @@ const Pricing = () => {
             const data = await response.json();
             window.location.href = data.sessionUrl;
         } catch (error) {
-            toast.error('An error occurred while processing your request.', { autoClose: 5000 });
+            setNotification('An error occurred while processing your request.');
             console.error(error);
         }
     };
@@ -143,13 +142,16 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            toast.success('Subscription cancelled successfully.', { autoClose: 5000 });
-                            navigate(location.pathname, { replace: true });
+                            setNotification('Subscription cancelled successfully.');
+                            setTimeout(() => {
+                                setNotification(null);
+                                navigate(location.pathname, { replace: true });
+                            }, 5000);
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
                     } catch (error) {
-                        toast.error('An error occurred while cancelling the subscription.', { autoClose: 5000 });
+                        setNotification('An error occurred while cancelling the subscription.');
                     }
                 };
                 break;
@@ -167,13 +169,16 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            toast.success('Subscription updated successfully.', { autoClose: 5000 });
-                            navigate(location.pathname, { replace: true });
+                            setNotification('Subscription updated successfully.');
+                            setTimeout(() => {
+                                setNotification(null);
+                                navigate(location.pathname, { replace: true });
+                            }, 5000);
                         } else {
                             throw new Error('Failed to change subscription');
                         }
                     } catch (error) {
-                        toast.error('An error occurred while changing the subscription.', { autoClose: 5000 });
+                        setNotification('An error occurred while changing the subscription.');
                     }
                 };
                 break;
@@ -245,6 +250,12 @@ const Pricing = () => {
                 {!user && <p>Please log in to purchase a plan. You can still view the pricing below.</p>}
                 {user && <p>Choose the package that suits you best:</p>}
             </div>
+
+            {notification && (
+                <div className="notification-bar">
+                    {notification}
+                </div>
+            )}
 
             <div className="container">
                 <div className="row gy-4">
