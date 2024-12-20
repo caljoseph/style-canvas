@@ -128,6 +128,14 @@ def Chalkboard(img):
     return chalk_board
 
 # All DiffI2I models:
+def ComicCrafterAI(img):
+    return Diff.ComicCrafterAI(img)
+
+def ComicCrafterAI_T1(img):
+    return Diff.ComicCrafterAI_T1(img)
+
+def BlockFilter(img):
+    return Diff.BlockFilter(img)
 
 def BaroqueBrush(img):
     return  Diff.OilPainting_SC3(img)
@@ -150,7 +158,7 @@ def face2paint(img):
 
 def crop_and_resize_face_image(img , img_width=4096, img_height=4096):
     processor_images = FaceImageProcessor(img_width, img_height)
-    processed_image = processor_images.process_image3(img)
+    processed_image = processor_images.rotate_and_resize_image(img)
     final_image_np = np.array(processed_image)
     return final_image_np
 
@@ -160,7 +168,7 @@ def apply_broken_glass_effect(img):
     background_path = r"./Broken_Glass_Assets/background.png"  # Update with correct extension
 
     processor_images = FaceImageProcessor(4096, 4096)
-    img = processor_images.process_image3(img)
+    img = processor_images.rotate_and_resize_image(img)
 
     # Open and resize the mask to match the dimensions of the given image
     mask = Image.open(mask_path).convert("L")  # Convert to grayscale (L) for mask
@@ -202,6 +210,9 @@ def Upsample(img, scale = 2):
 
 # Map filter names to functions
 filter_functions = {
+    'ComicCrafterAI' : ComicCrafterAI,
+    'ComicCrafterAI_T1' : ComicCrafterAI_T1,
+    'BlockFilter' : BlockFilter,
     'ShadowSplit_Abstract': ShadowSplit_Abstract,
     'ShadowSplit': ShadowSplit,
     'Kai_Face': Kai_Face,

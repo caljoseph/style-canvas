@@ -88,6 +88,11 @@ def ScarletFrame(img):
     drawing = fpm.Generate_Face_Drawing(img, face_drawing_styles)
     return drawing
 
+def MakeComicCrafterAIBaseDataSet(img):
+    face_drawing_styles = FaceDrawingTypes.Tenshi
+    drawing = fpm.Generate_Face_Drawing(img, face_drawing_styles, False, True)
+    return drawing
+
 # All Pix2Pix HD models:
 
 def RedMist(img):
@@ -127,11 +132,16 @@ def Chalkboard(img):
     return chalk_board
 
 # All DiffI2I models:
+def BlockFilter(img):
+    return Diff.BlockFilter(img)
+
+def ComicCrafterAI(img):
+    return Diff.ComicCrafterAI(img)
+
+def ComicCrafterAI_T1(img):
+    return Diff.ComicCrafterAI_T1(img)
 
 def BaroqueBrush(img):
-    return  Diff.OilPainting_SC3(img)
-
-def BaroqueBrush_2(img):
     return  Diff.OilPainting_OP3(img)
 
 def pencil_blur(img):
@@ -142,23 +152,17 @@ def Verdant_Flame(img):
 
 def FaceParsing_Mask(img):
     # Perform face parsing to get the segmentation mask
-    face_parsing = Diff.FaceParsing_T2(img)
-    
-    # Post-process the segmentation map
-    mask_as_image = fpm.segmentation_map_postprocessing(face_parsing)
+    face_parsing , _= Diff.FaceParsing_T2(img)   
     return rcpf.tensor2im(face_parsing, normalize=False)
 
-
 # Pix2Pix model:
-
 def face2paint(img):
     return f2p.Generate_Face2Paint_image(img)
 
 # uses YOLO from ultralytics:
-
 def crop_and_resize_face_image(img , img_width=4096, img_height=4096):
     processor_images = FaceImageProcessor(img_width, img_height)
-    processed_image = processor_images.process_image3(img)
+    processed_image = processor_images.rotate_and_resize_image(img)
     final_image_np = np.array(processed_image)
     return final_image_np
 
@@ -168,7 +172,7 @@ def apply_broken_glass_effect(img):
     background_path = r"./Broken_Glass_Assets/background.png"  # Update with correct extension
     
     processor_images = FaceImageProcessor(4096, 4096)
-    img = processor_images.process_image3(img)
+    img = processor_images.rotate_and_resize_image(img)
 
     # Open and resize the mask to match the dimensions of the given image
     mask = Image.open(mask_path).convert("L")  # Convert to grayscale (L) for mask
@@ -204,12 +208,14 @@ def apply_broken_glass_effect(img):
     return final_image_np
 
 # RealESRGANer model 
-
 def Upsample(img, scale = 2):
     return im.enhance_image_resolution(img, scale)
 
-# Function for testing other Functions above :
+# Functions for testing other Functions above :
 def process_images_with_function(processing_function):
+    #source_folder = r'F:\Python Projects\DiffI2I\Dataset\FlatFaceDataset\Training\A'
+    #destination_root_folder = r"F:\Python Projects\DiffI2I\Dataset\FlatFaceDataset\Training\B"
+    
     source_folder = r'Test_Images'
     destination_root_folder = r"Results"
     destination_subfolder_name = processing_function.__name__
@@ -236,8 +242,55 @@ def process_images_with_function(processing_function):
         except Exception as e:
             print(f"Failed to process {image_name}: {e}")
 
-if __name__ == "__main__": 
-    process_images_with_function(Tenshi)
+def process_images_with_functions(processing_functions):
+    """
+    Processes images using a list of functions and ensures unique destination folder names.
+    """
+    source_folder = r'Test_Images'
+    destination_root_folder = r"Results"
+
+    folder_name_counts = {}
+
+    for processing_function in processing_functions:
+        function_name = processing_function.__name__
+
+        # Ensure unique folder names
+        if function_name not in folder_name_counts:
+            folder_name_counts[function_name] = 1
+            folder_name = function_name
+        else:
+            folder_name_counts[function_name] += 1
+            folder_name = f"{function_name}_{folder_name_counts[function_name]}"
+
+        destination_folder = os.path.join(destination_root_folder, folder_name)
+
+        # Create destination folder if it doesn't exist
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
+
+        image_paths = natsorted(os.listdir(source_folder))  # Sort images alphabetically and numerically
+        image_saver = ImageSaver(destination_folder)
+        loop = tqdm(image_paths, leave=True, desc=f"Processing with {function_name}")
+
+        for image_name in loop:
+            try:
+                # Check if file is an image
+                if image_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+                    image_path = os.path.join(source_folder, image_name)
+                    img = Image.open(image_path)
+
+                    # Call the function to process the image
+                    processed_image = processing_function(img)
+
+                    if processed_image is not None:
+                        image_saver.save_image(image_name, processed_image)
+
+            except Exception as e:
+                print(f"Failed to process {image_name} with {function_name}: {e}")
+
+if __name__ == "__main__":
+    process_images_with_function(ComicCrafterAI_T1)
+
 
 
 

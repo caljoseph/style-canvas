@@ -7,6 +7,7 @@ import collections
 from typing import Union, List
 import requests
 import bz2
+import cv2
 
 
 def download_dlib_shape_predictor(predictor_path: str = "shape_predictor_68_face_landmarks.dat"):
@@ -58,27 +59,6 @@ def initializing_face_detector_lib():
     shape_predictor = dlib.shape_predictor(shape_predictor_path)
     return dlib_face_detector, shape_predictor
 
-def resize_image(img, img_width=512, img_height=512):
-    if img.mode != "RGB":
-        img = img.convert("RGB")
-
-    width, height = img.size
-
-    if width < 1024 or height < 1024:
-        raise ValueError("Image dimensions should be at least 1024x1024")
-
-    # Calculate aspect ratio
-    aspect_ratio = width / height
-
-    # Aspect ratio of 512x512 image is 1:1
-    target_aspect_ratio = 1
-
-    if aspect_ratio == target_aspect_ratio:
-        img = img.resize((img_width, img_height))
-    else:
-        img = cropping_and_resizing_face_images(img)
-    return img
-    
 def detect_face_landmarks(img: Union[Image.Image, np.ndarray]):
     if isinstance(img, Image.Image):
         img = np.array(img)
@@ -89,57 +69,57 @@ def detect_face_landmarks(img: Union[Image.Image, np.ndarray]):
         faces.append(np.array([[v.x, v.y] for v in shape.parts()]))
     return faces
 
-def align_and_crop_face(img: Image.Image, landmarks: np.ndarray, output_size: int = 1024, padding: float = 0.4):
-    # Convert PIL image to numpy array
-    img_np = np.array(img)
-    h, w, _ = img_np.shape
 
-    # Calculate bounding box based on landmarks
-    left = np.min(landmarks[:, 0])
-    right = np.max(landmarks[:, 0])
-    top = np.min(landmarks[:, 1])
-    bottom = np.max(landmarks[:, 1])
 
-    # Calculate width and height of the bounding box
-    width = right - left
-    height = bottom - top
+def generate_feature_masks(img: np.ndarray):
+    """
+    Generate masks for specific features based on facial landmarks.
 
-    # Ensure padding doesn't make the box exceed the image dimensions
-    # Limit padding to available space
-    available_top_padding = top
-    available_bottom_padding = h - bottom
-    available_left_padding = left
-    available_right_padding = w - right
+    Parameters:
+        img (np.ndarray): Input image as a numpy array.
 
-    # If the padding is larger than available space, adjust the padding dynamically
-    top = max(0, top - int(min(height * padding * 2, available_top_padding)))  # More padding above
-    bottom = min(h, bottom + int(min(height * padding * 0.5, available_bottom_padding)))  # Less padding below
-    left = max(0, left - int(min(width * padding, available_left_padding)))
-    right = min(w, right + int(min(width * padding, available_right_padding)))
+    Returns:
+        dict: A dictionary of binary masks for each feature.
+    """
+ 
 
-    # Ensure that we still have a valid bounding box after applying padding
-    if right - left <= 0 or bottom - top <= 0:
-        print("Warning: Invalid bounding box dimensions after padding.")
-        return None  # Skip processing if the bounding box is invalid
+    # Ensure image is uint8
+    if img.dtype != np.uint8:
+        img = (img * 255).astype(np.uint8)
 
-    # Crop and resize the image
-    cropped_img_np = img_np[top:bottom, left:right]
-    cropped_img = Image.fromarray(cropped_img_np)
-    aligned_img = cropped_img.resize((output_size, output_size), Image.Resampling.LANCZOS)
+    # Ensure image is RGB
+    if len(img.shape) == 2:  # Grayscale image
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+    elif img.shape[2] != 3:
+        raise ValueError("Input image must be RGB or Grayscale.")
 
-    return aligned_img
+ 
+    faces = detect_face_landmarks(img)
+    if not faces:
+        raise ValueError("No faces detected.")
 
-def cropping_and_resizing_face_images(img):  
-    landmarks = detect_face_landmarks(img)
-    if len(landmarks) == 0:
-        raise ValueError("No faces detected in the image.")
-        
-    aligned_face = align_and_crop_face(img, landmarks[0])
-    
-    if aligned_face is None:
-        raise ValueError("Failed to process image due to invalid bounding box.")
 
-    return aligned_face
+    landmarks = faces[0]
+
+    feature_masks = {
+        "l_eye": np.zeros(img.shape[:2], dtype=np.uint8),
+        "r_eye": np.zeros(img.shape[:2], dtype=np.uint8),
+        "l_brow": np.zeros(img.shape[:2], dtype=np.uint8),
+        "r_brow": np.zeros(img.shape[:2], dtype=np.uint8),
+        "nose": np.zeros(img.shape[:2], dtype=np.uint8),
+        "mouth": np.zeros(img.shape[:2], dtype=np.uint8),
+    }
+
+
+    cv2.fillPoly(feature_masks["l_eye"], [landmarks[36:42]], 255)  # Left eye
+    cv2.fillPoly(feature_masks["r_eye"], [landmarks[42:48]], 255)  # Right eye
+
+    cv2.fillPoly(feature_masks["nose"], [landmarks[27:36]], 255)  # Nose
+
+    cv2.fillPoly(feature_masks["mouth"], [landmarks[48:60]], 255)  # Outer lips
+    cv2.fillPoly(feature_masks["mouth"], [landmarks[60:68]], 255)  # Inner lips
+
+    return feature_masks
 
 dlib_face_detector, shape_predictor = initializing_face_detector_lib()
 

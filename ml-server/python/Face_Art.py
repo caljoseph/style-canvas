@@ -71,6 +71,7 @@ faceless_color_groups = {
                 'cloth_color': ['cloth'],
                 'hair_color': ['hair'],
                 'head_face_color': ['head_face','r_ear', 'l_ear'],
+                'ear_ring_color' : ['ear_r'],
                 'eyebrow_color': ['l_brow', 'r_brow'],
                 'mouth_color': ['mouth'],
                 'upper_lip_color': ['upper_lip'],
@@ -90,13 +91,14 @@ color_groups = {
                 'mouth_color': ['mouth'],
                 'upper_lip_color': ['upper_lip'],
                 'lower_lip_color': ['lower_lip'],
+                'ear_ring_color' : ['ear_r'],
                 'eye_color':['l_eye', 'r_eye'],
                 'glasses_color':['eyeglasses'],
                 'hat_color': ['hat']
             }
 
 
-line_shapes_layer_order = { 'neck', 'cloth', 'hair', 'head_face','l_brow', 'r_brow', 'mouth', 'upper_lip', 'lower_lip', 'l_eye', 'r_eye', 'neck_l', 'eyeglasses', 'hat'}
+line_shapes_layer_order = { 'head_face', 'neck', 'cloth', 'hair', 'l_brow', 'r_brow', 'upper_lip', 'lower_lip', 'mouth',  'l_eye', 'r_eye', 'neck_l', 'eyeglasses', 'hat','ear_r'}
 
 face_segments_for_mask = {
     "head_face",
@@ -277,6 +279,7 @@ class FaceArt:
         if segmented_face_tensor.ndim != 3 or segmented_face_tensor.shape[0] != 19:
                 raise ValueError("Output tensor must be of shape [19, H, W]")
         
+        print("here in Create_Faceless_drawing ")
         head_index = FSI.face_segment_indices['head_face']
         left_ear_index = FSI.face_segment_indices['l_ear']
         right_ear_index = FSI.face_segment_indices['r_ear']
@@ -316,7 +319,7 @@ class FaceArt:
         return canvas
 
     def create_artistic_face_drawing(self, segmented_face_tensor, unite_ears_and_head=False, is_lineless = False, crazy_neck = False):
-            
+            print(" in side of create_artistic_face_drawing")
             canvas = np.full((1024, 1024, 3), self.hex_to_bgr(self.flatfaceoptions.background_color), dtype=np.uint8)
             linecolor = self.flatfaceoptions.linecolor
             
@@ -359,13 +362,14 @@ class FaceArt:
                         neck_shape = resized_shape[FSI.face_segment_indices['neck']]
                         shape = self.create_head_shadow_for_neck(head_shape, neck_shape)
                         stroke_thickness = 0
+                    elif part == 'nose' : 
+                        stroke_thickness = 4
                     else:
                         shape_index = FSI.face_segment_indices[part]
                         shape = resized_shape[shape_index]
                         stroke_thickness = self.flatfaceoptions.stroke_thickness
 
-                    if part == 'nose':
-                        stroke_thickness = 3
+                 
 
                     if is_lineless :
                         linecolor = fill_color

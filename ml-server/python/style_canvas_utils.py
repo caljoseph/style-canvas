@@ -10,7 +10,6 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 gpu_id = torch.cuda.device_count()
 
 
-
 def load_image(input_image):
     if isinstance(input_image, str):
         input_image = Image.open(input_image)
@@ -127,7 +126,7 @@ def TurnBlue(img):
   blue_image = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
   return blue_image
 
-def process_face_image(image):
+def normalize_face_image_to_unit_range(image):
     """
     Process an image by resizing, converting to tensor, and normalizing.
     This function expects a PIL.Image as input and returns a normalized tensor.
@@ -139,6 +138,25 @@ def process_face_image(image):
     transformation_pipeline = T.Compose([
         T.ToTensor(),                      # Convert the image to a tensor
         T.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize the tensor
+    ])
+    
+    # Apply the transformations
+    processed_image = transformation_pipeline(image)
+    return processed_image
+
+
+def imagenet_normalize_face_image(image):
+    """
+    Process an image by resizing, converting to tensor, and normalizing.
+    This function expects a PIL.Image as input and returns a normalized tensor.
+
+    Returns:
+    torch.Tensor: The processed image tensor, ready for model input.
+    """
+    # Define the transformation pipeline
+    transformation_pipeline = T.Compose([
+        T.ToTensor(),                      # Convert the image to a tensor
+        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Normalize the tensor
     ])
     
     # Apply the transformations

@@ -17,7 +17,7 @@ def GetAdobeFilterModel(ai_model_name, which_epoch, ngf = 64, n_local_enhancers 
 def apply_filter_to_image(img, ai_model_name, which_epoch='latest', ngf = 64, n_local_enhancers = 2, img_height=1024, img_width=1024):
     AdobeFilterModel = GetAdobeFilterModel(ai_model_name,  which_epoch, ngf, n_local_enhancers)
     processor_images = FaceImageProcessor(img_height, img_width)
-    input_image_tensor = processor_images.process_image2(img)
+    input_image_tensor = processor_images.prepare_face_tensor_imagenet(img)
     inst_temp = torch.zeros((1,), dtype=torch.long)
     image_temp = torch.zeros((1,), dtype=torch.long)
     with torch.no_grad():  # Disable gradient computation
