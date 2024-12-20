@@ -9,7 +9,7 @@ import {
     Query,
     Res,
     UsePipes,
-    ValidationPipe, UseGuards, Put, HttpStatus, Param, RawBody
+    ValidationPipe, UseGuards, Put, HttpStatus, Param
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PaymentsService } from './payments.service';
@@ -18,6 +18,7 @@ import { UpdateSubscriptionDto } from "./dto/update-subscription.dto";
 import { AuthGuard } from "@nestjs/passport";
 import { UserDecorator } from "../users/user.decorator";
 import { User } from "../users/user.model";
+import * as process from "node:process";
 
 @Controller('payments')
 export class PaymentsController {
@@ -76,39 +77,15 @@ export class PaymentsController {
         return { message: 'Subscription cancelled successfully' };
     }
 
+
     @Post('webhook')
     @HttpCode(200)
     async handleWebhook(
         @Headers('stripe-signature') signature: string,
-        @Req() req: any
+        @Req() req: Request & { rawBody?: Buffer }
     ): Promise<string> {
         try {
-            // Debug logs
-            console.log('Request body:', req.body);
-            console.log('Is readable:', req.readable);
-            console.log('Request keys:', Object.keys(req));
-
-            // Convert ReadableStream to Buffer
-            const chunks: Buffer[] = [];
-            if (req.readable) {
-                console.log('Reading stream...');
-                for await (const chunk of req) {
-                    console.log('Got chunk:', chunk);
-                    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-                }
-            } else {
-                console.log('Not readable, using body directly');
-                // If not readable, try to use body directly
-                const body = req.body;
-                if (body) {
-                    chunks.push(Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)));
-                }
-            }
-
-            const rawBody = Buffer.concat(chunks);
-            console.log('Final raw body:', rawBody.toString());
-
-            await this.paymentsService.handleWebhook(signature, rawBody);
+            await this.paymentsService.handleWebhook(signature, req.rawBody);
             return 'Webhook processed successfully';
         } catch (error) {
             console.error('Webhook processing error:', error);

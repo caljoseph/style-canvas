@@ -22,6 +22,8 @@ export class PaymentsService {
         this.stripe = config.getStripeClient();
         this.prices = this.stripe.prices.list( )
         this.appUrl = process.env.APP_URL;
+        console.log("Stripe secret:", process.env.TEST_STRIPE_SECRET_KEY)
+        console.log("Stripe webhook secret:", process.env.STRIPE_WEBHOOK_SECRET)
     }
 
     async getPrices(){
