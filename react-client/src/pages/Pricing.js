@@ -3,7 +3,6 @@ import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Config from "../config";
-import './Pricing.css'; // Add CSS for toast styling
 
 const Pricing = () => {
     const { user } = useAuth();
@@ -256,7 +255,9 @@ const Pricing = () => {
             </div>
 
             {toast && (
-                <div className={`toast toast-${toast.type} slide-in`}>{toast.message}</div>
+                <div className={`toast-container show`}>
+                    <div className={`toast toast-${toast.type}`}>{toast.message}</div>
+                </div>
             )}
 
             <div className="container">
