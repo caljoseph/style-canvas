@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
 const ResetPassword = () => {
@@ -24,8 +24,29 @@ const ResetPassword = () => {
         setEmail(resetEmail);
     }, [navigate]);
 
+    const validatePassword = (password) => {
+        const hasNumber = /\d/.test(password);
+        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasLowercase = /[a-z]/.test(password);
+        return { hasNumber, hasSpecialChar, hasUppercase, hasLowercase };
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate password
+        if (formData.newPassword.length < 6) {
+            setError('Password must be at least 6 characters.');
+            return;
+        }
+
+        const passwordChecks = validatePassword(formData.newPassword);
+        if (!Object.values(passwordChecks).every(Boolean)) {
+            setError('Password does not meet all requirements.');
+            return;
+        }
+
         if (formData.newPassword !== formData.confirmPassword) {
             setError('Passwords do not match');
             return;
@@ -118,13 +139,29 @@ const ResetPassword = () => {
                                         type="button"
                                         className="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-3"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        style={{ border: 'none', background: 'none' }}
+                                        style={{border: 'none', background: 'none'}}
                                     >
-                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
                                     </button>
                                 </div>
+                                <ul className="password-requirements">
+                                    <li className={formData.newPassword.match(/[0-9]/) ? 'valid' : ''}>
+                                        Must contain at least one number
+                                    </li>
+                                    <li className={formData.newPassword.match(/[!@#$%^&*]/) ? 'valid' : ''}>
+                                        Must contain at least one special character
+                                    </li>
+                                    <li className={formData.newPassword.match(/[A-Z]/) ? 'valid' : ''}>
+                                        Must contain at least one uppercase letter
+                                    </li>
+                                    <li className={formData.newPassword.match(/[a-z]/) ? 'valid' : ''}>
+                                        Must contain at least one lowercase letter
+                                    </li>
+                                    <li className={formData.newPassword.length >= 6 ? 'valid' : ''}>
+                                        Must be at least 6 characters long
+                                    </li>
+                                </ul>
                             </div>
-
                             <div className="form-group">
                                 <label htmlFor="confirmPassword">Confirm New Password</label>
                                 <div className="position-relative">
@@ -142,9 +179,9 @@ const ResetPassword = () => {
                                         type="button"
                                         className="btn btn-link position-absolute top-50 end-0 translate-middle-y pe-3"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        style={{ border: 'none', background: 'none' }}
+                                        style={{border: 'none', background: 'none'}}
                                     >
-                                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        {showConfirmPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
                                     </button>
                                 </div>
                             </div>
@@ -157,14 +194,10 @@ const ResetPassword = () => {
                                 {loading ? 'Resetting...' : 'Reset Password'}
                             </button>
 
-                            <div className="text-center mt-3">
-                                <button
-                                    type="button"
-                                    onClick={() => navigate('/registration')}
-                                    className="btn btn-link"
-                                >
-                                    Back to Login
-                                </button>
+                            <div className="form-group" style={{paddingTop: '0.5rem'}}>
+                                <Link to="/registration" className="text-center d-block"
+                                      style={{textDecoration: 'none'}}>Back
+                                    to Login</Link>
                             </div>
                         </form>
                     </div>

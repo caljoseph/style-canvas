@@ -119,7 +119,11 @@ export const AuthProvider = ({ children }) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, code, newPassword }),
+                body: JSON.stringify({
+                    email,
+                    confirmationCode: code.toString(),
+                    newPassword
+                }),
             });
 
             const data = await response.json();
@@ -135,7 +139,6 @@ export const AuthProvider = ({ children }) => {
             };
         }
     };
-
 
     const value = {
         user,
