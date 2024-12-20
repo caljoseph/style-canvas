@@ -56,12 +56,19 @@ const Pricing = () => {
         const payment = params.get('payment');
         const sessionId = params.get('session_id');
 
+        console.log('Current URL:', window.location.href); // Debug log
+        console.log('Payment:', payment, 'Session ID:', sessionId); // Debug log
+
         if (payment === 'success' && sessionId) {
             toast.success('Payment successful! Verifying...');
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
             toast.info('Payment cancelled.');
-            navigate(location.pathname, { replace: true });
+            const timer = setTimeout(() => {
+                navigate(location.pathname, { replace: true });
+            }, 3000);
+
+            return () => clearTimeout(timer);
         }
     }, [location, navigate]);
 
@@ -80,8 +87,7 @@ const Pricing = () => {
                 } else {
                     toast.success('Payment successful! Credits have been added to your account.');
                 }
-                // Navigate to clear query parameters
-                navigate(location.pathname, { replace: true });
+                navigate(location.pathname, { replace: true }); // Clear URL
             } else {
                 throw new Error('Payment verification failed.');
             }
@@ -135,7 +141,7 @@ const Pricing = () => {
 
                         if (response.ok) {
                             toast.success('Subscription cancelled successfully.');
-                            window.location.reload();
+                            navigate(location.pathname, { replace: true });
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
@@ -159,7 +165,7 @@ const Pricing = () => {
 
                         if (response.ok) {
                             toast.success('Subscription updated successfully.');
-                            window.location.reload();
+                            navigate(location.pathname, { replace: true });
                         } else {
                             throw new Error('Failed to change subscription');
                         }
