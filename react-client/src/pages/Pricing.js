@@ -6,6 +6,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Config from "../config";
 
 const Pricing = () => {
+    console.log("[Pricing.js] Rendering component...");
+
     const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
@@ -53,12 +55,17 @@ const Pricing = () => {
     ];
 
     useEffect(() => {
-        // Check localStorage for a justPurchased message
+        console.log("[useEffect] Checking localStorage for justPurchased...");
         const justPurchased = localStorage.getItem('justPurchased');
+        console.log("[useEffect] justPurchased in localStorage:", justPurchased);
         if (justPurchased) {
             const parsed = JSON.parse(justPurchased);
+            console.log("[useEffect] Found justPurchased:", parsed);
             showToast(parsed.message, parsed.type);
+            console.log("[useEffect] Removing justPurchased from localStorage...");
             localStorage.removeItem('justPurchased');
+        } else {
+            console.log("[useEffect] No justPurchased found in localStorage.");
         }
     }, []);
 
@@ -67,20 +74,26 @@ const Pricing = () => {
         const payment = params.get('payment');
         const sessionId = params.get('session_id');
 
+        console.log("[useEffect - location change] Current URL:", window.location.href);
+        console.log("[useEffect - location change] Payment:", payment, "Session ID:", sessionId);
+
         if (payment === 'success' && sessionId) {
-            // Verify the payment before showing the toast
+            console.log("[useEffect - location change] Detected success payment with session_id. Verifying session...");
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            // Payment cancelled, set justPurchased in localStorage and navigate
+            console.log("[useEffect - location change] Payment cancelled. Setting localStorage and redirecting...");
             localStorage.setItem('justPurchased', JSON.stringify({
                 message: 'Payment cancelled.',
                 type: 'info'
             }));
             navigate('/pricing', { replace: true });
+        } else {
+            console.log("[useEffect - location change] No payment success or cancelled detected.");
         }
     }, [location, navigate]);
 
     const verifyPaymentSession = async (sessionId) => {
+        console.log("[verifyPaymentSession] Verifying session:", sessionId);
         try {
             const response = await fetch(`${Config.apiUrl}/payments/verify-session/${sessionId}`, {
                 headers: {
@@ -88,8 +101,10 @@ const Pricing = () => {
                 }
             });
 
+            console.log("[verifyPaymentSession] Response status:", response.status);
             if (response.ok) {
                 const data = await response.json();
+                console.log("[verifyPaymentSession] Session data:", data);
                 let message;
                 if (data.type === 'subscription') {
                     message = 'Thank you for your purchase! Your subscription is now active.';
@@ -97,16 +112,19 @@ const Pricing = () => {
                     message = 'Thank you for your purchase! Credits have been added to your account.';
                 }
 
-                // Store the message in localStorage and redirect
+                console.log("[verifyPaymentSession] Setting justPurchased in localStorage with message:", message);
                 localStorage.setItem('justPurchased', JSON.stringify({
                     message: message,
                     type: 'success'
                 }));
+                console.log("[verifyPaymentSession] Navigating to /pricing with replace: true");
                 navigate('/pricing', { replace: true });
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
+            console.error("[verifyPaymentSession] Error verifying payment:", error);
+            console.log("[verifyPaymentSession] Setting error in justPurchased and navigating...");
             localStorage.setItem('justPurchased', JSON.stringify({
                 message: 'Could not verify payment. Please contact support if credits are missing.',
                 type: 'error'
@@ -116,13 +134,20 @@ const Pricing = () => {
     };
 
     const showToast = (message, type) => {
+        console.log("[showToast] Showing toast with message:", message, "type:", type);
         setToast({ message, type });
         setTimeout(() => {
+            console.log("[showToast] Hiding toast after timeout");
             setToast(null);
         }, 5000);
     };
 
+    useEffect(() => {
+        console.log("[useEffect - toast change] Current toast state:", toast);
+    }, [toast]);
+
     const handlePurchase = async (plan) => {
+        console.log("[handlePurchase] Initiating purchase for plan:", plan);
         const endpoint = plan.type === 'subscription'
             ? '/payments/create-subscription-checkout-session'
             : '/payments/create-one-time-checkout-session';
@@ -137,24 +162,31 @@ const Pricing = () => {
                 body: JSON.stringify({ lookup_key: plan.lookupKey }),
             });
 
+            console.log("[handlePurchase] Response status:", response.status);
+
             if (!response.ok) {
+                console.error("[handlePurchase] Failed to create checkout session");
                 throw new Error('Failed to create checkout session');
             }
 
             const data = await response.json();
+            console.log("[handlePurchase] Received sessionUrl:", data.sessionUrl);
             window.location.href = data.sessionUrl;
         } catch (error) {
+            console.error("[handlePurchase] Error:", error);
             showToast('An error occurred while processing your request.', 'error');
-            console.error(error);
         }
     };
 
     const handleAction = (action, plan) => {
+        console.log("[handleAction] Action:", action, "Plan:", plan.title);
         let callback;
 
         switch (action) {
             case 'cancel':
+                console.log("[handleAction] Preparing to cancel subscription...");
                 callback = async () => {
+                    console.log("[handleAction/cancel callback] Attempting to cancel subscription...");
                     try {
                         const response = await fetch(Config.apiUrl + '/payments/cancel-subscription', {
                             method: 'POST',
@@ -164,23 +196,30 @@ const Pricing = () => {
                             },
                         });
 
+                        console.log("[handleAction/cancel callback] Response status:", response.status);
                         if (response.ok) {
+                            console.log("[handleAction/cancel callback] Subscription cancelled successfully. Setting justPurchased...");
                             localStorage.setItem('justPurchased', JSON.stringify({
                                 message: 'Subscription cancelled successfully.',
                                 type: 'success'
                             }));
+                            console.log("[handleAction/cancel callback] Navigating to /pricing...");
                             navigate('/pricing', { replace: true });
                         } else {
+                            console.error("[handleAction/cancel callback] Failed to cancel subscription");
                             throw new Error('Failed to cancel subscription');
                         }
                     } catch (error) {
+                        console.error("[handleAction/cancel callback] Error:", error);
                         showToast('An error occurred while cancelling the subscription.', 'error');
                     }
                 };
                 break;
 
             case 'change':
+                console.log("[handleAction] Preparing to change subscription...");
                 callback = async () => {
+                    console.log("[handleAction/change callback] Attempting to update subscription...");
                     try {
                         const response = await fetch(Config.apiUrl + '/payments/update-subscription', {
                             method: 'PUT',
@@ -191,25 +230,32 @@ const Pricing = () => {
                             body: JSON.stringify({ lookup_key: plan.lookupKey }),
                         });
 
+                        console.log("[handleAction/change callback] Response status:", response.status);
                         if (response.ok) {
+                            console.log("[handleAction/change callback] Subscription updated successfully. Setting justPurchased...");
                             localStorage.setItem('justPurchased', JSON.stringify({
                                 message: 'Subscription updated successfully.',
                                 type: 'success'
                             }));
+                            console.log("[handleAction/change callback] Navigating to /pricing...");
                             navigate('/pricing', { replace: true });
                         } else {
+                            console.error("[handleAction/change callback] Failed to change subscription");
                             throw new Error('Failed to change subscription');
                         }
                     } catch (error) {
+                        console.error("[handleAction/change callback] Error:", error);
                         showToast('An error occurred while changing the subscription.', 'error');
                     }
                 };
                 break;
 
             default:
+                console.log("[handleAction] Default action - will purchase plan.");
                 callback = () => handlePurchase(plan);
         }
 
+        console.log("[handleAction] Setting confirmAction state and showing modal...");
         setConfirmAction({ type: action, plan: plan.title, callback });
         setShowConfirmModal(true);
     };
@@ -266,6 +312,7 @@ const Pricing = () => {
         return null;
     };
 
+    console.log("[Pricing.js] Ready to render JSX...");
     return (
         <section id="pricing" className="pricing section">
             <div className="container section-title" data-aos="fade-up">
@@ -276,6 +323,7 @@ const Pricing = () => {
 
             {toast && (
                 <div className={`toast-container show`}>
+                    {console.log("[Pricing.js] Rendering toast:", toast)}
                     <div className={`toast toast-${toast.type}`}>{toast.message}</div>
                 </div>
             )}
@@ -321,6 +369,7 @@ const Pricing = () => {
                     <button
                         className="btn btn-primary"
                         onClick={() => {
+                            console.log("[Modal Confirm] User confirmed action:", confirmAction.type, "on plan:", confirmAction.plan);
                             confirmAction.callback();
                             setShowConfirmModal(false);
                         }}
