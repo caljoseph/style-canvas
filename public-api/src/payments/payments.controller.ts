@@ -76,7 +76,6 @@ export class PaymentsController {
         return { message: 'Subscription cancelled successfully' };
     }
 
-
     @Post('webhook')
     @HttpCode(200)
     async handleWebhook(
@@ -84,14 +83,30 @@ export class PaymentsController {
         @Req() req: any
     ): Promise<string> {
         try {
+            // Debug logs
+            console.log('Request body:', req.body);
+            console.log('Is readable:', req.readable);
+            console.log('Request keys:', Object.keys(req));
+
             // Convert ReadableStream to Buffer
             const chunks: Buffer[] = [];
             if (req.readable) {
+                console.log('Reading stream...');
                 for await (const chunk of req) {
+                    console.log('Got chunk:', chunk);
                     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
                 }
+            } else {
+                console.log('Not readable, using body directly');
+                // If not readable, try to use body directly
+                const body = req.body;
+                if (body) {
+                    chunks.push(Buffer.from(typeof body === 'string' ? body : JSON.stringify(body)));
+                }
             }
+
             const rawBody = Buffer.concat(chunks);
+            console.log('Final raw body:', rawBody.toString());
 
             await this.paymentsService.handleWebhook(signature, rawBody);
             return 'Webhook processed successfully';
