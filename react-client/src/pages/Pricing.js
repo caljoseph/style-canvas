@@ -12,7 +12,8 @@ const Pricing = () => {
     const navigate = useNavigate();
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ type: '', plan: '', callback: null });
-    const [subscriptionType, setSubscriptionType] = useState(null);
+    // Use the user's subscriptionType if available, else "none"
+    const subscriptionType = user?.subscriptionType || "none";
     const [toast, setToast] = useState(null);
 
     const plans = [
@@ -53,7 +54,6 @@ const Pricing = () => {
         },
     ];
 
-    // Check localStorage whenever the location changes
     useEffect(() => {
         console.log("[useEffect - location] Checking localStorage for justPurchased on each navigation...");
         const justPurchased = localStorage.getItem('justPurchased');
@@ -268,12 +268,13 @@ const Pricing = () => {
         if (!user) {
             // Redirect to login when not logged in
             return (
-                <button className="buy-btn" onClick={() => navigate('/register')}>
+                <button className="buy-btn" onClick={() => navigate('/login')}>
                     Log in to Purchase
                 </button>
             );
         }
 
+        // If this plan is the user's current subscription plan
         if (isCurrentPlan) {
             return (
                 <button
@@ -285,6 +286,7 @@ const Pricing = () => {
             );
         }
 
+        // If this is a subscription plan but not the current one
         if (isSubscription) {
             return (
                 <button
@@ -296,6 +298,7 @@ const Pricing = () => {
             );
         }
 
+        // Otherwise, it's a one-time purchase
         return (
             <button
                 className="buy-btn"
