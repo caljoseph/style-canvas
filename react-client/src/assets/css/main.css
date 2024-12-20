@@ -2245,71 +2245,64 @@ section,
 }
 
 /*--------------------------------------------------------------
-# Check out page styles
+# Toast Styles
 --------------------------------------------------------------*/
 
-/* Add any checkout page styles here if needed */
-
-/* Toast Styles */
-.my-toast-container {
+.toast-container {
   position: fixed;
   top: 20px;
-  right: 20px;
-  z-index: 999999;
-  background: red;
-  padding: 20px;
-  color: #fff;
-  border-radius: 8px;
-  font-size: 16px;
-  font-family: Arial, sans-serif;
+  right: -500px; /* off-screen initially */
+  transition: right 0.5s ease-out;
+  z-index: 1055;
 }
 
-/* Keeping original toast styles here if you need them in the future,
-   but we won't use .toast-container in Pricing.js now. */
+.toast-container.show {
+  right: 20px;
+}
+
 .toast {
-  background-color: var(--accent-color, #0d6efd);
-  color: var(--background-color, #fff);
+  background-color: var(--accent-color, #3498db);
+  color: var(--contrast-color, #fff);
   font-family: var(--default-font, Arial, sans-serif);
   font-size: 16px;
   padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Semi-transparent border */
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 8px;
   box-shadow: 0px 0 12px rgba(0, 0, 0, 0.1);
   width: 400px;
   position: relative;
   overflow: hidden;
-}
-
-.toast-container {
-  position: fixed;
-  top: 20px;
-  right: -500px; /* Start off-screen */
-  transition: right 0.5s ease-out;
-  z-index: 1055; /* Ensure it's above other elements */
-}
-
-.toast-container.show {
-  right: 20px; /* Slide into view */
-}
-
-.toast.fade-out {
-  opacity: 0;
-  transition: opacity 0.5s ease-in;
+  display: flex;
+  align-items: center;
 }
 
 .toast .toast-body {
+  flex-grow: 1;
   font-size: 16px;
+  margin-right: 40px; /* space for the close button */
 }
 
 .toast .btn-close {
   position: absolute;
   top: 10px;
   right: 10px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
   opacity: 0.7;
+  padding: 0;
 }
 
 .toast .btn-close:hover {
   opacity: 1;
+}
+
+.toast.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
 }
 
 @media (max-width: 576px) {

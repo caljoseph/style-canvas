@@ -266,7 +266,12 @@ const Pricing = () => {
         const hasNoSubscription = subscriptionType === "none";
 
         if (!user) {
-            return <button className="buy-btn" disabled>Log in to Purchase</button>;
+            // Redirect to login when not logged in
+            return (
+                <button className="buy-btn" onClick={() => navigate('/login')}>
+                    Log in to Purchase
+                </button>
+            );
         }
 
         if (isCurrentPlan) {
@@ -322,9 +327,18 @@ const Pricing = () => {
             </div>
 
             {toast && (
-                <div className="my-toast-container">
+                <div className={`toast-container show`}>
                     {console.log("[Pricing.js] Rendering toast:", toast)}
-                    {toast.message}
+                    <div className="toast">
+                        <div className="toast-body">{toast.message}</div>
+                        <button
+                            className="btn-close"
+                            onClick={() => setToast(null)}
+                            aria-label="Close"
+                        >
+                            &times;
+                        </button>
+                    </div>
                 </div>
             )}
 
