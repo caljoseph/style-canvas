@@ -2247,45 +2247,38 @@ section,
 /*--------------------------------------------------------------
 # Toast Styles
 --------------------------------------------------------------*/
-
-.toast-container {
+.my-toast-container {
   position: fixed;
   top: 20px;
-  right: -500px; /* off-screen initially */
+  right: -500px; /* Start off-screen */
+  z-index: 999999;
   transition: right 0.5s ease-out;
-  z-index: 1055;
+  width: min(90%, 400px);
+  box-shadow: 0px 0 12px rgba(0, 0, 0, 0.1);
 }
 
-.toast-container.show {
+.my-toast-container.show {
   right: 20px;
 }
 
-.toast {
+.my-toast {
   background-color: var(--accent-color, #3498db);
-  color: var(--contrast-color, #fff);
+  color: var(--contrast-color, #ffffff);
   font-family: var(--default-font, Arial, sans-serif);
   font-size: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 16px 20px;
   border-radius: 8px;
-  box-shadow: 0px 0 12px rgba(0, 0, 0, 0.1);
-  width: 400px;
   position: relative;
-  overflow: hidden;
   display: flex;
   align-items: center;
 }
 
-.toast .toast-body {
-  flex-grow: 1;
-  font-size: 16px;
-  margin-right: 40px; /* space for the close button */
+.my-toast .my-toast-body {
+  flex: 1;
+  margin-right: 24px; /* space for close button */
 }
 
-.toast .btn-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+.my-toast .my-toast-close {
   background: none;
   border: none;
   color: #fff;
@@ -2293,26 +2286,17 @@ section,
   font-size: 18px;
   line-height: 1;
   opacity: 0.7;
-  padding: 0;
+  position: absolute;
+  top: 10px;
+  right: 10px;
 }
 
-.toast .btn-close:hover {
+.my-toast .my-toast-close:hover {
   opacity: 1;
 }
 
-.toast.fade-out {
-  opacity: 0;
-  transition: opacity 0.5s ease-in;
-}
-
 @media (max-width: 576px) {
-  .toast {
-    width: 90%;
-  }
-  .toast-container {
-    right: -100%;
-  }
-  .toast-container.show {
+  .my-toast-container.show {
     right: 5%;
   }
 }

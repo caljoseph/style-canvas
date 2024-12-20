@@ -268,7 +268,7 @@ const Pricing = () => {
         if (!user) {
             // Redirect to login when not logged in
             return (
-                <button className="buy-btn" onClick={() => navigate('/login')}>
+                <button className="buy-btn" onClick={() => navigate('/register')}>
                     Log in to Purchase
                 </button>
             );
@@ -327,12 +327,12 @@ const Pricing = () => {
             </div>
 
             {toast && (
-                <div className={`toast-container show`}>
+                <div className={`my-toast-container show`}>
                     {console.log("[Pricing.js] Rendering toast:", toast)}
-                    <div className="toast">
-                        <div className="toast-body">{toast.message}</div>
+                    <div className="my-toast">
+                        <div className="my-toast-body">{toast.message}</div>
                         <button
-                            className="btn-close"
+                            className="my-toast-close"
                             onClick={() => setToast(null)}
                             aria-label="Close"
                         >
