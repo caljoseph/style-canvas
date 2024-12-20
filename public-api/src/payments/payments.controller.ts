@@ -9,7 +9,7 @@ import {
     Query,
     Res,
     UsePipes,
-    ValidationPipe, UseGuards, Put, HttpStatus, Param
+    ValidationPipe, UseGuards, Put, HttpStatus, Param, RawBody
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PaymentsService } from './payments.service';
@@ -77,23 +77,23 @@ export class PaymentsController {
     }
 
 
-    // payments.controller.ts
     @Post('webhook')
     @HttpCode(200)
     async handleWebhook(
         @Headers('stripe-signature') signature: string,
-        @Req() req: Request & { rawBody?: Buffer }
+        @Req() req: any
     ): Promise<string> {
         try {
-            // Add logging to debug
-            console.log('Raw body exists:', !!req.rawBody);
-            console.log('Request body type:', typeof req.body);
-
-            if (!req.rawBody) {
-                throw new Error('No raw body found in request');
+            // Convert ReadableStream to Buffer
+            const chunks: Buffer[] = [];
+            if (req.readable) {
+                for await (const chunk of req) {
+                    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+                }
             }
+            const rawBody = Buffer.concat(chunks);
 
-            await this.paymentsService.handleWebhook(signature, req.rawBody);
+            await this.paymentsService.handleWebhook(signature, rawBody);
             return 'Webhook processed successfully';
         } catch (error) {
             console.error('Webhook processing error:', error);

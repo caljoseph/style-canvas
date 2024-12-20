@@ -17,16 +17,16 @@ async function bootstrap() {
 
 
 // Raw body parser for Stripe webhooks
-  app.use(
-      '/payments/webhook',
-      express.raw({ type: 'application/json' }),
-      (req: any, _, next) => {
-        if (req.body) {
-          req.rawBody = req.body;
-        }
-        next();
-      }
-  );
+  app.use('/payments/webhook', express.raw({ type: 'application/json' }));
+
+// Regular JSON parser for all other routes
+  app.use((req, res, next) => {
+    if (req.originalUrl === '/payments/webhook') {
+      next();
+    } else {
+      express.json()(req, res, next);
+    }
+  });
 
   await app.listen(3000);
 }
