@@ -3,6 +3,7 @@ import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Config from "../config";
+import './Pricing.css'; // Add CSS for toast styling
 
 const Pricing = () => {
     const { user } = useAuth();
@@ -11,7 +12,7 @@ const Pricing = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ type: '', plan: '', callback: null });
     const [subscriptionType, setSubscriptionType] = useState(null);
-    const [notification, setNotification] = useState(null);
+    const [toast, setToast] = useState(null);
 
     const plans = [
         {
@@ -62,9 +63,8 @@ const Pricing = () => {
         if (payment === 'success' && sessionId) {
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            setNotification('Payment cancelled.');
+            showToast('Payment cancelled.', 'info');
             setTimeout(() => {
-                setNotification(null);
                 navigate(location.pathname, { replace: true });
             }, 5000);
         }
@@ -81,22 +81,28 @@ const Pricing = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.type === 'subscription') {
-                    setNotification('Thank you for your purchase! Your subscription is now active.');
+                    showToast('Thank you for your purchase! Your subscription is now active.', 'success');
                 } else {
-                    setNotification('Thank you for your purchase! Credits have been added to your account.');
+                    showToast('Thank you for your purchase! Credits have been added to your account.', 'success');
                 }
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
-            setNotification('Could not verify payment. Please contact support if credits are missing.');
+            showToast('Could not verify payment. Please contact support if credits are missing.', 'error');
             console.error('Verification error:', error);
         } finally {
             setTimeout(() => {
-                setNotification(null);
                 navigate(location.pathname, { replace: true });
             }, 5000);
         }
+    };
+
+    const showToast = (message, type) => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 5000);
     };
 
     const handlePurchase = async (plan) => {
@@ -121,7 +127,7 @@ const Pricing = () => {
             const data = await response.json();
             window.location.href = data.sessionUrl;
         } catch (error) {
-            setNotification('An error occurred while processing your request.');
+            showToast('An error occurred while processing your request.', 'error');
             console.error(error);
         }
     };
@@ -142,16 +148,15 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            setNotification('Subscription cancelled successfully.');
+                            showToast('Subscription cancelled successfully.', 'success');
                             setTimeout(() => {
-                                setNotification(null);
                                 navigate(location.pathname, { replace: true });
                             }, 5000);
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
                     } catch (error) {
-                        setNotification('An error occurred while cancelling the subscription.');
+                        showToast('An error occurred while cancelling the subscription.', 'error');
                     }
                 };
                 break;
@@ -169,16 +174,15 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            setNotification('Subscription updated successfully.');
+                            showToast('Subscription updated successfully.', 'success');
                             setTimeout(() => {
-                                setNotification(null);
                                 navigate(location.pathname, { replace: true });
                             }, 5000);
                         } else {
                             throw new Error('Failed to change subscription');
                         }
                     } catch (error) {
-                        setNotification('An error occurred while changing the subscription.');
+                        showToast('An error occurred while changing the subscription.', 'error');
                     }
                 };
                 break;
@@ -251,10 +255,8 @@ const Pricing = () => {
                 {user && <p>Choose the package that suits you best:</p>}
             </div>
 
-            {notification && (
-                <div className="notification-bar">
-                    {notification}
-                </div>
+            {toast && (
+                <div className={`toast toast-${toast.type} slide-in`}>{toast.message}</div>
             )}
 
             <div className="container">
