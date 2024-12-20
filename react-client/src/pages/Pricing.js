@@ -53,6 +53,7 @@ const Pricing = () => {
         },
     ];
 
+    // Check localStorage whenever the location changes to show toast
     useEffect(() => {
         console.log("[useEffect - location] Checking localStorage for justPurchased on each navigation...");
         const justPurchased = localStorage.getItem('justPurchased');
@@ -68,6 +69,7 @@ const Pricing = () => {
         }
     }, [location]);
 
+    // Check query params for payment verification
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const payment = params.get('payment');
@@ -80,16 +82,16 @@ const Pricing = () => {
             console.log("[useEffect - location change] Detected success payment with session_id. Verifying session...");
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            console.log("[useEffect - location change] Payment cancelled. Setting localStorage and redirecting...");
+            console.log("[useEffect - location change] Payment cancelled. Setting localStorage and reloading...");
             localStorage.setItem('justPurchased', JSON.stringify({
                 message: 'Payment cancelled.',
                 type: 'info'
             }));
-            navigate('/pricing', { replace: true });
+            window.location.href = '/pricing'; // Full reload
         } else {
             console.log("[useEffect - location change] No payment success or cancelled detected.");
         }
-    }, [location, navigate]);
+    }, [location]);
 
     const verifyPaymentSession = async (sessionId) => {
         console.log("[verifyPaymentSession] Verifying session:", sessionId);
@@ -116,19 +118,19 @@ const Pricing = () => {
                     message: message,
                     type: 'success'
                 }));
-                console.log("[verifyPaymentSession] Navigating to /pricing with replace: true");
-                navigate('/pricing', { replace: true });
+                console.log("[verifyPaymentSession] Reloading page...");
+                window.location.href = '/pricing';
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
             console.error("[verifyPaymentSession] Error verifying payment:", error);
-            console.log("[verifyPaymentSession] Setting error in justPurchased and navigating...");
+            console.log("[verifyPaymentSession] Setting error in justPurchased and reloading...");
             localStorage.setItem('justPurchased', JSON.stringify({
                 message: 'Could not verify payment. Please contact support if credits are missing.',
                 type: 'error'
             }));
-            navigate('/pricing', { replace: true });
+            window.location.href = '/pricing';
         }
     };
 
@@ -197,13 +199,13 @@ const Pricing = () => {
 
                         console.log("[handleAction/cancel callback] Response status:", response.status);
                         if (response.ok) {
-                            console.log("[handleAction/cancel callback] Subscription cancelled successfully. Setting justPurchased...");
+                            console.log("[handleAction/cancel callback] Subscription cancelled successfully...");
                             localStorage.setItem('justPurchased', JSON.stringify({
                                 message: 'Subscription cancelled successfully. You will no longer be billed.',
                                 type: 'success'
                             }));
-                            console.log("[handleAction/cancel callback] Navigating to /pricing...");
-                            navigate('/pricing', { replace: true });
+                            console.log("[handleAction/cancel callback] Reloading page...");
+                            window.location.href = '/pricing'; // Full reload
                         } else {
                             console.error("[handleAction/cancel callback] Failed to cancel subscription");
                             throw new Error('Failed to cancel subscription');
@@ -216,37 +218,43 @@ const Pricing = () => {
                 break;
 
             case 'change':
-                console.log("[handleAction] Preparing to change subscription...");
-                callback = async () => {
-                    console.log("[handleAction/change callback] Attempting to update subscription...");
-                    try {
-                        const response = await fetch(Config.apiUrl + '/payments/update-subscription', {
-                            method: 'PUT',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                            },
-                            body: JSON.stringify({ lookup_key: plan.lookupKey }),
-                        });
+                // If user has no subscription, "change" means "add" a new subscription.
+                if (subscriptionType === 'none') {
+                    console.log("[handleAction/change] User has no subscription, treating as new subscription purchase...");
+                    callback = () => handlePurchase(plan);
+                } else {
+                    console.log("[handleAction/change] User has a subscription, updating it...");
+                    callback = async () => {
+                        console.log("[handleAction/change callback] Attempting to update subscription...");
+                        try {
+                            const response = await fetch(Config.apiUrl + '/payments/update-subscription', {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                                },
+                                body: JSON.stringify({ lookup_key: plan.lookupKey }),
+                            });
 
-                        console.log("[handleAction/change callback] Response status:", response.status);
-                        if (response.ok) {
-                            console.log("[handleAction/change callback] Subscription updated successfully. Setting justPurchased...");
-                            localStorage.setItem('justPurchased', JSON.stringify({
-                                message: 'Subscription updated successfully. Changes will take effect on your next billing cycle.',
-                                type: 'success'
-                            }));
-                            console.log("[handleAction/change callback] Navigating to /pricing...");
-                            navigate('/pricing', { replace: true });
-                        } else {
-                            console.error("[handleAction/change callback] Failed to change subscription");
-                            throw new Error('Failed to change subscription');
+                            console.log("[handleAction/change callback] Response status:", response.status);
+                            if (response.ok) {
+                                console.log("[handleAction/change callback] Subscription updated successfully...");
+                                localStorage.setItem('justPurchased', JSON.stringify({
+                                    message: 'Subscription updated successfully. Changes will take effect on your next billing cycle.',
+                                    type: 'success'
+                                }));
+                                console.log("[handleAction/change callback] Reloading page...");
+                                window.location.href = '/pricing'; // Full reload
+                            } else {
+                                console.error("[handleAction/change callback] Failed to change subscription");
+                                throw new Error('Failed to change subscription');
+                            }
+                        } catch (error) {
+                            console.error("[handleAction/change callback] Error:", error);
+                            showToast('An error occurred while changing the subscription.', 'error');
                         }
-                    } catch (error) {
-                        console.error("[handleAction/change callback] Error:", error);
-                        showToast('An error occurred while changing the subscription.', 'error');
-                    }
-                };
+                    };
+                }
                 break;
 
             default:
@@ -379,7 +387,7 @@ const Pricing = () => {
                         ? `Are you sure you want to cancel your subscription for the ${confirmAction.plan}? You will no longer be billed.`
                         : (subscriptionType === "none"
                             ? `Are you sure you want to add the ${confirmAction.plan}?`
-                            : `Are you sure you want to change your subscription to the ${confirmAction.plan}? This will go into effect on your next billing cycle.`)}
+                            : `Are you sure you want to change your subscription to the ${confirmAction.plan}? Changes will take effect on your next billing cycle.`)}
                 </Modal.Body>
                 <Modal.Footer>
                     <button
