@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {Link, useNavigate} from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const ResetPassword = () => {
     const navigate = useNavigate();
+    const { resetPassword } = useAuth();
     const [formData, setFormData] = useState({
         code: '',
         newPassword: '',
@@ -56,27 +58,15 @@ const ResetPassword = () => {
         setError('');
 
         try {
-            const response = await fetch('/api/auth/confirm-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    code: formData.code,
-                    newPassword: formData.newPassword,
-                }),
-            });
+            const result = await resetPassword(email, formData.code, formData.newPassword);
 
-            const data = await response.json();
-
-            if (response.ok) {
+            if (result.success) {
                 sessionStorage.removeItem('resetEmail');
                 alert('Password reset successful! Please login with your new password.');
                 navigate('/registration');
             } else {
-                setError(data.message || 'Failed to reset password');
-            }
+                setError(result.message || 'Failed to reset password');
+                }
         } catch (err) {
             setError('An error occurred. Please try again later.');
         } finally {
