@@ -52,20 +52,32 @@ const Pricing = () => {
     ];
 
     useEffect(() => {
+        // Check if we have a toast message from location state
+        if (location.state && location.state.toastMessage && location.state.toastType) {
+            showToast(location.state.toastMessage, location.state.toastType);
+            // Clear out the state so it doesn't show again if user navigates away and back
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location, navigate]);
+
+    useEffect(() => {
+        // Check for URL parameters for payment verification
         const params = new URLSearchParams(location.search);
         const payment = params.get('payment');
         const sessionId = params.get('session_id');
 
-        console.log('Current URL:', window.location.href); // Debug log
-        console.log('Payment:', payment, 'Session ID:', sessionId); // Debug log
-
         if (payment === 'success' && sessionId) {
             verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            showToast('Payment cancelled.', 'info');
-            setTimeout(() => {
-                navigate(location.pathname, { replace: true });
-            }, 5000);
+            // Payment cancelled logic
+            // Instead of waiting on this page with params, navigate immediately with state
+            navigate('/pricing', {
+                replace: true,
+                state: {
+                    toastMessage: 'Payment cancelled.',
+                    toastType: 'info'
+                }
+            });
         }
     }, [location, navigate]);
 
@@ -79,21 +91,33 @@ const Pricing = () => {
 
             if (response.ok) {
                 const data = await response.json();
+                let message;
                 if (data.type === 'subscription') {
-                    showToast('Thank you for your purchase! Your subscription is now active.', 'success');
+                    message = 'Thank you for your purchase! Your subscription is now active.';
                 } else {
-                    showToast('Thank you for your purchase! Credits have been added to your account.', 'success');
+                    message = 'Thank you for your purchase! Credits have been added to your account.';
                 }
+
+                // Navigate immediately to /pricing with toast state
+                navigate('/pricing', {
+                    replace: true,
+                    state: {
+                        toastMessage: message,
+                        toastType: 'success'
+                    }
+                });
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
-            showToast('Could not verify payment. Please contact support if credits are missing.', 'error');
-            console.error('Verification error:', error);
-        } finally {
-            setTimeout(() => {
-                navigate(location.pathname, { replace: true });
-            }, 5000);
+            // If verification fails, navigate with error toast
+            navigate('/pricing', {
+                replace: true,
+                state: {
+                    toastMessage: 'Could not verify payment. Please contact support if credits are missing.',
+                    toastType: 'error'
+                }
+            });
         }
     };
 
@@ -147,10 +171,13 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            showToast('Subscription cancelled successfully.', 'success');
-                            setTimeout(() => {
-                                navigate(location.pathname, { replace: true });
-                            }, 5000);
+                            navigate('/pricing', {
+                                replace: true,
+                                state: {
+                                    toastMessage: 'Subscription cancelled successfully.',
+                                    toastType: 'success'
+                                }
+                            });
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
@@ -173,10 +200,13 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            showToast('Subscription updated successfully.', 'success');
-                            setTimeout(() => {
-                                navigate(location.pathname, { replace: true });
-                            }, 5000);
+                            navigate('/pricing', {
+                                replace: true,
+                                state: {
+                                    toastMessage: 'Subscription updated successfully.',
+                                    toastType: 'success'
+                                }
+                            });
                         } else {
                             throw new Error('Failed to change subscription');
                         }
