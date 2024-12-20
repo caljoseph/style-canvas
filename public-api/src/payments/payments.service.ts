@@ -103,12 +103,18 @@ export class PaymentsService {
     async handleWebhook(signature: string, payload: Buffer): Promise<void> {
         let event: Stripe.Event;
         try {
+            this.logger.log(`Received webhook with signature: ${signature}`);
+            this.logger.log(`Payload: ${payload.toString()}`);
+
             event = this.stripe.webhooks.constructEvent(
                 payload,
                 signature,
                 process.env.STRIPE_WEBHOOK_SECRET,
             );
+            this.logger.log('Successfully constructed event');
         } catch (err) {
+            this.logger.error(`Failed to construct event: ${err.message}`);
+            this.logger.error(`Webhook secret used: ${process.env.STRIPE_WEBHOOK_SECRET}`);
             throw new Error(`Webhook Error: ${err.message}`);
         }
 

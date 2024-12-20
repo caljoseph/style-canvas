@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { json } from 'express';
 import * as cors from 'cors'; // Import CORS if using advanced options
+import * as express from 'express';  // Add this import
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,16 +16,17 @@ async function bootstrap() {
   });
 
 
-
-
-  // Middleware for stripe webhooks
-  app.use('/payments/webhook', (req, res, next) => {
-    json({
-      verify: (req: any, _res, buffer) => {
-        req.rawBody = buffer;
+// Raw body parser for Stripe webhooks
+  app.use(
+      '/payments/webhook',
+      express.raw({ type: 'application/json' }),
+      (req: any, _, next) => {
+        if (req.body) {
+          req.rawBody = req.body;
+        }
+        next();
       }
-    })(req, res, next);
-  });
+  );
 
   await app.listen(3000);
 }

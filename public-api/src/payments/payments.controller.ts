@@ -77,6 +77,7 @@ export class PaymentsController {
     }
 
 
+    // payments.controller.ts
     @Post('webhook')
     @HttpCode(200)
     async handleWebhook(
@@ -84,6 +85,14 @@ export class PaymentsController {
         @Req() req: Request & { rawBody?: Buffer }
     ): Promise<string> {
         try {
+            // Add logging to debug
+            console.log('Raw body exists:', !!req.rawBody);
+            console.log('Request body type:', typeof req.body);
+
+            if (!req.rawBody) {
+                throw new Error('No raw body found in request');
+            }
+
             await this.paymentsService.handleWebhook(signature, req.rawBody);
             return 'Webhook processed successfully';
         } catch (error) {
