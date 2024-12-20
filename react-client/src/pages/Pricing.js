@@ -54,20 +54,21 @@ const Pricing = () => {
         },
     ];
 
+    // Check localStorage whenever the location changes
     useEffect(() => {
-        console.log("[useEffect] Checking localStorage for justPurchased...");
+        console.log("[useEffect - location] Checking localStorage for justPurchased on each navigation...");
         const justPurchased = localStorage.getItem('justPurchased');
-        console.log("[useEffect] justPurchased in localStorage:", justPurchased);
+        console.log("[useEffect - location] justPurchased in localStorage:", justPurchased);
         if (justPurchased) {
             const parsed = JSON.parse(justPurchased);
-            console.log("[useEffect] Found justPurchased:", parsed);
+            console.log("[useEffect - location] Found justPurchased:", parsed);
             showToast(parsed.message, parsed.type);
-            console.log("[useEffect] Removing justPurchased from localStorage...");
+            console.log("[useEffect - location] Removing justPurchased from localStorage...");
             localStorage.removeItem('justPurchased');
         } else {
-            console.log("[useEffect] No justPurchased found in localStorage.");
+            console.log("[useEffect - location] No justPurchased found in localStorage.");
         }
-    }, []);
+    }, [location]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
