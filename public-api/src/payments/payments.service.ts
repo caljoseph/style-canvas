@@ -16,13 +16,12 @@ export class PaymentsService {
 
     constructor(
         private config: StripeConfigService,
-        private configService: ConfigService,
         private tokensService: TokensService,
         private userRepository: UserRepository,
         ) {
         this.stripe = config.getStripeClient();
         this.prices = this.stripe.prices.list( )
-        this.appUrl = this.configService.get<string>('APP_URL');
+        this.appUrl = process.env.APP_URL;
     }
 
     async getPrices(){
