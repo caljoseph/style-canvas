@@ -5,7 +5,6 @@ import { toast } from 'react-toastify';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Config from "../config";
 
-
 const Pricing = () => {
     const { user } = useAuth();
     const location = useLocation();
@@ -19,15 +18,22 @@ const Pricing = () => {
         const payment = params.get('payment');
         const sessionId = params.get('session_id');
 
+        console.log('Current URL:', window.location.href); // Debug log
+        console.log('Payment:', payment, 'Session ID:', sessionId); // Debug log
+
         if (payment === 'success' && sessionId) {
-            // Verify the session
+            toast.success('Payment successful! Verifying...');
             verifyPaymentSession(sessionId);
-            // Remove query params
-            navigate(location.pathname, { replace: true });
         } else if (payment === 'cancelled') {
-            toast.info('Payment cancelled');
-            navigate(location.pathname, { replace: true });
+            toast.info('Payment cancelled.');
         }
+
+        // Delay clearing query parameters to allow toasts to show
+        const timer = setTimeout(() => {
+            navigate(location.pathname, { replace: true });
+        }, 3000);
+
+        return () => clearTimeout(timer);
     }, [location, navigate]);
 
     const verifyPaymentSession = async (sessionId) => {
@@ -45,60 +51,15 @@ const Pricing = () => {
                 } else {
                     toast.success('Payment successful! Credits have been added to your account.');
                 }
-                // Refresh user data to get updated credit count/subscription status
                 window.location.reload();
             } else {
-                throw new Error('Payment verification failed');
+                throw new Error('Payment verification failed.');
             }
         } catch (error) {
             toast.error('Could not verify payment. Please contact support if credits are missing.');
+            console.error('Verification error:', error);
         }
     };
-
-
-    const plans = [
-        {
-            title: "Standard Plan",
-            credits: "70 credits per month",
-            price: "$20/month ($0.29 per credit)",
-            type: "subscription",
-            lookupKey: "standard_monthly",
-        },
-        {
-            title: "Pro Plan",
-            credits: "150 credits per month",
-            price: "$35/month ($0.23 per credit)",
-            type: "subscription",
-            lookupKey: "pro_monthly",
-        },
-        {
-            title: "Premium Plan",
-            credits: "200 credits per month",
-            price: "$50/month ($0.25 per credit)",
-            type: "subscription",
-            lookupKey: "premium_monthly",
-        },
-        {
-            title: "Pay-As-You-Go (Single Credit)",
-            credits: "1 credit",
-            price: "$1.99 USD per credit",
-            type: "one_time",
-            lookupKey: "single_token",
-        },
-        {
-            title: "Pay-As-You-Go (10 Credits)",
-            credits: "10 credits",
-            price: "$14.99 USD ($1.49 per credit)",
-            type: "one_time",
-            lookupKey: "ten_tokens",
-        },
-    ];
-
-    useEffect(() => {
-        if (user) {
-            setSubscriptionType(user.subscriptionType || "none");
-        }
-    }, [user]);
 
     const handlePurchase = async (plan) => {
         const endpoint = plan.type === 'subscription'
@@ -123,6 +84,7 @@ const Pricing = () => {
             window.location.href = data.sessionUrl;
         } catch (error) {
             toast.error('An error occurred while processing your request.');
+            console.error(error);
         }
     };
 
