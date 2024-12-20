@@ -9,7 +9,7 @@ import {
     Query,
     Res,
     UsePipes,
-    ValidationPipe, UseGuards, Put, HttpStatus
+    ValidationPipe, UseGuards, Put, HttpStatus, Param
 } from '@nestjs/common';
 import { Response } from 'express';
 import { PaymentsService } from './payments.service';
@@ -106,5 +106,17 @@ export class PaymentsController {
             console.error('Error retrieving session:', error);
             res.status(400).send('Unable to verify payment status. Please contact support.');
         }
+    }
+
+    // payments.controller.ts
+    @Get('verify-session/:sessionId')
+    @UseGuards(AuthGuard('jwt'))
+    async verifySession(
+        @Param('sessionId') sessionId: string,
+    ): Promise<{ type: 'one-time' | 'subscription' }> {
+        const session = await this.paymentsService.getSessionDetails(sessionId);
+        return {
+            type: session.mode === 'subscription' ? 'subscription' : 'one-time'
+        };
     }
 }

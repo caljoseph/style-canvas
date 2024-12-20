@@ -19,7 +19,7 @@ export class ImageService {
     private readonly completedDir = path.join(__dirname, '../completed_images');
     private readonly ML_PORT = 3000;
     private readonly CLEAN_QUEUE_INTERVAL = 60 * 60 * 1000; // 1 hour
-    private readonly SERVER_START_TIMEOUT = 300000; // 5 minutes
+    private readonly SERVER_START_TIMEOUT = 600000; // 10 minutes
     private readonly SERVER_START_RETRY_INTERVAL = 5000; // 5 seconds
     private isProcessing = false;
 
@@ -168,39 +168,87 @@ export class ImageService {
     private async ensureServerRunning(requestHash: string): Promise<void> {
         const startTime = Date.now();
         let lastStatus = '';
+        let attemptCount = 0;
+
+        this.logger.log(`[ServerStatus] Request ${requestHash}: Beginning server startup sequence`);
 
         while (Date.now() - startTime < this.SERVER_START_TIMEOUT) {
+            attemptCount++;
             try {
                 const status = await this.mlServerService.getServerStatus();
 
                 if (status !== lastStatus) {
-                    this.logger.log(`[ServerStatus] Request ${requestHash}: Server status changed to ${status}`);
+                    this.logger.log(
+                        `[ServerStatus] Request ${requestHash}: ` +
+                        `Server status changed from ${lastStatus || 'unknown'} to ${status} ` +
+                        `(attempt ${attemptCount}, elapsed ${Math.round((Date.now() - startTime)/1000)}s)`
+                    );
                     lastStatus = status;
                 }
 
-                if (status === 'RUNNING') {
-                    this.mlServerService.updateLastActivity();
-                    return;
+                switch (status) {
+                    case 'RUNNING':
+                        this.logger.log(
+                            `[ServerStatus] Request ${requestHash}: ` +
+                            `Server is running after ${Math.round((Date.now() - startTime)/1000)}s`
+                        );
+                        this.mlServerService.updateLastActivity();
+                        return;
+
+                    case 'STOPPED':
+                        this.logger.log(
+                            `[ServerStatus] Request ${requestHash}: ` +
+                            `Initiating server startup (attempt ${attemptCount})`
+                        );
+                        await this.mlServerService.startServer();
+                        break;
+
+                    case 'STOPPING':
+                        this.logger.log(
+                            `[ServerStatus] Request ${requestHash}: ` +
+                            `Waiting for server to finish stopping (${Math.round((Date.now() - startTime)/1000)}s elapsed)`
+                        );
+                        break;
+
+                    case 'STARTING':
+                        this.logger.log(
+                            `[ServerStatus] Request ${requestHash}: ` +
+                            `Waiting for server startup to complete (${Math.round((Date.now() - startTime)/1000)}s elapsed)`
+                        );
+                        break;
                 }
 
-                if (status === 'STOPPED') {
-                    this.logger.log(`[ServerStatus] Request ${requestHash}: Starting stopped server`);
-                    await this.mlServerService.startServer();
-                    continue;
-                }
-
-                // For STARTING or STOPPING states, wait and check again
+                // For any non-RUNNING state, wait before checking again
                 await new Promise(resolve => setTimeout(resolve, this.SERVER_START_RETRY_INTERVAL));
 
             } catch (error) {
-                this.logger.error(`[ServerStatus] Request ${requestHash}: Error checking server status`, error);
-                throw new MLServerOfflineException();
+                this.logger.error(
+                    `[ServerStatus] Request ${requestHash}: ` +
+                    `Error during startup attempt ${attemptCount}: ${error.message}`
+                );
+
+                if (Date.now() - startTime >= this.SERVER_START_TIMEOUT) {
+                    throw new MLServerOfflineException(
+                        `Server failed to start after ${Math.round((Date.now() - startTime)/1000)}s ` +
+                        `and ${attemptCount} attempts`
+                    );
+                }
+
+                await new Promise(resolve => setTimeout(resolve, this.SERVER_START_RETRY_INTERVAL));
             }
         }
 
-        throw new MLServerOfflineException('Server failed to start within timeout period');
-    }
+        const timeoutSeconds = Math.round((Date.now() - startTime)/1000);
+        this.logger.error(
+            `[ServerStatus] Request ${requestHash}: ` +
+            `Server startup timed out after ${timeoutSeconds}s and ${attemptCount} attempts. ` +
+            `Final status: ${lastStatus}`
+        );
 
+        throw new MLServerOfflineException(
+            `Server failed to start within timeout period (${timeoutSeconds}s, ${attemptCount} attempts)`
+        );
+    }
     async getRequestStatus(requestHash: string, userID: string) {
         return this.queueService.getRequestStatus(requestHash, userID);
     }

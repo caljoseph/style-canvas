@@ -4,20 +4,25 @@ import {StripeConfigService} from "../config/stripe-config.service";
 import * as process from "node:process";
 import {TokensService} from "../tokens/tokens.service";
 import {UserRepository} from "../users/user.repository";
+import { ConfigService } from '@nestjs/config';
+
 
 @Injectable()
 export class PaymentsService {
     private stripe: Stripe;
     private readonly prices: Stripe.ApiListPromise<Stripe.Price>;
     private readonly logger = new Logger(PaymentsService.name);
+    private readonly appUrl: string;
 
     constructor(
         private config: StripeConfigService,
+        private configService: ConfigService,
         private tokensService: TokensService,
         private userRepository: UserRepository,
         ) {
         this.stripe = config.getStripeClient();
         this.prices = this.stripe.prices.list( )
+        this.appUrl = this.configService.get<string>('APP_URL');
     }
 
     async getPrices(){
@@ -40,8 +45,8 @@ export class PaymentsService {
                 },
             ],
             mode: 'payment',
-            success_url: `${process.env.DEV_APP_URL}/index.html?payment=success`,
-            cancel_url: `${process.env.DEV_APP_URL}/index.html?payment=cancelled`,
+            success_url: `${this.appUrl}/pricing?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${this.appUrl}/pricing?payment=cancelled`,
             client_reference_id: userId,
             // TODO: figure out stripe tax
             automatic_tax: {
@@ -78,8 +83,8 @@ export class PaymentsService {
                 },
             ],
             mode: 'subscription',
-            success_url: `${process.env.DEV_APP_URL}/index.html?payment=success`,
-            cancel_url: `${process.env.DEV_APP_URL}/index.html?payment=cancelled`,
+            success_url: `${this.appUrl}/pricing?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${this.appUrl}/pricing?payment=cancelled`,
             subscription_data: {
                 metadata: {
                     userId: userId

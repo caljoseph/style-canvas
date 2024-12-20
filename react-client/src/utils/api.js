@@ -28,7 +28,7 @@ export const refreshAccessToken = async () => {
     if (!refreshToken) return null;
 
     try {
-        const response = await fetch('/auth/refresh-token', {
+        const response = await fetch(`${Config.apiUrl}/auth/refresh-token`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

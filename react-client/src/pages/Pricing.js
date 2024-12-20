@@ -1,13 +1,60 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-toastify';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Config from "../config";
+
 
 const Pricing = () => {
     const { user } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [confirmAction, setConfirmAction] = useState({ type: '', plan: '', callback: null });
     const [subscriptionType, setSubscriptionType] = useState(null);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const payment = params.get('payment');
+        const sessionId = params.get('session_id');
+
+        if (payment === 'success' && sessionId) {
+            // Verify the session
+            verifyPaymentSession(sessionId);
+            // Remove query params
+            navigate(location.pathname, { replace: true });
+        } else if (payment === 'cancelled') {
+            toast.info('Payment cancelled');
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location, navigate]);
+
+    const verifyPaymentSession = async (sessionId) => {
+        try {
+            const response = await fetch(`${Config.apiUrl}/payments/verify-session/${sessionId}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.type === 'subscription') {
+                    toast.success('Subscription activated successfully!');
+                } else {
+                    toast.success('Payment successful! Credits have been added to your account.');
+                }
+                // Refresh user data to get updated credit count/subscription status
+                window.location.reload();
+            } else {
+                throw new Error('Payment verification failed');
+            }
+        } catch (error) {
+            toast.error('Could not verify payment. Please contact support if credits are missing.');
+        }
+    };
+
 
     const plans = [
         {
@@ -75,7 +122,7 @@ const Pricing = () => {
             const data = await response.json();
             window.location.href = data.sessionUrl;
         } catch (error) {
-            alert('An error occurred while processing your request.');
+            toast.error('An error occurred while processing your request.');
         }
     };
 
@@ -95,13 +142,13 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            alert('Subscription cancelled successfully.');
+                            toast.success('Subscription cancelled successfully.');
                             window.location.reload();
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
                     } catch (error) {
-                        alert('An error occurred while cancelling the subscription.');
+                        toast.error('An error occurred while cancelling the subscription.');
                     }
                 };
                 break;
@@ -119,13 +166,13 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            alert('Subscription updated successfully.');
+                            toast.success('Subscription updated successfully.');
                             window.location.reload();
                         } else {
                             throw new Error('Failed to change subscription');
                         }
                     } catch (error) {
-                        alert('An error occurred while changing the subscription.');
+                        toast.error('An error occurred while changing the subscription.');
                     }
                 };
                 break;

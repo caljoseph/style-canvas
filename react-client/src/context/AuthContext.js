@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
 
     const forgotPassword = async (email) => {
         try {
-            const response = await fetch('/auth/forgot-password', {
+            const response = await fetch(`${Config.apiUrl}/auth/forgot-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }) => {
 
     const resetPassword = async (email, code, newPassword) => {
         try {
-            const response = await fetch('/auth/confirm-password', {
+            const response = await fetch(`${Config.apiUrl}/auth/confirm-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
