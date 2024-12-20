@@ -60,13 +60,9 @@ const Pricing = () => {
         console.log('Payment:', payment, 'Session ID:', sessionId); // Debug log
 
         if (payment === 'success' && sessionId) {
-            toast.success('Payment successful! Verifying...');
-            verifyPaymentSession(sessionId).finally(() => {
-                // Clear the query parameters AFTER verification completes
-                navigate(location.pathname, { replace: true });
-            });
+            verifyPaymentSession(sessionId);
         } else if (payment === 'cancelled') {
-            toast.info('Payment cancelled.');
+            toast.info('Payment cancelled.', { autoClose: 5000 });
             const timer = setTimeout(() => {
                 navigate(location.pathname, { replace: true });
             }, 3000);
@@ -86,16 +82,21 @@ const Pricing = () => {
             if (response.ok) {
                 const data = await response.json();
                 if (data.type === 'subscription') {
-                    toast.success('Subscription activated successfully!');
+                    toast.success('Thank you for your purchase! Your subscription is now active.', { autoClose: 5000 });
                 } else {
-                    toast.success('Payment successful! Credits have been added to your account.');
+                    toast.success('Thank you for your purchase! Credits have been added to your account.', { autoClose: 5000 });
                 }
             } else {
                 throw new Error('Payment verification failed.');
             }
         } catch (error) {
-            toast.error('Could not verify payment. Please contact support if credits are missing.');
+            toast.error('Could not verify payment. Please contact support if credits are missing.', { autoClose: 5000 });
             console.error('Verification error:', error);
+        } finally {
+            // Clear the URL after the toast displays
+            setTimeout(() => {
+                navigate(location.pathname, { replace: true });
+            }, 5000);
         }
     };
 
@@ -121,7 +122,7 @@ const Pricing = () => {
             const data = await response.json();
             window.location.href = data.sessionUrl;
         } catch (error) {
-            toast.error('An error occurred while processing your request.');
+            toast.error('An error occurred while processing your request.', { autoClose: 5000 });
             console.error(error);
         }
     };
@@ -142,13 +143,13 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            toast.success('Subscription cancelled successfully.');
+                            toast.success('Subscription cancelled successfully.', { autoClose: 5000 });
                             navigate(location.pathname, { replace: true });
                         } else {
                             throw new Error('Failed to cancel subscription');
                         }
                     } catch (error) {
-                        toast.error('An error occurred while cancelling the subscription.');
+                        toast.error('An error occurred while cancelling the subscription.', { autoClose: 5000 });
                     }
                 };
                 break;
@@ -166,13 +167,13 @@ const Pricing = () => {
                         });
 
                         if (response.ok) {
-                            toast.success('Subscription updated successfully.');
+                            toast.success('Subscription updated successfully.', { autoClose: 5000 });
                             navigate(location.pathname, { replace: true });
                         } else {
                             throw new Error('Failed to change subscription');
                         }
                     } catch (error) {
-                        toast.error('An error occurred while changing the subscription.');
+                        toast.error('An error occurred while changing the subscription.', { autoClose: 5000 });
                     }
                 };
                 break;
