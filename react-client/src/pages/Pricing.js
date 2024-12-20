@@ -13,6 +13,44 @@ const Pricing = () => {
     const [confirmAction, setConfirmAction] = useState({ type: '', plan: '', callback: null });
     const [subscriptionType, setSubscriptionType] = useState(null);
 
+    const plans = [
+        {
+            title: "Standard Plan",
+            credits: "70 credits per month",
+            price: "$20/month ($0.29 per credit)",
+            type: "subscription",
+            lookupKey: "standard_monthly",
+        },
+        {
+            title: "Pro Plan",
+            credits: "150 credits per month",
+            price: "$35/month ($0.23 per credit)",
+            type: "subscription",
+            lookupKey: "pro_monthly",
+        },
+        {
+            title: "Premium Plan",
+            credits: "200 credits per month",
+            price: "$50/month ($0.25 per credit)",
+            type: "subscription",
+            lookupKey: "premium_monthly",
+        },
+        {
+            title: "Pay-As-You-Go (Single Credit)",
+            credits: "1 credit",
+            price: "$1.99 USD per credit",
+            type: "one_time",
+            lookupKey: "single_token",
+        },
+        {
+            title: "Pay-As-You-Go (10 Credits)",
+            credits: "10 credits",
+            price: "$14.99 USD ($1.49 per credit)",
+            type: "one_time",
+            lookupKey: "ten_tokens",
+        },
+    ];
+
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const payment = params.get('payment');
