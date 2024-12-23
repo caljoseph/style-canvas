@@ -17,15 +17,22 @@ const ModelTest = React.lazy(() => import('./pages/ModelTest'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 
-// Loading component
+
 const LoadingSpinner = () => (
     <div style={{
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh'
+        height: '100vh',
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 9999
     }}>
-        <div>Loading...</div>
+        <div id="preloader"></div>
     </div>
 );
 
