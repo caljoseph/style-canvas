@@ -2309,7 +2309,7 @@ section,
 --------------------------------------------------------------*/
 .my-toast-container {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: -500px; /* Start off-screen */
   z-index: 999999;
   transition: right 0.5s ease-out;

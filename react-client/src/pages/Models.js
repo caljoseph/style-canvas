@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import ReactCrop from 'react-image-crop';
 import { useAuth } from '../context/AuthContext';
-import Config from '../config';
+import Config from '../api/config';
 import 'react-image-crop/dist/ReactCrop.css';
 import { useNavigate } from 'react-router-dom';
+import { imageService } from '../api/services';
+
 
 const Models = () => {
     const [selectedModel, setSelectedModel] = useState('');
@@ -327,22 +329,8 @@ const Models = () => {
 
     const fetchProcessedImage = async (requestHash) => {
         try {
-            const response = await fetch(`${Config.apiUrl}/image/retrieve/${requestHash}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to retrieve processed image: ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            if (!blob.type.startsWith('image/')) {
-                throw new Error('Received invalid image data');
-            }
-
-            const imageUrl = URL.createObjectURL(blob);
+            const imageBlob = await imageService.retrieveImage(requestHash);
+            const imageUrl = URL.createObjectURL(imageBlob);
 
             const img = new Image();
             img.src = imageUrl;
@@ -382,22 +370,10 @@ const Models = () => {
             }));
         }
     };
-
     const pollStatus = async (requestHash) => {
         console.log('Polling status for hash:', requestHash);
         try {
-            const response = await fetch(`${Config.apiUrl}/image/status/${requestHash}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to check status');
-            }
-
-            const data = await response.json();
-            console.log('Poll status response:', data);
+            const data = await imageService.checkStatus(requestHash);
 
             if (data.status === 'completed') {
                 console.log('Processing completed, fetching image');
@@ -448,25 +424,8 @@ const Models = () => {
             const blob = await response.blob();
             console.log('Blob created from cropped image:', blob.type, blob.size);
 
-            const formData = new FormData();
-            formData.append('image', blob, 'image.png');
-            formData.append('modelName', selectedModel);
-
             console.log('Sending generate request for model:', selectedModel);
-            const generateResponse = await fetch(`${Config.apiUrl}/image/generate`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                },
-                body: formData
-            });
-
-            if (!generateResponse.ok) {
-                const errorData = await generateResponse.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to start image processing');
-            }
-
-            const data = await generateResponse.json();
+            const data = await imageService.generateImage(blob, selectedModel);
             console.log('Generate response:', data);
 
             setProcessingState(prev => ({
@@ -496,7 +455,6 @@ const Models = () => {
             }));
         }
     };
-
     useEffect(() => {
         console.log('Processing state changed:', processingState);
     }, [processingState]);
@@ -521,24 +479,7 @@ const Models = () => {
             const response = await fetch(processingState.resultImage);
             const blob = await response.blob();
 
-            const formData = new FormData();
-            formData.append('image', blob, 'image.png');
-            formData.append('modelName', 'Upsample');
-
-            const generateResponse = await fetch(`${Config.apiUrl}/image/generate`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                },
-                body: formData
-            });
-
-            if (!generateResponse.ok) {
-                const errorData = await generateResponse.json().catch(() => ({}));
-                throw new Error(errorData.message || 'Failed to start upscaling');
-            }
-
-            const data = await generateResponse.json();
+            const data = await imageService.generateImage(blob, 'Upsample');
 
             setProcessingState(prev => ({
                 ...prev,
@@ -570,7 +511,6 @@ const Models = () => {
             setIsUpscaling(false);
         }
     };
-
     const handleNoTokenForUpscaleModalClose = () => {
         setShowNoCreditForUpscaleModal(false);
     };

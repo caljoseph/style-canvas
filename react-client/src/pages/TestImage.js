@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Config from '../config';
+import Config from '../api/config';
 
 const SimpleImageGenerator = () => {
     const [file, setFile] = useState(null);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { authService } from '../api/services';
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
@@ -14,25 +15,13 @@ const ForgotPassword = () => {
         setError('');
 
         try {
-            const response = await fetch('/api/auth/forgot-password', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email }),
-            });
+            const data = await authService.forgotPassword(email);
 
-            const data = await response.json();
-
-            if (response.ok) {
-                setSuccess(true);
-                sessionStorage.setItem('resetEmail', email);
-                setTimeout(() => {
-                    navigate('/reset-password');
-                }, 2000);
-            } else {
-                setError(data.message || 'Failed to initiate password reset');
-            }
+            setSuccess(true);
+            sessionStorage.setItem('resetEmail', email);
+            setTimeout(() => {
+                navigate('/reset-password');
+            }, 2000);
         } catch (err) {
             setError('An error occurred. Please try again later.');
         } finally {
@@ -84,16 +73,20 @@ const ForgotPassword = () => {
                             </button>
 
                             <div className="form-group" style={{paddingTop: '0.5rem'}}>
-                                <Link to="/registration" className="text-center d-block" style={{textDecoration: 'none'}}>Back
-                                    to Login</Link>
+                                <Link
+                                    to="/registration"
+                                    className="text-center d-block"
+                                    style={{textDecoration: 'none'}}
+                                >
+                                    Back to Login
+                                </Link>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
         </section>
-    )
-        ;
+    );
 };
 
 export default ForgotPassword;

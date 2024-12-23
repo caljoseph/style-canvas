@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import Config from "../config";
+import { paymentService } from '../api/services'
 
 const Pricing = () => {
     console.log("[Pricing.js] Rendering component...");
@@ -96,41 +96,49 @@ const Pricing = () => {
     const verifyPaymentSession = async (sessionId) => {
         console.log("[verifyPaymentSession] Verifying session:", sessionId);
         try {
-            const response = await fetch(`${Config.apiUrl}/payments/verify-session/${sessionId}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                }
-            });
+            // Make sure we have auth tokens
+            if (!localStorage.getItem('accessToken')) {
+                throw new Error('Not authenticated');
+            }
 
-            console.log("[verifyPaymentSession] Response status:", response.status);
-            if (response.ok) {
-                const data = await response.json();
-                console.log("[verifyPaymentSession] Session data:", data);
-                let message;
-                if (data.type === 'subscription') {
-                    message = 'Thank you for your purchase! Your subscription is now active.';
-                } else {
-                    message = 'Thank you for your purchase! Credits have been added to your account.';
-                }
+            const data = await paymentService.verifySession(sessionId);
 
-                console.log("[verifyPaymentSession] Setting justPurchased in localStorage with message:", message);
-                localStorage.setItem('justPurchased', JSON.stringify({
-                    message: message,
-                    type: 'success'
-                }));
-                console.log("[verifyPaymentSession] Reloading page...");
-                window.location.href = '/pricing';
+            let message;
+            if (data.type === 'subscription') {
+                message = 'Thank you for your purchase! Your subscription is now active.';
             } else {
-                throw new Error('Payment verification failed.');
+                message = 'Thank you for your purchase! Credits have been added to your account.';
+            }
+
+            localStorage.setItem('justPurchased', JSON.stringify({
+                message,
+                type: 'success'
+            }));
+
+            // Instead of reloading the whole page, just change the URL
+            window.history.replaceState({}, '', '/pricing');
+            // Refresh the page only if specified
+            if (data.shouldReload) {
+                window.location.reload();
             }
         } catch (error) {
-            console.error("[verifyPaymentSession] Error verifying payment:", error);
-            console.log("[verifyPaymentSession] Setting error in justPurchased and reloading...");
+            console.error("[verifyPaymentSession] Error:", error);
+
+            if (error.message === 'Not authenticated') {
+                // Handle authentication error
+                localStorage.setItem('justPurchased', JSON.stringify({
+                    message: 'Session expired. Please log in again and check your account for updates.',
+                    type: 'warning'
+                }));
+                navigate('/registration');
+                return;
+            }
+
             localStorage.setItem('justPurchased', JSON.stringify({
                 message: 'Could not verify payment. Please contact support if credits are missing.',
                 type: 'error'
             }));
-            window.location.href = '/pricing';
+            window.history.replaceState({}, '', '/pricing');
         }
     };
 
@@ -149,30 +157,13 @@ const Pricing = () => {
 
     const handlePurchase = async (plan) => {
         console.log("[handlePurchase] Initiating purchase for plan:", plan);
-        const endpoint = plan.type === 'subscription'
-            ? '/payments/create-subscription-checkout-session'
-            : '/payments/create-one-time-checkout-session';
-
         try {
-            const response = await fetch(Config.apiUrl + endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                },
-                body: JSON.stringify({ lookup_key: plan.lookupKey }),
-            });
+            const sessionUrl = plan.type === 'subscription'
+                ? await paymentService.createSubscriptionCheckout(plan.lookupKey)
+                : await paymentService.createOneTimeCheckout(plan.lookupKey);
 
-            console.log("[handlePurchase] Response status:", response.status);
-
-            if (!response.ok) {
-                console.error("[handlePurchase] Failed to create checkout session");
-                throw new Error('Failed to create checkout session');
-            }
-
-            const data = await response.json();
-            console.log("[handlePurchase] Received sessionUrl:", data.sessionUrl);
-            window.location.href = data.sessionUrl;
+            console.log("[handlePurchase] Received sessionUrl:", sessionUrl);
+            window.location.href = sessionUrl;
         } catch (error) {
             console.error("[handlePurchase] Error:", error);
             showToast('An error occurred while processing your request.', 'error');
@@ -189,27 +180,15 @@ const Pricing = () => {
                 callback = async () => {
                     console.log("[handleAction/cancel callback] Attempting to cancel subscription...");
                     try {
-                        const response = await fetch(Config.apiUrl + '/payments/cancel-subscription', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                            },
-                        });
+                        await paymentService.cancelSubscription();
 
-                        console.log("[handleAction/cancel callback] Response status:", response.status);
-                        if (response.ok) {
-                            console.log("[handleAction/cancel callback] Subscription cancelled successfully...");
-                            localStorage.setItem('justPurchased', JSON.stringify({
-                                message: 'Subscription cancelled successfully. You will no longer be billed.',
-                                type: 'success'
-                            }));
-                            console.log("[handleAction/cancel callback] Reloading page...");
-                            window.location.href = '/pricing'; // Full reload
-                        } else {
-                            console.error("[handleAction/cancel callback] Failed to cancel subscription");
-                            throw new Error('Failed to cancel subscription');
-                        }
+                        console.log("[handleAction/cancel callback] Subscription cancelled successfully...");
+                        localStorage.setItem('justPurchased', JSON.stringify({
+                            message: 'Subscription cancelled successfully! You will no longer be billed.',
+                            type: 'success'
+                        }));
+                        console.log("[handleAction/cancel callback] Reloading page...");
+                        window.location.href = '/pricing'; // Full reload
                     } catch (error) {
                         console.error("[handleAction/cancel callback] Error:", error);
                         showToast('An error occurred while cancelling the subscription.', 'error');
@@ -227,28 +206,15 @@ const Pricing = () => {
                     callback = async () => {
                         console.log("[handleAction/change callback] Attempting to update subscription...");
                         try {
-                            const response = await fetch(Config.apiUrl + '/payments/update-subscription', {
-                                method: 'PUT',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-                                },
-                                body: JSON.stringify({ lookup_key: plan.lookupKey }),
-                            });
+                            await paymentService.updateSubscription(plan.lookupKey);
 
-                            console.log("[handleAction/change callback] Response status:", response.status);
-                            if (response.ok) {
-                                console.log("[handleAction/change callback] Subscription updated successfully...");
-                                localStorage.setItem('justPurchased', JSON.stringify({
-                                    message: 'Subscription updated successfully. Changes will take effect on your next billing cycle.',
-                                    type: 'success'
-                                }));
-                                console.log("[handleAction/change callback] Reloading page...");
-                                window.location.href = '/pricing'; // Full reload
-                            } else {
-                                console.error("[handleAction/change callback] Failed to change subscription");
-                                throw new Error('Failed to change subscription');
-                            }
+                            console.log("[handleAction/change callback] Subscription updated successfully...");
+                            localStorage.setItem('justPurchased', JSON.stringify({
+                                message: 'Subscription updated successfully! Changes will take effect on your next billing cycle.',
+                                type: 'success'
+                            }));
+                            console.log("[handleAction/change callback] Reloading page...");
+                            window.location.href = '/pricing'; // Full reload
                         } catch (error) {
                             console.error("[handleAction/change callback] Error:", error);
                             showToast('An error occurred while changing the subscription.', 'error');

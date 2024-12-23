@@ -1,5 +1,5 @@
-import React, {createContext, useState, useContext, useEffect, useCallback} from 'react';
-import Config from "../config"
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { authService, userService } from '../api/services';
 
 const AuthContext = createContext(null);
 
@@ -9,17 +9,10 @@ export const AuthProvider = ({ children }) => {
 
     const fetchUserProfile = useCallback(async () => {
         try {
-                const response = await fetch(`${Config.apiUrl}/users/profile`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-                }
-            });
-            if (response.ok) {
-                const userData = await response.json();
-                setUser(userData);
-            } else {
-                logout();
-            }
+            console.log('Fetching user profile...');
+            const userData = await userService.getProfile();
+            console.log('Profile fetched:', userData);
+            setUser(userData);
         } catch (error) {
             console.error('Error fetching user profile:', error);
             logout();
@@ -29,113 +22,69 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     useEffect(() => {
-        const accessToken = localStorage.getItem('accessToken');
-        if (accessToken) {
+        if (localStorage.getItem('accessToken')) {
             fetchUserProfile();
         } else {
             setLoading(false);
         }
     }, [fetchUserProfile]);
 
-
     const login = async (email, password) => {
-        const response = await fetch(`${Config.apiUrl}/auth/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
+        try {
+            const data = await authService.login(email, password);
+            console.log('Login successful, fetching profile...');
             await fetchUserProfile();
             return { success: true };
-        } else {
-            return { success: false, message: data.message };
+        } catch (error) {
+            console.error('Login failed:', error);
+            return { success: false, message: error.message };
         }
     };
-
     const register = async (email, password) => {
-        const response = await fetch(`${Config.apiUrl}/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Optionally auto-login after registration
-            localStorage.setItem('accessToken', data.accessToken);
-            localStorage.setItem('refreshToken', data.refreshToken);
+        try {
+            await authService.register(email, password);
             await fetchUserProfile();
             return { success: true };
-        } else {
-            return { success: false, message: data.message };
+        } catch (error) {
+            return {
+                success: false,
+                message: error.message || 'Registration failed'
+            };
         }
     };
 
     const logout = () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        authService.logout();
         setUser(null);
     };
 
     const forgotPassword = async (email) => {
         try {
-            const response = await fetch(`${Config.apiUrl}/auth/forgot-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({email}),
-            });
-
-            const data = await response.json();
+            const data = await authService.forgotPassword(email);
             return {
-                success: response.ok,
+                success: true,
                 message: data.message,
                 data: data
             };
         } catch (error) {
-            console.error('Error initiating password reset:', error);
             return {
                 success: false,
-                message: 'An error occurred while initiating password reset'
+                message: error.message || 'An error occurred while initiating password reset'
             };
         }
     };
 
     const resetPassword = async (email, code, newPassword) => {
         try {
-            const response = await fetch(`${Config.apiUrl}/auth/confirm-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email,
-                    confirmationCode: code.toString(),
-                    newPassword
-                }),
-            });
-
-            const data = await response.json();
+            const data = await authService.resetPassword(email, code, newPassword);
             return {
-                success: response.ok,
+                success: true,
                 message: data.message
             };
         } catch (error) {
-            console.error('Error resetting password:', error);
             return {
                 success: false,
-                message: 'An error occurred while resetting password'
+                message: error.message || 'An error occurred while resetting password'
             };
         }
     };
@@ -150,7 +99,6 @@ export const AuthProvider = ({ children }) => {
         forgotPassword,
         resetPassword
     };
-
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
