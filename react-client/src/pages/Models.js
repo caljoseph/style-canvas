@@ -69,7 +69,6 @@ const Models = () => {
 
     const models = [
         { name: "Pencil Blur", image: "/assets/model_thumbnails/Pencil Blur/pencil_blur.png" },
-        { name: "Verdant Flame", image: "/assets/model_thumbnails/Verdant Flame/verdant_flame.png" },
         { name: "Impasto", image: "/assets/model_thumbnails/Impasto/impasto.png" },
         { name: "Chalkboard", image: "/assets/model_thumbnails/Chalkboard/chalkboard.png" },
         { name: "Face-2-Paint", image: "/assets/model_thumbnails/Face-2-Paint/face-2-paint.png" },
