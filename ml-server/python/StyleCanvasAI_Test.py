@@ -138,8 +138,6 @@ def BlockFilter(img):
 def ComicCrafterAI(img):
     return Diff.ComicCrafterAI(img)
 
-def ComicCrafterAI_T1(img):
-    return Diff.ComicCrafterAI_T1(img)
 
 def BaroqueBrush(img):
     return  Diff.OilPainting_OP3(img)
@@ -213,11 +211,11 @@ def Upsample(img, scale = 2):
 
 # Functions for testing other Functions above :
 def process_images_with_function(processing_function):
-    #source_folder = r'F:\Python Projects\DiffI2I\Dataset\FlatFaceDataset\Training\A'
-    #destination_root_folder = r"F:\Python Projects\DiffI2I\Dataset\FlatFaceDataset\Training\B"
+    source_folder = r'./Test_Images'
+    destination_root_folder = r"./Results"
     
-    source_folder = r'Test_Images'
-    destination_root_folder = r"Results"
+    #source_folder = r'F:\Python Projects\DiffI2I\Dataset\Verdant_Flame\Training\A'
+    #destination_root_folder = r"F:\Python Projects\DiffI2I\Dataset\Verdant_Flame\Training"
     destination_subfolder_name = processing_function.__name__
     destination_folder = os.path.join(destination_root_folder, destination_subfolder_name)
     
@@ -289,7 +287,7 @@ def process_images_with_functions(processing_functions):
                 print(f"Failed to process {image_name} with {function_name}: {e}")
 
 if __name__ == "__main__":
-    process_images_with_function(ComicCrafterAI_T1)
+    process_images_with_function(BlockFilter)
 
 
 

@@ -99,9 +99,9 @@ def reset_flags_and_set_active(active_flag):
         is_BlockFilter_loaded = True
 
 def BlockFilter(img):
-    global manager
+    global manager, is_BlockFilter_loaded
 
-    if not is_ComicCrafterAI_loaded:
+    if not is_BlockFilter_loaded:
         reset_flags_and_set_active("is_BlockFilter_loaded")
         manager = None
         manager = DiffI2IManager(S2ModelConfigurations.BlockFilter_Parameters)
@@ -109,7 +109,7 @@ def BlockFilter(img):
     return generate_stylized_face_image(img, S2ModelConfigurations.BlockFilter_Parameters)
 
 def ComicCrafterAI(img):
-    global manager
+    global manager, is_ComicCrafterAI_loaded
 
     if not is_ComicCrafterAI_loaded:
         reset_flags_and_set_active("is_ComicCrafterAI_loaded")
@@ -119,10 +119,11 @@ def ComicCrafterAI(img):
     return generate_stylized_face_image(img, S2ModelConfigurations.Comic_CrafterAI_Parameters)
 
 def ComicCrafterAI_T1(img):
-    global manager
-
+    global manager, is_ComicCrafterAI_T1_loaded
+    print(" inside of is_ComicCrafterAI_T1_loaded")
     if not is_ComicCrafterAI_T1_loaded:
         reset_flags_and_set_active("is_ComicCrafterAI_T1_loaded")
+        print(" inside of  if not is_ComicCrafterAI_T1_loaded ")
         manager = None
         manager = DiffI2IManager(S2ModelConfigurations.Comic_CrafterAI_Parameters_T1)
     
