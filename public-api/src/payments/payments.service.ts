@@ -22,8 +22,6 @@ export class PaymentsService {
         this.stripe = config.getStripeClient();
         this.prices = this.stripe.prices.list( )
         this.appUrl = process.env.APP_URL;
-        console.log("Stripe secret:", process.env.TEST_STRIPE_SECRET_KEY)
-        console.log("Stripe webhook secret:", process.env.STRIPE_WEBHOOK_SECRET)
     }
 
     async getPrices(){
@@ -31,17 +29,15 @@ export class PaymentsService {
     }
 
     async createOneTimeCheckoutSession(lookup_key: string, userId: string): Promise<string> {
-        console.log("computed redirect success url:", `${this.appUrl}/pricing?payment=success&session_id={CHECKOUT_SESSION_ID}`)
-        console.log("computed redirect cancel url:", `${this.appUrl}/pricing?payment=cancelled`)
+        const user = await this.userRepository.getOne(userId);
 
-        // Get the prices from the lookup key
         const prices = await this.stripe.prices.list({
             lookup_keys: [lookup_key],
             expand: ['data.product'],
         });
 
         const session = await this.stripe.checkout.sessions.create({
-            billing_address_collection: 'auto',
+            billing_address_collection: 'required',
             line_items: [
                 {
                     price: prices.data[0].id,
@@ -52,7 +48,7 @@ export class PaymentsService {
             success_url: `${this.appUrl}/pricing?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${this.appUrl}/pricing?payment=cancelled`,
             client_reference_id: userId,
-            // TODO: figure out stripe tax
+            customer_email: user.email,
             automatic_tax: {
                 enabled: true
             },
@@ -61,25 +57,20 @@ export class PaymentsService {
     }
 
     async createSubscriptionCheckoutSession(lookup_key: string, userId: string) {
-        // TODO: you probably shouldn't be able to do this if you have subscription.
-        // When i demoed this for brandon it didn't add the subscription type to the database
-        // I don't want a user to be able to create a checkout session for a subscription they currently have
-        const user = await this.userRepository.getOne(userId)
-        const currentPlan = user.subscriptionType
+        const user = await this.userRepository.getOne(userId);
+        const currentPlan = user.subscriptionType;
         if (currentPlan !== "none") {
             this.logger.log(`Not creating checkout session because user: ${userId} already has subscription: ${currentPlan}`);
             throw new BadRequestException('You already have a subscription. You must update it or cancel it and buy another.');
         }
 
-        // Get the prices from the lookup key
         const prices = await this.stripe.prices.list({
             lookup_keys: [lookup_key],
             expand: ['data.product'],
         });
 
-        // Create a checkout session
         const session = await this.stripe.checkout.sessions.create({
-            billing_address_collection: 'auto',
+            billing_address_collection: 'required',
             line_items: [
                 {
                     price: prices.data[0].id,
@@ -89,6 +80,7 @@ export class PaymentsService {
             mode: 'subscription',
             success_url: `${this.appUrl}/pricing?payment=success&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${this.appUrl}/pricing?payment=cancelled`,
+            customer_email: user.email,
             subscription_data: {
                 metadata: {
                     userId: userId
