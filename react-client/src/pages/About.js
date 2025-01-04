@@ -30,7 +30,7 @@ const About = () => {
                         <div className="row gy-4">
                             <div>
                                 <div className="order-1 order-lg-2 hero-img" style={{ marginLeft: '60px' }}>
-                                    <img src="/assets/img/hero-img.png" className="img-fluid animated" alt="" />
+                                    <img src="/assets/img/about-second.png" className="img-fluid animated" alt="" />
                                 </div>
                             </div>
                         </div>

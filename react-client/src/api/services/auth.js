@@ -1,4 +1,3 @@
-// api/services/auth.js
 import apiClient from '../client';
 import API_CONFIG from '../config';
 

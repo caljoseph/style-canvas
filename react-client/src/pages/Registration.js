@@ -225,21 +225,6 @@ const Registration = () => {
                                             <div className="invalid-feedback">{errors.passwordConfirm}</div>
                                         }
                                     </div>
-
-                                    <div className="form-check">
-                                        <input
-                                            type="checkbox"
-                                            id="termsAccepted"
-                                            name="termsAccepted"
-                                            className={`form-check-input ${errors.terms ? 'is-invalid' : ''}`}
-                                            checked={formData.termsAccepted}
-                                            onChange={handleInputChange}
-                                        />
-                                        <label className="form-check-label" htmlFor="termsAccepted">
-                                            I agree to the terms and conditions
-                                        </label>
-                                        {errors.terms && <div className="invalid-feedback">{errors.terms}</div>}
-                                    </div>
                                 </>
                             )}
 
