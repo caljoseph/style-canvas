@@ -24,7 +24,7 @@ class ApiClient {
                 ...options,
                 headers,
             });
-
+            console.log("fetch status: ", response.status)
             // Handle 401 with token refresh
             if (response.status === 401 && accessToken) {
                 console.log('Got 401, attempting token refresh...');

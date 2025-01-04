@@ -18,6 +18,7 @@ import { User } from "../users/user.model";
 @Injectable()
 export class AuthService {
     private readonly logger = new Logger(AuthService.name);
+    private readonly DEFAULT_TOKENS = 4;
 
     constructor(
         private readonly awsCognitoService: AwsCognitoService,
@@ -30,7 +31,7 @@ export class AuthService {
             const newUser = new User(
                 authRegisterUserDto.email,
                 userSub,
-                10 // Default tokens
+                this.DEFAULT_TOKENS
             );
             await this.userRepository.create(newUser);
             this.logger.log(`User registered successfully: ${JSON.stringify(newUser)}`);
