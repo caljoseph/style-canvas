@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 
-
 const Registration = () => {
     const navigate = useNavigate();
     const { login, register } = useAuth();
@@ -13,9 +12,7 @@ const Registration = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
-        passwordConfirm: '',
-        termsAccepted: false,
-        notificationsAccepted: false
+        passwordConfirm: ''
     });
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -66,10 +63,6 @@ const Registration = () => {
                 newErrors.passwordConfirm = 'Please confirm your password.';
             } else if (formData.password !== formData.passwordConfirm) {
                 newErrors.passwordConfirm = 'Passwords do not match.';
-            }
-
-            if (!formData.termsAccepted) {
-                newErrors.terms = 'You must agree to the terms and conditions.';
             }
         }
 
