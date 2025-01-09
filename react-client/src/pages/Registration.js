@@ -86,7 +86,8 @@ const Registration = () => {
             } else {
                 const result = await register(formData.email, formData.password);
                 if (result.success) {
-                    navigate('/welcome');
+                    localStorage.setItem('pendingEmail', formData.email);
+                    navigate('/email-confirmation');
                 } else {
                     setErrors({ submit: result.message || 'Registration failed' });
                 }

@@ -7,6 +7,7 @@ const API_CONFIG = {
             refreshToken: '/auth/refresh-token',
             forgotPassword: '/auth/forgot-password',
             resetPassword: '/auth/confirm-password',
+            resendConfirmationEmail: '/auth/resend-confirmation-code',
         },
         user: {
             profile: '/users/profile',

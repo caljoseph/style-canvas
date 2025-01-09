@@ -9,18 +9,18 @@ import {
     Logger,
     HttpException,
     HttpStatus,
-    ConflictException, UnauthorizedException
+    ConflictException,
+    UnauthorizedException,
 } from '@nestjs/common';
-import { AuthRegisterUserDto } from "./dto/auth-register-user.dto";
-import { AuthLoginUserDto } from "./dto/auth-login-user.dto";
-import { AuthGuard } from "@nestjs/passport";
-import { AuthChangePasswordUserDto } from "./dto/auth-change-password-user.dto";
-import { AuthForgotPasswordUserDto } from "./dto/auth-forgot-password-user.dto";
-import { AuthConfirmPasswordUserDto } from "./dto/auth-confirm-password-user.dto";
-import { AuthService } from "./auth.service";
-import { AdminGuard } from "./guards/admin.guard";
-import { User } from "../users/user.model"; // Import the User model
-import { UserDecorator } from "../users/user.decorator"; // Import the custom decorator
+import { AuthRegisterUserDto } from './dto/auth-register-user.dto';
+import { AuthLoginUserDto } from './dto/auth-login-user.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { AuthChangePasswordUserDto } from './dto/auth-change-password-user.dto';
+import { AuthForgotPasswordUserDto } from './dto/auth-forgot-password-user.dto';
+import { AuthConfirmPasswordUserDto } from './dto/auth-confirm-password-user.dto';
+import { AuthService } from './auth.service';
+import { AdminGuard } from './guards/admin.guard';
+import { User } from '../users/user.model';
 
 @Controller('auth')
 export class AuthController {
@@ -34,7 +34,10 @@ export class AuthController {
         try {
             return await this.authService.registerUser(authRegisterUserDto);
         } catch (error) {
-            this.logger.error(`Failed to register user: ${authRegisterUserDto.email}`, error.stack);
+            this.logger.error(
+                `Failed to register user: ${authRegisterUserDto.email}`,
+                error.stack,
+            );
             if (error instanceof ConflictException) {
                 throw new HttpException('User already exists', HttpStatus.CONFLICT);
             }
@@ -49,7 +52,10 @@ export class AuthController {
             this.logger.log(`Login attempt for user: ${authLoginUserDto.email}`);
             return await this.authService.authenticateUser(authLoginUserDto);
         } catch (error) {
-            this.logger.error(`Login failed for user: ${authLoginUserDto.email}`, error.stack);
+            this.logger.error(
+                `Login failed for user: ${authLoginUserDto.email}`,
+                error.stack,
+            );
             throw new HttpException('Authentication failed', HttpStatus.UNAUTHORIZED);
         }
     }
@@ -58,10 +64,9 @@ export class AuthController {
     @UsePipes(ValidationPipe)
     async refreshToken(@Body() { refreshToken }: { refreshToken: string }) {
         try {
-            const result = await this.authService.refreshToken(refreshToken);
-            return result;
+            return await this.authService.refreshToken(refreshToken);
         } catch (error) {
-            this.logger.error(`Failed to refresh token`, error.stack);
+            this.logger.error('Failed to refresh token', error.stack);
             throw new UnauthorizedException('Failed to refresh token');
         }
     }
@@ -70,10 +75,15 @@ export class AuthController {
     @UsePipes(ValidationPipe)
     async changePassword(@Body() authChangePasswordUserDto: AuthChangePasswordUserDto) {
         try {
-            this.logger.log(`Password change attempt for user: ${authChangePasswordUserDto.email}`);
+            this.logger.log(
+                `Password change attempt for user: ${authChangePasswordUserDto.email}`,
+            );
             return await this.authService.changeUserPassword(authChangePasswordUserDto);
         } catch (error) {
-            this.logger.error(`Password change failed for user: ${authChangePasswordUserDto.email}`, error.stack);
+            this.logger.error(
+                `Password change failed for user: ${authChangePasswordUserDto.email}`,
+                error.stack,
+            );
             throw new HttpException('Password change failed', HttpStatus.BAD_REQUEST);
         }
     }
@@ -82,10 +92,15 @@ export class AuthController {
     @UsePipes(ValidationPipe)
     async forgotPassword(@Body() authForgotPasswordUserDto: AuthForgotPasswordUserDto) {
         try {
-            this.logger.log(`Password reset request for user: ${authForgotPasswordUserDto.email}`);
+            this.logger.log(
+                `Password reset request for user: ${authForgotPasswordUserDto.email}`,
+            );
             return await this.authService.forgotUserPassword(authForgotPasswordUserDto);
         } catch (error) {
-            this.logger.error(`Password reset request failed for user: ${authForgotPasswordUserDto.email}`, error.stack);
+            this.logger.error(
+                `Password reset request failed for user: ${authForgotPasswordUserDto.email}`,
+                error.stack,
+            );
             throw new HttpException('Password reset request failed', HttpStatus.BAD_REQUEST);
         }
     }
@@ -94,10 +109,15 @@ export class AuthController {
     @UsePipes(ValidationPipe)
     async confirmPassword(@Body() authConfirmPasswordUserDto: AuthConfirmPasswordUserDto) {
         try {
-            this.logger.log(`Password confirmation for user: ${authConfirmPasswordUserDto.email}`);
+            this.logger.log(
+                `Password confirmation for user: ${authConfirmPasswordUserDto.email}`,
+            );
             return await this.authService.confirmUserPassword(authConfirmPasswordUserDto);
         } catch (error) {
-            this.logger.error(`Password confirmation failed for user: ${authConfirmPasswordUserDto.email}`, error.stack);
+            this.logger.error(
+                `Password confirmation failed for user: ${authConfirmPasswordUserDto.email}`,
+                error.stack,
+            );
             throw new HttpException('Password confirmation failed', HttpStatus.BAD_REQUEST);
         }
     }
@@ -111,7 +131,28 @@ export class AuthController {
             return { message: result };
         } catch (error) {
             this.logger.error(`Failed to elevate privileges for user: ${email}`, error.stack);
-            throw new HttpException('Failed to elevate user privileges', HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException(
+                'Failed to elevate user privileges',
+                HttpStatus.INTERNAL_SERVER_ERROR,
+            );
+        }
+    }
+
+    @Post('/resend-confirmation-code')
+    async resendConfirmationCode(@Body('email') email: string) {
+        try {
+            this.logger.log(`Resend confirmation code request for: ${email}`);
+            await this.authService.resendConfirmationEmail(email);
+            return { message: 'Verification email resent successfully' };
+        } catch (error) {
+            this.logger.error(
+                `Failed to resend confirmation code for user: ${email}`,
+                error.stack,
+            );
+            throw new HttpException(
+                error.message || 'Failed to resend confirmation code',
+                HttpStatus.BAD_REQUEST,
+            );
         }
     }
 }

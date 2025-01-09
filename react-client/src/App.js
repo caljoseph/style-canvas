@@ -11,7 +11,7 @@ const Pricing = React.lazy(() => import('./pages/Pricing'));
 const About = React.lazy(() => import('./pages/About'));
 const Contact = React.lazy(() => import('./pages/Contact'));
 const Registration = React.lazy(() => import('./pages/Registration'));
-const Welcome = React.lazy(() => import('./pages/Welcome'));
+const EmailConfirmation = React.lazy(() => import('./pages/EmailConfirmation'));
 const TestImage = React.lazy(() => import('./pages/TestImage'));
 const ModelTest = React.lazy(() => import('./pages/ModelTest'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
@@ -84,7 +84,7 @@ function App() {
                         <Route path="about" element={<About />} />
                         <Route path="contact" element={<Contact />} />
                         <Route path="registration" element={<Registration />} />
-                        <Route path="welcome" element={<Welcome />} />
+                        <Route path="email-confirmation" element={<EmailConfirmation />} />
                         <Route path="model-test" element={<ModelTest />} />
                         <Route path="forgot-password" element={<ForgotPassword />} />
                         <Route path="reset-password" element={<ResetPassword />} />

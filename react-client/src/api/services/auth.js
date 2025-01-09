@@ -96,6 +96,7 @@ export const authService = {
                 body: JSON.stringify({ refreshToken }),
             });
 
+            // Update tokens in local storage if new ones come back
             if (data.accessToken) {
                 localStorage.setItem('accessToken', data.accessToken);
                 if (data.refreshToken) {
@@ -106,6 +107,23 @@ export const authService = {
             return data;
         } catch (error) {
             console.error('Token refresh failed:', error);
+            throw error;
+        }
+    },
+
+    async resendConfirmationEmail(email) {
+        try {
+            const data = await apiClient.request(API_CONFIG.endpoints.auth.resendConfirmationEmail, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email }),
+            });
+
+            return data;
+        } catch (error) {
+            console.error('Resend confirmation email failed:', error);
             throw error;
         }
     },

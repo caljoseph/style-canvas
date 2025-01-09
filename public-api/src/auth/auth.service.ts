@@ -4,16 +4,16 @@ import {
     Logger,
     InternalServerErrorException,
     ConflictException,
-    UnauthorizedException
+    UnauthorizedException,
 } from '@nestjs/common';
-import { AuthLoginUserDto } from "./dto/auth-login-user.dto";
-import { AwsCognitoService } from "./aws-cognito.service";
-import { AuthRegisterUserDto } from "./dto/auth-register-user.dto";
-import { AuthChangePasswordUserDto } from "./dto/auth-change-password-user.dto";
-import { AuthForgotPasswordUserDto } from "./dto/auth-forgot-password-user.dto";
-import { AuthConfirmPasswordUserDto } from "./dto/auth-confirm-password-user.dto";
-import { UserRepository } from "../users/user.repository";
-import { User } from "../users/user.model";
+import { AuthLoginUserDto } from './dto/auth-login-user.dto';
+import { AwsCognitoService } from './aws-cognito.service';
+import { AuthRegisterUserDto } from './dto/auth-register-user.dto';
+import { AuthChangePasswordUserDto } from './dto/auth-change-password-user.dto';
+import { AuthForgotPasswordUserDto } from './dto/auth-forgot-password-user.dto';
+import { AuthConfirmPasswordUserDto } from './dto/auth-confirm-password-user.dto';
+import { UserRepository } from '../users/user.repository';
+import { User } from '../users/user.model';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +22,7 @@ export class AuthService {
 
     constructor(
         private readonly awsCognitoService: AwsCognitoService,
-        private readonly userRepository: UserRepository
+        private readonly userRepository: UserRepository,
     ) {}
 
     async registerUser(authRegisterUserDto: AuthRegisterUserDto) {
@@ -31,15 +31,18 @@ export class AuthService {
             const newUser = new User(
                 authRegisterUserDto.email,
                 userSub,
-                this.DEFAULT_TOKENS
+                this.DEFAULT_TOKENS,
             );
             await this.userRepository.create(newUser);
             this.logger.log(`User registered successfully: ${JSON.stringify(newUser)}`);
             return { message: 'User registered successfully' };
         } catch (error) {
-            this.logger.error(`Error during user registration for ${authRegisterUserDto.email}: ${error.message}`, error.stack);
+            this.logger.error(
+                `Error during user registration for ${authRegisterUserDto.email}: ${error.message}`,
+                error.stack,
+            );
             if (error instanceof ConflictException) {
-                throw error; // Pass through the ConflictException
+                throw error; // Pass ConflictException through
             }
             throw new InternalServerErrorException('User registration failed');
         }
@@ -51,7 +54,10 @@ export class AuthService {
             this.logger.log(`User authenticated successfully: ${authLoginUserDto.email}`);
             return result;
         } catch (error) {
-            this.logger.error(`Authentication failed for user: ${authLoginUserDto.email}`, error.stack);
+            this.logger.error(
+                `Authentication failed for user: ${authLoginUserDto.email}`,
+                error.stack,
+            );
             throw new UnauthorizedException('Authentication failed');
         }
     }
@@ -81,7 +87,10 @@ export class AuthService {
             this.logger.log(`Password changed successfully for user: ${authChangePasswordUserDto.email}`);
             return result;
         } catch (error) {
-            this.logger.error(`Error changing password for user: ${authChangePasswordUserDto.email}`, error.stack);
+            this.logger.error(
+                `Error changing password for user: ${authChangePasswordUserDto.email}`,
+                error.stack,
+            );
             throw new InternalServerErrorException('Failed to change password');
         }
     }
@@ -92,7 +101,10 @@ export class AuthService {
             this.logger.log(`Password reset initiated for user: ${authForgotPasswordUserDto.email}`);
             return result;
         } catch (error) {
-            this.logger.error(`Error initiating password reset for user: ${authForgotPasswordUserDto.email}`, error.stack);
+            this.logger.error(
+                `Error initiating password reset for user: ${authForgotPasswordUserDto.email}`,
+                error.stack,
+            );
             throw new InternalServerErrorException('Failed to initiate password reset');
         }
     }
@@ -100,11 +112,24 @@ export class AuthService {
     async confirmUserPassword(authConfirmPasswordUserDto: AuthConfirmPasswordUserDto) {
         try {
             const result = await this.awsCognitoService.confirmUserPassword(authConfirmPasswordUserDto);
-            this.logger.log(`Password reset confirmed for user: ${authConfirmPasswordUserDto.email}`);
+            this.logger.log(
+                `Password reset confirmed for user: ${authConfirmPasswordUserDto.email}`,
+            );
             return result;
         } catch (error) {
-            this.logger.error(`Error confirming password reset for user: ${authConfirmPasswordUserDto.email}`, error.stack);
+            this.logger.error(
+                `Error confirming password reset for user: ${authConfirmPasswordUserDto.email}`,
+                error.stack,
+            );
             throw new InternalServerErrorException('Failed to confirm password reset');
         }
+    }
+
+    /**
+     * NEW: Resend Confirmation Email
+     * Does not check local DB at all, just calls AWS Cognito's resend.
+     */
+    async resendConfirmationEmail(email: string): Promise<void> {
+        await this.awsCognitoService.resendConfirmationEmail(email);
     }
 }
