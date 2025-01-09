@@ -4,7 +4,7 @@ const About = () => {
     return (
         <section id="about" className="about section">
             <div className="container section-title" data-aos="fade-up">
-                <h2 style={{ color: '#47aeff' }}>About Us</h2>
+                <h2 >About Us</h2>
             </div>
 
             <div className="container">

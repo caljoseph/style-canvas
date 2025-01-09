@@ -1,6 +1,7 @@
 import React from 'react';
 
 const Work = () => {
+    // Four-step linear process
     const steps = [
         {
             title: "1. Create an Account",
@@ -18,35 +19,75 @@ const Work = () => {
             delay: "300"
         },
         {
-            title: "4. Upload Your Image",
-            description: "Click on your chosen model, upload an image, and see a small preview of your transformed photo.",
+            title: "4. Upload & Download",
+            description: "Upload your image to the chosen model, then download your transformed artwork once it's ready.",
             delay: "400"
-        },
-        {
-            title: "5. Accept and Download",
-            description: "If you like the preview, click accept, and a credit will be deducted from your account. Download the full version of your artwork.",
-            delay: "500"
         }
     ];
 
     return (
-        <section id="work" className="faq section light-background">
+        <section
+            id="work"
+            className="faq section light-background"
+            style={{
+                minHeight: '100vh',
+                marginBottom: 0
+            }}
+        >
             <div className="container section-title" data-aos="fade-up">
-                <h2>How It Works</h2>
+                <h2 style={{ color: 'var(--heading-color)' }}>How It Works</h2>
             </div>
 
             <div className="container">
-                {steps.map((step, index) => (
-                    <div key={index} className="row faq-item" data-aos="fade-up" data-aos-delay={step.delay}>
-                        <div className="col-lg-5 d-flex">
-                            <i className="bi bi-question-circle"></i>
-                            <h4>{step.title}</h4>
-                        </div>
-                        <div className="col-lg-7">
-                            <p>{step.description}</p>
-                        </div>
+                <div className="row justify-content-center">
+                    <div className="col-lg-8">
+                        {steps.map((step, index) => (
+                            <div
+                                key={index}
+                                className="d-flex align-items-start mb-4"
+                                data-aos="fade-up"
+                                data-aos-delay={step.delay}
+                                style={{
+                                    backgroundColor: 'var(--surface-color)',
+                                    borderRadius: '8px',
+                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                                    minHeight: '120px',       // Ensures a taller card
+                                    padding: '1.5rem'        // Extra padding for more vertical space
+                                }}
+                            >
+                                {/* Number circle */}
+                                <div
+                                    className="d-flex align-items-center justify-content-center flex-shrink-0"
+                                    style={{
+                                        width: '50px',
+                                        height: '50px',
+                                        borderRadius: '50%',
+                                        marginRight: '1.5rem',
+                                        backgroundColor: 'var(--accent-color)',
+                                        color: 'var(--contrast-color)',
+                                        fontWeight: 'bold',
+                                        fontSize: '1.2rem'
+                                    }}
+                                >
+                                    {index + 1}
+                                </div>
+
+                                {/* Step content */}
+                                <div className="flex-grow-1">
+                                    <h5
+                                        className="fw-bold mb-2"
+                                        style={{ color: 'var(--heading-color)' }}
+                                    >
+                                        {step.title}
+                                    </h5>
+                                    <p style={{ color: 'var(--default-color)', marginBottom: 0 }}>
+                                        {step.description}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
+                </div>
             </div>
         </section>
     );
