@@ -2,11 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Modal } from 'react-bootstrap';
 import ReactCrop from 'react-image-crop';
 import { useAuth } from '../context/AuthContext';
-import Config from '../api/config';
 import 'react-image-crop/dist/ReactCrop.css';
 import { useNavigate } from 'react-router-dom';
 import { imageService } from '../api/services';
-
 
 const Models = () => {
     const [selectedModel, setSelectedModel] = useState('');
@@ -24,9 +22,8 @@ const Models = () => {
     const [showNoCreditModal, setShowNoCreditModal] = useState(false);
     const [showNoCreditForUpscaleModal, setShowNoCreditForUpscaleModal] = useState(false);
 
-
     const [isUpscaling, setIsUpscaling] = useState(false);
-    const [originalImage, setOriginalImage] = useState(null);
+
     const [processingState, setProcessingState] = useState({
         status: 'idle', // idle, uploading, processing, complete, error
         requestHash: null,
@@ -48,25 +45,10 @@ const Models = () => {
     const MIN_DIMENSION = 1024;
     const DISPLAY_DIMENSION = 350;
 
-    // Prevent navigation while processing
-    useEffect(() => {
-        const handleBeforeUnload = (e) => {
-            if (processingState.status === 'processing' || processingState.status === 'uploading') {
-                e.preventDefault();
-                e.returnValue = 'Your image is still processing. Are you sure you want to leave?';
-                return e.returnValue;
-            }
-        };
+    // Models which are in beta mode must be specified in this array
+    const BETA_MODELS = ["Face-2-Paint"];
 
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            if (pollInterval.current) {
-                clearInterval(pollInterval.current);
-            }
-        };
-    }, [processingState.status]);
-
+    // List of available models
     const models = [
         { name: "Pencil Blur", image: "/assets/model_thumbnails/Pencil Blur/pencil_blur.png" },
         { name: "Impasto", image: "/assets/model_thumbnails/Impasto/impasto.png" },
@@ -94,8 +76,26 @@ const Models = () => {
         { name: "Triadic Vision", image: "/assets/model_thumbnails/Triadic Vision/triadic_vision.png" },
     ];
 
+    // Prevent navigation while processing
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (processingState.status === 'processing' || processingState.status === 'uploading') {
+                e.preventDefault();
+                e.returnValue = 'Your image is still processing. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        };
 
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            if (pollInterval.current) {
+                clearInterval(pollInterval.current);
+            }
+        };
+    }, [processingState.status]);
 
+    // Validate image dimensions
     const validateImageDimensions = (width, height) => {
         if (width < MIN_DIMENSION || height < MIN_DIMENSION) {
             setStatusMessage({
@@ -111,21 +111,7 @@ const Models = () => {
         return true;
     };
 
-    const calculateDisplayDimensions = (naturalWidth, naturalHeight) => {
-        const aspectRatio = naturalWidth / naturalHeight;
-        let displayWidth, displayHeight;
-
-        if (naturalWidth > naturalHeight) {
-            displayWidth = Math.min(DISPLAY_DIMENSION, naturalWidth);
-            displayHeight = displayWidth / aspectRatio;
-        } else {
-            displayHeight = Math.min(DISPLAY_DIMENSION, naturalHeight);
-            displayWidth = displayHeight * aspectRatio;
-        }
-
-        return { width: displayWidth, height: displayHeight };
-    };
-
+    // Handle model card click
     const handleModelClick = (modelName) => {
         if (!user) {
             setSelectedModel(modelName);
@@ -159,23 +145,29 @@ const Models = () => {
         });
     };
 
+    // Close "no credits" modal
     const handleNoCreditModalClose = () => {
         setShowNoCreditModal(false);
         setSelectedModel('');
     };
 
+    // Redirect to pricing
     const redirectToPricing = () => {
         navigate('/pricing');
     };
 
+    // Close auth required modal
     const handleAuthModalClose = () => {
         setShowAuthModal(false);
         setSelectedModel('');
     };
 
+    // Redirect to sign in/sign up
     const redirectToRegistration = () => {
         navigate('/registration');
     };
+
+    // On image load
     const onImageLoad = (e) => {
         const { naturalWidth, naturalHeight, width, height } = e.currentTarget;
         setOriginalDimensions({ width: naturalWidth, height: naturalHeight });
@@ -205,6 +197,7 @@ const Models = () => {
         });
     };
 
+    // Handle image upload
     const handleImageUpload = (event) => {
         const file = event.target.files[0];
         if (file) {
@@ -230,17 +223,17 @@ const Models = () => {
         }
     };
 
+    // Validate cropping dimensions
     const validateCropDimensions = (crop) => {
         if (!imageRef.current) return false;
 
         const scaleX = originalDimensions.width / imageRef.current.width;
         const scaleY = originalDimensions.height / imageRef.current.height;
 
-        // Use floor to ensure we don't round up and get odd dimensions
         const cropWidth = Math.floor(crop.width * scaleX);
         const cropHeight = Math.floor(crop.height * scaleY);
 
-        // Force dimensions to be equal
+        // Force a perfect square
         const finalSize = Math.max(cropWidth, cropHeight);
 
         if (finalSize < MIN_DIMENSION) {
@@ -257,6 +250,7 @@ const Models = () => {
         return true;
     };
 
+    // Convert cropped area to a Blob URL
     const getCroppedImage = async (image, crop) => {
         if (!validateCropDimensions(crop)) {
             throw new Error('Invalid crop dimensions');
@@ -266,7 +260,6 @@ const Models = () => {
         const scaleX = image.naturalWidth / image.width;
         const scaleY = image.naturalHeight / image.height;
 
-        // Calculate the final size and ensure it's a perfect square of at least 1024x1024
         const size = Math.max(
             MIN_DIMENSION,
             Math.floor(Math.min(crop.width * scaleX, crop.height * scaleY))
@@ -276,12 +269,11 @@ const Models = () => {
         canvas.height = size;
 
         const ctx = canvas.getContext('2d');
-
         ctx.drawImage(
             image,
             crop.x * scaleX,
             crop.y * scaleY,
-            size,  // Use the same size for both width and height
+            size,
             size,
             0,
             0,
@@ -304,6 +296,7 @@ const Models = () => {
         });
     };
 
+    // Handle crop
     const handleCropImage = async () => {
         if (!previewImage) {
             setStatusMessage({
@@ -312,7 +305,6 @@ const Models = () => {
             });
             return;
         }
-
         try {
             const croppedImg = await getCroppedImage(imageRef.current, crop);
             setCroppedImage(croppedImg);
@@ -326,6 +318,7 @@ const Models = () => {
         }
     };
 
+    // Fetch the processed image from the server
     const fetchProcessedImage = async (requestHash) => {
         try {
             const imageBlob = await imageService.retrieveImage(requestHash);
@@ -337,7 +330,6 @@ const Models = () => {
                 img.onload = resolve;
             });
 
-            // If originalDimensions is null, this is the first generated image
             if (!originalDimensions) {
                 setOriginalDimensions({
                     width: img.width,
@@ -356,7 +348,7 @@ const Models = () => {
                 }
             }));
 
-            // Refresh the profile to update token count
+            // Refresh profile to update token count
             await refreshProfile();
 
         } catch (error) {
@@ -369,6 +361,8 @@ const Models = () => {
             }));
         }
     };
+
+    // Poll the backend to check processing status
     const pollStatus = async (requestHash) => {
         console.log('Polling status for hash:', requestHash);
         try {
@@ -402,11 +396,11 @@ const Models = () => {
         }
     };
 
+    // Apply the chosen style
     const handleApplyStyle = async () => {
         if (!croppedImage) return;
         console.log('Starting style application');
 
-        // Clear any existing interval
         if (pollInterval.current) {
             clearInterval(pollInterval.current);
             pollInterval.current = null;
@@ -421,7 +415,6 @@ const Models = () => {
 
             const response = await fetch(croppedImage);
             const blob = await response.blob();
-            console.log('Blob created from cropped image:', blob.type, blob.size);
 
             console.log('Sending generate request for model:', selectedModel);
             const data = await imageService.generateImage(blob, selectedModel);
@@ -435,13 +428,12 @@ const Models = () => {
                 progress: 50
             }));
 
-            // Call poll immediately and then set up interval
+            // Immediate poll, then repeat
             await pollStatus(data.requestHash);
             pollInterval.current = setInterval(() => pollStatus(data.requestHash), 3000);
 
         } catch (error) {
             console.error('Error in handleApplyStyle:', error);
-            // Clear interval on error
             if (pollInterval.current) {
                 clearInterval(pollInterval.current);
                 pollInterval.current = null;
@@ -454,16 +446,17 @@ const Models = () => {
             }));
         }
     };
+
     useEffect(() => {
         console.log('Processing state changed:', processingState);
     }, [processingState]);
 
+    // Upscale the final image
     const handleUpscale = async () => {
         if (user.tokens < 1) {
             setShowNoCreditForUpscaleModal(true);
             return;
         }
-
         if (!processingState.resultImage) return;
 
         try {
@@ -491,11 +484,10 @@ const Models = () => {
             if (pollInterval.current) {
                 clearInterval(pollInterval.current);
             }
-
             await pollStatus(data.requestHash);
             pollInterval.current = setInterval(() => pollStatus(data.requestHash), 3000);
 
-            // Refresh user profile after successful upscaling
+            // Refresh user profile
             await refreshProfile();
 
         } catch (error) {
@@ -510,10 +502,13 @@ const Models = () => {
             setIsUpscaling(false);
         }
     };
+
+    // Close No Token for Upscale Modal
     const handleNoTokenForUpscaleModalClose = () => {
         setShowNoCreditForUpscaleModal(false);
     };
 
+    // Download the processed image
     const handleDownload = () => {
         if (processingState.resultImage) {
             const link = document.createElement('a');
@@ -525,12 +520,13 @@ const Models = () => {
         }
     };
 
+    // Close main modal
     const handleCloseModal = () => {
         if (processingState.status === 'processing' || processingState.status === 'uploading') {
-            const confirm = window.confirm(
+            const confirmClose = window.confirm(
                 'Your image is still processing. If you close this window, you will lose your result. Are you sure you want to continue?'
             );
-            if (!confirm) return;
+            if (!confirmClose) return;
 
             if (pollInterval.current) {
                 clearInterval(pollInterval.current);
@@ -545,7 +541,7 @@ const Models = () => {
         setIsCropping(true);
         setCrop(null);
         setImgLoaded(false);
-        setOriginalDimensions(null);  // Reset original dimensions
+        setOriginalDimensions(null);
         setProcessingState({
             status: 'idle',
             requestHash: null,
@@ -555,8 +551,9 @@ const Models = () => {
             imageSize: null
         });
     };
+
+    // Crop changes
     const handleCropChange = (newCrop) => {
-        // Force the crop to be perfectly square using the smaller dimension
         if (newCrop.width !== newCrop.height) {
             const size = Math.min(newCrop.width, newCrop.height);
             newCrop = {
@@ -573,15 +570,31 @@ const Models = () => {
 
     return (
         <>
+            {/* Add extra style for the Beta tag */}
             <style>
                 {`
-          .btn-close {
-            opacity: 1 !important;
-            filter: invert(27%) sepia(99%) saturate(7404%) hue-rotate(353deg) brightness(87%) contrast(135%);
-            transform: scale(1.2);
-          }
-        `}
+                .btn-close {
+                    opacity: 1 !important;
+                    filter: invert(27%) sepia(99%) saturate(7404%) hue-rotate(353deg) brightness(87%) contrast(135%);
+                    transform: scale(1.2);
+                }
+                .beta-badge {
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: linear-gradient(45deg, #ff3cac, #784ba0);
+                    color: #fff;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                    z-index: 2;
+                    text-transform: uppercase;
+                }
+            `}
             </style>
+
             <section id="models" className="features section">
                 <div className="container section-title" data-aos="fade-up">
                     <h2>Our AI Models</h2>
@@ -597,10 +610,17 @@ const Models = () => {
                                 data-aos="fade-up"
                                 data-aos-delay="100"
                             >
-                                <div className="features-item" onClick={() => handleModelClick(model.name)}>
-                                    <img src={model.image} alt={model.name}/>
+                                <div
+                                    className="features-item position-relative"
+                                    onClick={() => handleModelClick(model.name)}
+                                >
+                                    {/* Show the Beta badge if this model is in BETA_MODELS */}
+                                    {BETA_MODELS.includes(model.name) && (
+                                        <span className="beta-badge">Beta</span>
+                                    )}
+                                    <img src={model.image} alt={model.name} />
                                     <h3>
-                                        <a href="#" className="stretched-link">{model.name}</a>
+                                        <a href="#!" className="stretched-link">{model.name}</a>
                                     </h3>
                                 </div>
                             </div>
@@ -651,8 +671,9 @@ const Models = () => {
                                 <i className="bi bi-coin text-warning" style={{fontSize: '3rem'}}></i>
                             </div>
                             <h5 className="mb-3">Want to try {selectedModel}?</h5>
-                            <p className="mb-4">You need at least 1 credit to generate an image. Purchase credits to
-                                continue.</p>
+                            <p className="mb-4">
+                                You need at least 1 credit to generate an image. Purchase credits to continue.
+                            </p>
                             <button
                                 className="btn btn-primary btn-lg w-100 mb-3"
                                 onClick={redirectToPricing}
@@ -662,7 +683,6 @@ const Models = () => {
                         </div>
                     </Modal.Body>
                 </Modal>
-
 
                 {/* No Tokens for Upscale Modal */}
                 <Modal
@@ -721,7 +741,9 @@ const Models = () => {
                             )}
                             <Modal.Title>
                                 Style: {selectedModel}
-                                {processingState.imageSize && processingState.imageSize.width > originalDimensions?.width ? ' (Upscaled)' : ''}
+                                {processingState.imageSize && processingState.imageSize.width > originalDimensions?.width
+                                    ? ' (Upscaled)'
+                                    : ''}
                             </Modal.Title>
                         </div>
                     </Modal.Header>
@@ -751,8 +773,9 @@ const Models = () => {
                                     </div>
                                 </div>
                                 <p className="mb-3">
-                                    {processingState.status === 'uploading' ? 'Uploading image...' :
-                                        `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
+                                    {processingState.status === 'uploading'
+                                        ? 'Uploading image...'
+                                        : `Processing image... Estimated wait time: ${processingState.estimatedTime}`}
                                 </p>
                                 <div className="alert alert-warning mb-0" role="alert">
                                     <strong>Please don't close this window</strong><br/>
@@ -782,8 +805,7 @@ const Models = () => {
                                 </div>
 
                                 <h6 className="text-muted mb-4">
-                                    Current
-                                    Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
+                                    Current Resolution: {processingState.imageSize?.width}x{processingState.imageSize?.height}px
                                 </h6>
 
                                 <div className="card shadow-sm">
@@ -840,8 +862,14 @@ const Models = () => {
                                 {isCropping && (
                                     <div className="mb-3">
                                         {statusMessage.text && (
-                                            <div className={`alert alert-${statusMessage.type === 'error' ? 'danger' :
-                                                statusMessage.type === 'success' ? 'success' : 'info'} text-center`}>
+                                            <div
+                                                className={`alert alert-${
+                                                    statusMessage.type === 'error'
+                                                        ? 'danger'
+                                                        : statusMessage.type === 'success'
+                                                            ? 'success'
+                                                            : 'info'
+                                                } text-center`}>
                                                 {statusMessage.text}
                                             </div>
                                         )}

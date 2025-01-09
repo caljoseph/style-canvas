@@ -2,7 +2,7 @@ import React, { Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 
-// Lazy load all your routes
+// Lazy load all routes
 const Home = React.lazy(() => import('./pages/Home'));
 const Cases = React.lazy(() => import('./pages/Cases'));
 const Work = React.lazy(() => import('./pages/Work'));
@@ -16,6 +16,8 @@ const TestImage = React.lazy(() => import('./pages/TestImage'));
 const ModelTest = React.lazy(() => import('./pages/ModelTest'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
+const ComingSoon = React.lazy(() => import('./pages/ComingSoon'));
+
 
 
 const LoadingSpinner = () => (
@@ -77,6 +79,7 @@ function App() {
                         <Route path="cases" element={<Cases />} />
                         <Route path="work" element={<Work />} />
                         <Route path="models" element={<Models />} />
+                        <Route path="coming-soon" element={<ComingSoon />} />
                         <Route path="pricing" element={<Pricing />} />
                         <Route path="about" element={<About />} />
                         <Route path="contact" element={<Contact />} />

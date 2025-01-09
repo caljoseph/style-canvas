@@ -74,6 +74,7 @@ const Header = () => {
                         <li><Link to="/cases">Use Cases</Link></li>
                         <li><Link to="/work">How It Works</Link></li>
                         <li><Link to="/models">AI Models</Link></li>
+                        <li><Link to="/coming-soon">Coming Soon</Link></li>
                         <li><Link to="/pricing">Pricing</Link></li>
                         <li><Link to="/about">About</Link></li>
                         <li><Link to="/contact">Contact</Link></li>
