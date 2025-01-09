@@ -4,29 +4,8 @@ const ComingSoon = () => {
     // Define the models in development here
     const comingSoonModels = [
         {
-            name: "Splatter Brush",
-            image: "/assets/coming_soon_thumbnails/Splatter Brush/splatter_brush.png",
-            description: "A vibrant paint-splatter effect to make your images pop with color."
-        },
-        {
             name: "Neon Glow",
             image: "/assets/coming_soon_thumbnails/Neon Glow/neon_glow.png",
-            description: "A high-contrast neon glow effect, perfect for futuristic designs."
-        },
-        {
-            name: "Duo Tone",
-            image: "/assets/coming_soon_thumbnails/Duo Tone/duo_tone.png",
-            description: "A stylish dual-color overlay for bold, eye-catching imagery."
-        },
-        {
-            name: "Mosaic Mixer",
-            image: "/assets/coming_soon_thumbnails/Mosaic Mixer/mosaic_mixer.png",
-            description: "Transform your photos into a creative mosaic of shapes and patterns."
-        },
-        {
-            name: "Vintage Sketch",
-            image: "/assets/coming_soon_thumbnails/Vintage Sketch/vintage_sketch.png",
-            description: "Classic sketch style for a timeless, hand-drawn aesthetic."
         },
     ];
 
@@ -58,7 +37,6 @@ const ComingSoon = () => {
                                     }}
                                 />
                                 <h3>{model.name}</h3>
-                                <p>{model.description}</p>
                             </div>
                         </div>
                     ))}
