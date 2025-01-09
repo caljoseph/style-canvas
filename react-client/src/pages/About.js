@@ -17,13 +17,6 @@ const About = () => {
                             artwork. Inspired by his experiences hiring artists for his books, Brandon developed this app to provide
                             accessible, custom art for everyone.
                         </h5>
-                        <a
-                            href="#"
-                            className="about-btn align-self-center align-self-xl-start"
-                            style={{ marginTop: '50px', marginLeft: '100px' }}
-                        >
-                            <span>About us</span> <i className="bi bi-chevron-right"></i>
-                        </a>
                     </div>
 
                     <div className="col-xl-7" data-aos="fade-up" data-aos-delay="200">

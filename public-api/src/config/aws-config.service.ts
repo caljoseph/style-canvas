@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { CognitoIdentityServiceProvider } from "aws-sdk";
 import * as process from "node:process";
+import {SESClient} from "@aws-sdk/client-ses";
 
 @Injectable()
 export class AwsConfigService {
@@ -23,6 +24,15 @@ export class AwsConfigService {
                 secretAccessKey: process.env.COGNITO_SECRET_KEY,
             },
         });
+    }
 
+    public getSESClient(): SESClient {
+        return new SESClient({
+            region: process.env.AWS_REGION,
+            credentials: {
+                accessKeyId: process.env.SES_ACCESS_KEY,
+                secretAccessKey: process.env.SES_SECRET_KEY,
+            },
+        });
     }
 }

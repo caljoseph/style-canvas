@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
-import { contactService } from '../api/services';
+import { contactService } from '../api/services/contact';
+import { useAuth } from '../context/AuthContext';
+import { Modal } from 'react-bootstrap';
 
 const Contact = () => {
+    const { user } = useAuth();
     const [formData, setFormData] = useState({
-        name: '',
-        email: '',
+        name: user?.name || '',
+        email: user?.email || '',
         subject: '',
         message: ''
     });
 
-    const [status, setStatus] = useState({
-        loading: false,
-        error: null,
-        success: false
-    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState(null);
+    const [toast, setToast] = useState(null);
 
-    // Basic email validation
     const isValidEmail = (email) => {
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     };
@@ -26,67 +26,81 @@ const Contact = () => {
             ...prev,
             [name]: value
         }));
-        // Clear errors when user starts typing again
-        if (status.error) {
-            setStatus(prev => ({ ...prev, error: null }));
-        }
+        setError(null);
+    };
+
+    const resetForm = () => {
+        setFormData({
+            name: user?.name || '',
+            email: user?.email || '',
+            subject: '',
+            message: ''
+        });
+    };
+
+    const showToast = (message, type) => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 5000);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         // Validate form
-        if (!formData.name.trim()) {
-            setStatus({ loading: false, error: 'Please enter your name', success: false });
-            return;
-        }
-
-        if (!isValidEmail(formData.email)) {
-            setStatus({ loading: false, error: 'Please enter a valid email address', success: false });
+        if (!user && !isValidEmail(formData.email)) {
+            setError('Please enter a valid email address');
             return;
         }
 
         if (!formData.message.trim()) {
-            setStatus({ loading: false, error: 'Please enter a message', success: false });
+            setError('Please enter a message');
             return;
         }
 
-        setStatus({ loading: true, error: null, success: false });
+        setIsSubmitting(true);
+        setError(null);
 
         try {
             await contactService.sendMessage({
                 ...formData,
-                // Add any additional metadata
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                source: window.location.href
+                email: user?.email || formData.email
             });
 
-            // Success
-            setStatus({ loading: false, error: null, success: true });
-            setFormData({
-                name: '',
-                email: '',
-                subject: '',
-                message: ''
-            });
+            // Show success toast immediately
+            showToast('Your message has been sent successfully!', 'success');
 
-            // Reset success message after 5 seconds
-            setTimeout(() => {
-                setStatus(prev => ({ ...prev, success: false }));
-            }, 5000);
+            // Clear form after a slight delay for better UX
+            resetForm();
 
         } catch (error) {
-            setStatus({
-                loading: false,
-                error: error.message || 'Failed to send message. Please try again or email us directly.',
-                success: false
-            });
+            setError(error.response?.data?.message ||
+                error.message ||
+                'Failed to send message. Please try again or email us directly.');
         }
+
+        // Always re-enable the form
+        setIsSubmitting(false);
     };
 
     return (
         <section id="contactus" className="contact section">
+            {toast && (
+                <div className={`my-toast-container show`}>
+                    <div className="my-toast">
+                        <div className="my-toast-body">{toast.message}</div>
+                        <button
+                            className="my-toast-close"
+                            onClick={() => setToast(null)}
+                            aria-label="Close"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="container section-title" data-aos="fade-up">
                 <h2>Contact Us</h2>
             </div>
@@ -114,16 +128,28 @@ const Contact = () => {
                     </div>
 
                     <div className="col-lg-7">
-                        <form onSubmit={handleSubmit} className="php-email-form" data-aos="fade-up" data-aos-delay="500">
+                        {error && (
+                            <div className="alert alert-danger mb-4" role="alert">
+                                {error}
+                            </div>
+                        )}
+
+                        <form
+                            onSubmit={handleSubmit}
+                            className={`php-email-form ${isSubmitting ? 'submitting' : ''}`}
+                            data-aos="fade-up"
+                            data-aos-delay="500"
+                        >
                             <div className="row gy-4">
                                 <div className="col-md-6">
                                     <input
                                         type="text"
                                         name="name"
-                                        className={`form-control ${status.error && !formData.name.trim() ? 'is-invalid' : ''}`}
+                                        className={`form-control ${error && !formData.name.trim() ? 'is-invalid' : ''}`}
                                         placeholder="Your Name"
                                         value={formData.name}
                                         onChange={handleChange}
+                                        disabled={isSubmitting}
                                         required
                                     />
                                 </div>
@@ -132,11 +158,13 @@ const Contact = () => {
                                     <input
                                         type="email"
                                         name="email"
-                                        className={`form-control ${status.error && !isValidEmail(formData.email) ? 'is-invalid' : ''}`}
+                                        className={`form-control ${error && !isValidEmail(formData.email) ? 'is-invalid' : ''} ${user ? 'bg-light text-muted' : ''}`}
                                         placeholder="Your Email"
-                                        value={formData.email}
+                                        value={user?.email || formData.email}
                                         onChange={handleChange}
                                         required
+                                        disabled={!!user || isSubmitting}
+                                        style={user ? { cursor: 'not-allowed', backgroundColor: '#dde0e3' } : {}}
                                     />
                                 </div>
 
@@ -148,33 +176,38 @@ const Contact = () => {
                                         placeholder="Subject"
                                         value={formData.subject}
                                         onChange={handleChange}
+                                        disabled={isSubmitting}
                                         required
                                     />
                                 </div>
 
                                 <div className="col-md-12">
                                     <textarea
-                                        className={`form-control ${status.error && !formData.message.trim() ? 'is-invalid' : ''}`}
+                                        className={`form-control ${error && !formData.message.trim() ? 'is-invalid' : ''}`}
                                         name="message"
                                         rows="6"
                                         placeholder="Message"
                                         value={formData.message}
                                         onChange={handleChange}
+                                        disabled={isSubmitting}
                                         required
                                     ></textarea>
                                 </div>
 
                                 <div className="col-md-12 text-center">
-                                    {status.loading && <div className="loading">Sending message...</div>}
-                                    {status.error && <div className="error-message">{status.error}</div>}
-                                    {status.success && <div className="sent-message">Your message has been sent. Thank you!</div>}
-
                                     <button
                                         type="submit"
-                                        disabled={status.loading}
-                                        className={status.loading ? 'loading' : ''}
+                                        disabled={isSubmitting}
+                                        className={`submit-button ${isSubmitting ? 'submitting' : ''}`}
                                     >
-                                        {status.loading ? 'Sending...' : 'Send Message'}
+                                        {isSubmitting ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                Sending...
+                                            </>
+                                        ) : (
+                                            'Send Message'
+                                        )}
                                     </button>
                                 </div>
                             </div>

@@ -11,6 +11,8 @@ import {AwsCognitoService} from "./auth/aws-cognito.service";
 import {UserRepository} from "./users/user.repository";
 import {AwsConfigModule} from "./config/aws-config.module";
 import { PaymentsModule } from './payments/payments.module';
+import { ContactService } from './contact/contact.service';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { PaymentsModule } from './payments/payments.module';
       ImageModule,
       AwsConfigModule,
       PaymentsModule,
+      ContactModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TokensService, AwsCognitoService, UserRepository],
+  providers: [AppService, TokensService, AwsCognitoService, UserRepository, ContactService],
 })
 export class AppModule {}

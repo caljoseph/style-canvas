@@ -23,6 +23,9 @@ const API_CONFIG = {
             status: (hash) => `/image/status/${hash}`,
             retrieve: (hash) => `/image/retrieve/${hash}`,
         },
+        contact: {
+            send: '/contact/send'
+        }
     },
 };
 
