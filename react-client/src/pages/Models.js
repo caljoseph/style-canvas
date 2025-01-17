@@ -46,10 +46,13 @@ const Models = () => {
     const DISPLAY_DIMENSION = 350;
 
     // Models which are in beta mode must be specified in this array
-    const BETA_MODELS = ["Face-2-Paint"];
+    const BETA_MODELS = ["Comic Crafter", "Block Filter"];
 
     // List of available models
     const models = [
+        {name: "Comic Crafter", image: "/assets/model_thumbnails/Comic Crafter/comic_crafter.png" },
+        {name: "Hope Art", image: "/assets/model_thumbnails/Hope Art/hope_art.png" },
+        {name: "Block Filter", image: "/assets/model_thumbnails/Block Filter/block_filter.png" },
         { name: "Pencil Blur", image: "/assets/model_thumbnails/Pencil Blur/pencil_blur.png" },
         { name: "Impasto", image: "/assets/model_thumbnails/Impasto/impasto.png" },
         { name: "Chalkboard", image: "/assets/model_thumbnails/Chalkboard/chalkboard.png" },
@@ -73,10 +76,7 @@ const Models = () => {
         { name: "Tenshi", image: "/assets/model_thumbnails/Tenshi/tenshi.png" },
         { name: "Tenshi Abstract", image: "/assets/model_thumbnails/Tenshi Abstract/tenshi_abstract.png" },
         { name: "Triad Shade", image: "/assets/model_thumbnails/Triad Shade/triad_shade.png" },
-        { name: "Triadic Vision", image: "/assets/model_thumbnails/Triadic Vision/triadic_vision.png" },
-        {name: "Comic Crafter", image: "/assets/model_thumbnails/Comic Crafter/comic_crafter.png" },
-        {name: "Hope Art", image: "/assets/model_thumbnails/Hope Art/hope_art.png" },
-        {name: "Block Filter", image: "/assets/model_thumbnails/Block Filter/block_filter.png" }
+        { name: "Triadic Vision", image: "/assets/model_thumbnails/Triadic Vision/triadic_vision.png" }
     ];
 
     // Prevent navigation while processing
