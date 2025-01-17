@@ -31,6 +31,9 @@ const ModelName = {
     "Triadic Vision": "TriadicVision",
     "Upsample": "Upsample",
     "Van Gogh": "VanGogh",
+    "Hope Art": "HopeArt",
+    "Block Filter" : "BlockFilter",
+    "Comic Crafter" :"ComicCrafterAI"
 } as const;
 
 type ModelNameKey = keyof typeof ModelName;
