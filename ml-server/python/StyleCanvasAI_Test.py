@@ -145,8 +145,8 @@ def BaroqueBrush(img):
 def pencil_blur(img):
     return  Diff.pencil_blur(img)
 
-def Verdant_Flame(img):
-    return  Diff.Verdant_Flame(img)
+def HopeArt(img):
+    return  Diff.HopeArt(img)
 
 def FaceParsing_Mask(img):
     # Perform face parsing to get the segmentation mask
@@ -287,7 +287,7 @@ def process_images_with_functions(processing_functions):
                 print(f"Failed to process {image_name} with {function_name}: {e}")
 
 if __name__ == "__main__":
-    process_images_with_function(BlockFilter)
+    process_images_with_function(HopeArt)
 
 
 

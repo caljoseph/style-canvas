@@ -80,8 +80,8 @@ class S2ModelConfigurations:
         img_width=512, 
     )
 
-    T3_Verdant_Flame_Parameters = S2_Parameters(
-        Checkpoint_Name="T3_Verdant_Flame", 
+    HopeArt = S2_Parameters(
+        Checkpoint_Name="T2_HopeArt", 
         n_feats=64, 
         dim=48, 
         n_encoder_res=6, 

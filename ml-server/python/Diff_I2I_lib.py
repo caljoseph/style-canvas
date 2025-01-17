@@ -182,10 +182,10 @@ def FaceParsing_T2(img):
         manager = DiffI2IManager(S2ModelConfigurations.FaceParsing_T2_Parameters)
     return Generate_Face_Parsing_image(img, S2ModelConfigurations.FaceParsing_T2_Parameters)
 
-def Verdant_Flame(img):
+def HopeArt(img):
     global manager
     if not is_verdant_flame_loaded:
         reset_flags_and_set_active("is_verdant_flame_loaded")
         manager = None
-        manager = DiffI2IManager(S2ModelConfigurations.T3_Verdant_Flame_Parameters)
-    return Generate_Face_image(img, S2ModelConfigurations.T3_Verdant_Flame_Parameters)
+        manager = DiffI2IManager(S2ModelConfigurations.HopeArt)
+    return generate_stylized_face_image(img, S2ModelConfigurations.HopeArt)

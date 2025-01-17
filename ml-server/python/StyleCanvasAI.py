@@ -146,8 +146,8 @@ def Baroquebrush_2(img):
 def pencil_blur(img):
     return  Diff.pencil_blur(img)
 
-def Verdant_Flame(img):
-    return  Diff.Verdant_Flame(img)
+def HopeArt(img):
+    return  Diff.HopeArt(img)
 
 # Pix2Pix model:
 
@@ -236,7 +236,7 @@ filter_functions = {
     'BaroqueBrush': BaroqueBrush,
     'BaroqueBrush_2': Baroquebrush_2,
     'pencil_blur': pencil_blur,
-    'Verdant_Flame': Verdant_Flame,
+    'HopeArt': HopeArt,
     'face2paint': face2paint,
     'crop_and_resize_face_image': crop_and_resize_face_image,
     'apply_broken_glass_effect': apply_broken_glass_effect,
