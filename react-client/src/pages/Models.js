@@ -74,6 +74,9 @@ const Models = () => {
         { name: "Tenshi Abstract", image: "/assets/model_thumbnails/Tenshi Abstract/tenshi_abstract.png" },
         { name: "Triad Shade", image: "/assets/model_thumbnails/Triad Shade/triad_shade.png" },
         { name: "Triadic Vision", image: "/assets/model_thumbnails/Triadic Vision/triadic_vision.png" },
+        {name: "Comic Crafter", image: "/assets/model_thumbnails/Comic Crafter/comic_crafter.png" },
+        {name: "Hope Art", image: "/assets/model_thumbnails/Hope Art/hope_art.png" },
+        {name: "Block Filter", image: "/assets/model_thumbnails/Block Filter/block_filter.png" }
     ];
 
     // Prevent navigation while processing
