@@ -1,19 +1,30 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { json } from 'express';
-import * as cors from 'cors'; // Import CORS if using advanced options
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS
+  // Enable CORS with dynamic origin handling
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:63343'],  // Allow requests from frontend in dev mode
-    methods: 'GET,POST,PUT,DELETE',
-    credentials: true,  // Allows cookies to be sent with requests
-    allowedHeaders: 'Content-Type, Authorization',  // Specify allowed headers
-  });
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3001',
+        'http://localhost:63343',
+        'https://stylecanvasai.com',
+        'https://www.stylecanvasai.com'
+      ];
 
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);  // Allow the origin if it's in the list or no origin (e.g., server-side requests)
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: 'GET,POST,PUT,DELETE',
+    credentials: true,  // Allows cookies with requests
+    allowedHeaders: 'Content-Type, Authorization',
+  });
 
   // Middleware for stripe webhooks
   app.use('/payments/webhook', (req, res, next) => {
