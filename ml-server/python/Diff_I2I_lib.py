@@ -12,7 +12,7 @@ is_Sketches_T5_loaded = False
 is_FaceParsing_T1_loaded = False
 is_FaceParsing_T2_loaded = False
 is_pencil_blur_loaded = False
-is_verdant_flame_loaded = False
+is_HopeArt_loaded = False
 is_ComicCrafterAI_loaded = False
 is_ComicCrafterAI_T1_loaded = False
 is_BlockFilter_loaded = False
@@ -62,7 +62,7 @@ def reset_flags_and_set_active(active_flag):
     Sets all load flags to False except the specified active_flag, which will be set to True.
     """
     global is_OP3_loaded, is_SC3_loaded, is_Sketches_T5_loaded, is_FaceParsing_T1_loaded
-    global is_FaceParsing_T2_loaded, is_pencil_blur_loaded, is_pope_art_loaded
+    global is_FaceParsing_T2_loaded, is_pencil_blur_loaded, is_HopeArt_loaded
     global is_ComicCrafterAI_loaded, is_ComicCrafterAI_T1_loaded , is_BlockFilter_loaded, is_ColorOilPaint_loaded
 
     # Reset all flags to False
@@ -72,7 +72,7 @@ def reset_flags_and_set_active(active_flag):
     is_FaceParsing_T1_loaded = False
     is_FaceParsing_T2_loaded = False
     is_pencil_blur_loaded = False
-    is_verdant_flame_loaded = False
+    is_HopeArt_loaded = False
     is_ComicCrafterAI_loaded = False
     is_ComicCrafterAI_T1_loaded = False
     is_BlockFilter_loaded = False
@@ -91,8 +91,8 @@ def reset_flags_and_set_active(active_flag):
         is_FaceParsing_T2_loaded = True
     elif active_flag == "is_pencil_blur_loaded":
         is_pencil_blur_loaded = True
-    elif active_flag == "is_verdant_flame_loaded":
-        is_verdant_flame_loaded = True
+    elif active_flag == "is_HopeArt_loaded":
+        is_HopeArt_loaded = True
     elif active_flag == "is_ComicCrafterAI_loaded":
         is_ComicCrafterAI_loaded = True
     elif active_flag == "is_ComicCrafterAI_T1_loaded":
@@ -201,8 +201,8 @@ def FaceParsing_T2(img):
 
 def HopeArt(img):
     global manager
-    if not is_verdant_flame_loaded:
-        reset_flags_and_set_active("is_verdant_flame_loaded")
+    if not is_HopeArt_loaded:
+        reset_flags_and_set_active("is_HopeArt_loaded")
         manager = None
         manager = DiffI2IManager(S2ModelConfigurations.HopeArt)
     return generate_stylized_face_image(img, S2ModelConfigurations.HopeArt)

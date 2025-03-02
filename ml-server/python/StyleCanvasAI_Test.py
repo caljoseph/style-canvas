@@ -290,7 +290,7 @@ def process_images_with_functions(processing_functions):
                 print(f"Failed to process {image_name} with {function_name}: {e}")
 
 if __name__ == "__main__":
-    process_images_with_function(Upsample)
+    process_images_with_function(HopeArt)
 
 
 
