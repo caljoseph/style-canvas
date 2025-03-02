@@ -33,7 +33,8 @@ const ModelName = {
     "Van Gogh": "VanGogh",
     "Hope Art": "HopeArt",
     "Block Filter" : "BlockFilter",
-    "Comic Crafter" :"ComicCrafterAI"
+    "Comic Crafter" :"ComicCrafterAI",
+    "Color Oil Paint": "ColorOilPaint"
 } as const;
 
 type ModelNameKey = keyof typeof ModelName;

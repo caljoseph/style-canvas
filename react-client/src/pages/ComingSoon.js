@@ -4,8 +4,8 @@ const ComingSoon = () => {
     // Define the models in development here
     const comingSoonModels = [
         {
-            name: "Neon Glow",
-            image: "/assets/coming_soon_thumbnails/Neon Glow/neon_glow.png",
+            name: "Adventure Time",
+            image: "/assets/coming_soon_thumbnails/Adventure_Time/Adventure_Time.png",
         },
     ];
 
