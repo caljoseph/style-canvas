@@ -214,7 +214,7 @@ def Upsample(img, scale = 4):
 
 # Functions for testing other Functions above :
 def process_images_with_function(processing_function):
-    source_folder = r'D:\style-canvas\ml-server\python\Results\ColorOilPaint'
+    source_folder = r'D:\Python Projects\DiffI2I\Clean_Face_To_Drawing_3\A2'
     destination_root_folder = r"./Results"
     
     #source_folder = r'F:\Python Projects\DiffI2I\Dataset\Verdant_Flame\Training\A'
@@ -290,7 +290,7 @@ def process_images_with_functions(processing_functions):
                 print(f"Failed to process {image_name} with {function_name}: {e}")
 
 if __name__ == "__main__":
-    process_images_with_function(HopeArt)
+    process_images_with_function(ColorOilPaint)
 
 
 
