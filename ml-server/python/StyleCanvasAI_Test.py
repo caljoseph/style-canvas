@@ -132,6 +132,9 @@ def Chalkboard(img):
     return chalk_board
 
 # All DiffI2I models:
+def ColorOilPaint(img):
+    return Diff.ColorOilPaint(img)
+
 def BlockFilter(img):
     return Diff.BlockFilter(img)
 
@@ -206,12 +209,12 @@ def apply_broken_glass_effect(img):
     return final_image_np
 
 # RealESRGANer model 
-def Upsample(img, scale = 2):
+def Upsample(img, scale = 4):
     return im.enhance_image_resolution(img, scale)
 
 # Functions for testing other Functions above :
 def process_images_with_function(processing_function):
-    source_folder = r'./Test_Images'
+    source_folder = r'D:\style-canvas\ml-server\python\Results\ColorOilPaint'
     destination_root_folder = r"./Results"
     
     #source_folder = r'F:\Python Projects\DiffI2I\Dataset\Verdant_Flame\Training\A'
@@ -244,7 +247,7 @@ def process_images_with_functions(processing_functions):
     """
     Processes images using a list of functions and ensures unique destination folder names.
     """
-    source_folder = r'Test_Images'
+    source_folder = r'One_image'
     destination_root_folder = r"Results"
 
     folder_name_counts = {}
@@ -287,7 +290,7 @@ def process_images_with_functions(processing_functions):
                 print(f"Failed to process {image_name} with {function_name}: {e}")
 
 if __name__ == "__main__":
-    process_images_with_function(HopeArt)
+    process_images_with_function(Upsample)
 
 
 

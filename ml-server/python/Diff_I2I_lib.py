@@ -16,6 +16,7 @@ is_verdant_flame_loaded = False
 is_ComicCrafterAI_loaded = False
 is_ComicCrafterAI_T1_loaded = False
 is_BlockFilter_loaded = False
+is_ColorOilPaint_loaded = False
 
 
 def generate_stylized_face_image(img, parameters):
@@ -61,8 +62,8 @@ def reset_flags_and_set_active(active_flag):
     Sets all load flags to False except the specified active_flag, which will be set to True.
     """
     global is_OP3_loaded, is_SC3_loaded, is_Sketches_T5_loaded, is_FaceParsing_T1_loaded
-    global is_FaceParsing_T2_loaded, is_pencil_blur_loaded, is_verdant_flame_loaded
-    global is_ComicCrafterAI_loaded, is_ComicCrafterAI_T1_loaded , is_BlockFilter_loaded
+    global is_FaceParsing_T2_loaded, is_pencil_blur_loaded, is_pope_art_loaded
+    global is_ComicCrafterAI_loaded, is_ComicCrafterAI_T1_loaded , is_BlockFilter_loaded, is_ColorOilPaint_loaded
 
     # Reset all flags to False
     is_OP3_loaded = False
@@ -75,6 +76,7 @@ def reset_flags_and_set_active(active_flag):
     is_ComicCrafterAI_loaded = False
     is_ComicCrafterAI_T1_loaded = False
     is_BlockFilter_loaded = False
+    is_ColorOilPaint_loaded = False
 
     # Set the specified flag to True
     if active_flag == "is_OP3_loaded":
@@ -97,6 +99,21 @@ def reset_flags_and_set_active(active_flag):
         is_ComicCrafterAI_T1_loaded = True
     elif active_flag == "is_BlockFilter_loaded":
         is_BlockFilter_loaded = True
+    elif active_flag == "is_ColorOilPaint_loaded":
+        is_ColorOilPaint_loaded = True
+
+
+
+def ColorOilPaint(img):
+    global manager, is_ColorOilPaint_loaded
+
+    if not is_ColorOilPaint_loaded:
+        reset_flags_and_set_active("is_ColorOilPaint_loaded")
+        manager = None
+        manager = DiffI2IManager(S2ModelConfigurations.Color_Oil_Paint_Parameters)
+    
+    return generate_stylized_face_image(img, S2ModelConfigurations.Color_Oil_Paint_Parameters)
+
 
 def BlockFilter(img):
     global manager, is_BlockFilter_loaded

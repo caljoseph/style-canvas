@@ -35,8 +35,8 @@ def enhance_image_resolution(img, scale=2):
         torch.cuda.synchronize()  # Ensure all CUDA operations are finished
         torch.cuda.empty_cache()  # Clear the CUDA cache to free up memory
 
-    # Initialize the model and upsampler
-    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=scale)
+    # Initialize the model and upsampler"
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
     upsampler = RealESRGANer(
         scale=scale,
         model_path=r'./Resize_Model_Weights/RealESRGAN_x4plus.pth',
@@ -44,7 +44,7 @@ def enhance_image_resolution(img, scale=2):
         device=scu.DEVICE,
         gpu_id=scu.gpu_id,
     )
-
+    
     # Process the image
     img_np = np.array(img)  # Convert PIL Image to NumPy array
     output_img, _ = upsampler.enhance(img_np)

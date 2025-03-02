@@ -1,6 +1,17 @@
 from S2_Parameters import S2_Parameters
 
 class S2ModelConfigurations:
+    Color_Oil_Paint_Parameters = S2_Parameters(
+        Checkpoint_Name="T1_Color_Oil_Paint", 
+        n_feats=64, 
+        dim=64, 
+        n_encoder_res=6, 
+        n_denoise_res=6, 
+        timesteps=60, 
+        img_height=512, 
+        img_width=512, 
+    )
+
     SC3_Parameters = S2_Parameters(
         Checkpoint_Name="OilPainting_SC3", 
         n_feats=32, 

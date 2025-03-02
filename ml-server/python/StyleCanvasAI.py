@@ -149,6 +149,9 @@ def pencil_blur(img):
 def HopeArt(img):
     return  Diff.HopeArt(img)
 
+def ColorOilPaint(img):
+    return Diff.ColorOilPaint(img)
+
 # Pix2Pix model:
 
 def face2paint(img):
@@ -240,7 +243,8 @@ filter_functions = {
     'face2paint': face2paint,
     'crop_and_resize_face_image': crop_and_resize_face_image,
     'apply_broken_glass_effect': apply_broken_glass_effect,
-    'Upsample': Upsample
+    'Upsample': Upsample,
+    'ColorOilPaint': ColorOilPaint
 }
 
 # Function for processing a single image:
