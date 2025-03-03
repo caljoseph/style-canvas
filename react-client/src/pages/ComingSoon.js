@@ -5,7 +5,7 @@ const ComingSoon = () => {
     const comingSoonModels = [
         {
             name: "Adventure Time",
-            image: "/assets/coming_soon_thumbnails/Adventure_Time/Adventure_Time.png",
+            image: "/assets/coming_soon_thumbnails/Adventure_Time/Adventure_Time.PNG",
         },
     ];
 
